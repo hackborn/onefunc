@@ -14,10 +14,10 @@ import (
 // receives ownership of string writers.
 type Pool interface {
 	// Acquire takes a writer out of the pool.
-	Acquire() io.StringWriter
+	Get() io.StringWriter
 
 	// Release puts a writer in the pool.
-	Release(io.StringWriter)
+	Put(io.StringWriter)
 
 	// Close puts all writers back in the master pool.
 	Close() error
@@ -52,14 +52,14 @@ func (p *stringPoolInterner) Initialize(w io.StringWriter) {
 	}
 }
 
-// AcquireWriter removes and answers a new string writer from the global pool.
-func AcquireWriter() io.StringWriter {
-	return globalPool.Acquire()
+// GetWriter removes and answers a new string writer from the global pool.
+func GetWriter() io.StringWriter {
+	return globalPool.Get()
 }
 
-// ReleaseWriter places a writer into the global pool.
-func ReleaseWriter(w io.StringWriter) {
-	globalPool.Release(w)
+// PutWriter places a writer into the global pool.
+func PutWriter(w io.StringWriter) {
+	globalPool.Put(w)
 }
 
 func String(w io.StringWriter) string {

@@ -17,36 +17,30 @@ func TestStringWriterPool(t *testing.T) {
 		Stack   []io.StringWriter
 	}
 	type ActionFunc func(*State) error
-	acquire := func(s *State) error {
-		w := s.pool.Acquire()
+	get := func(s *State) error {
+		w := s.pool.Get()
 		s.Stack = append(s.Stack, w)
 		return nil
 	}
-	release := func(s *State) error {
+	put := func(s *State) error {
 		size := len(s.Stack)
 		if size > 0 {
-			s.pool.Release(s.Stack[size-1])
+			s.pool.Put(s.Stack[size-1])
 			s.Stack = s.Stack[:size-1]
 		}
 		return nil
 	}
-	/*
-		m := maps.Pool[uint64, io.StringWriter]{}
-		fmt.Println("map", m)
-		m2 := newPool()
-		fmt.Println("pool", m2)
-		panic(nil)
-	*/
+
 	table := []struct {
 		actions []ActionFunc
 		want    string
 		wantLen int
 		wantErr error
 	}{
-		{[]ActionFunc{acquire}, "", 0, nil},
-		{[]ActionFunc{acquire, release}, "", 1, nil},
-		{[]ActionFunc{acquire, release, acquire}, "", 0, nil},
-		{[]ActionFunc{acquire, release, release}, "", 1, nil},
+		{[]ActionFunc{get}, "", 0, nil},
+		{[]ActionFunc{get, put}, "", 1, nil},
+		{[]ActionFunc{get, put, get}, "", 0, nil},
+		{[]ActionFunc{get, put, put}, "", 1, nil},
 	}
 	for i, v := range table {
 		state := &State{}

@@ -34,15 +34,15 @@ type Pool[K comparable, V any] struct {
 	cache map[K]V
 }
 
-func (p *Pool[K, V]) Acquire() V {
-	if v, ok := p.acquireLocked(); ok {
+func (p *Pool[K, V]) Get() V {
+	if v, ok := p.getLocked(); ok {
 		p.interner.Initialize(v)
 		return v
 	}
 	return p.interner.New()
 }
 
-func (p *Pool[K, V]) acquireLocked() (V, bool) {
+func (p *Pool[K, V]) getLocked() (V, bool) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -53,7 +53,7 @@ func (p *Pool[K, V]) acquireLocked() (V, bool) {
 	return p.emptyV, false
 }
 
-func (p *Pool[K, V]) Release(v V) {
+func (p *Pool[K, V]) Put(v V) {
 	if k, ok := p.interner.Key(v); ok {
 		p.lock.Lock()
 		p.cache[k] = v
