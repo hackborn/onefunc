@@ -5,6 +5,8 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+
+	"github.com/hackborn/onefunc/maps"
 )
 
 // ---------------------------------------------------------
@@ -21,66 +23,33 @@ type Pool interface {
 	Close() error
 }
 
-// ---------------------------------------------------------
-// allocStringWriter can create new string writers.
-type allocStringWriter interface {
-	New() io.StringWriter
-}
-
-// ---------------------------------------------------------
-// pool gives and receives io.StringWriters.
-type pool struct {
-	lock     sync.Locker
-	alloc    allocStringWriter
-	builders map[uint64]*stringBuilder
-}
-
-func (p *pool) Acquire() io.StringWriter {
-	sb := p.acquireLocked()
-	if sb == nil {
-		return p.alloc.New()
-	}
-	sb.Reset()
-	return sb
-}
-
-func (p *pool) acquireLocked() *stringBuilder {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
-	for k, v := range p.builders {
-		delete(p.builders, k)
-		return v
-	}
-	return nil
-}
-
-func (p *pool) Release(w io.StringWriter) {
-	if b, ok := w.(*stringBuilder); ok {
-		p.lock.Lock()
-		p.builders[b.id] = b
-		p.lock.Unlock()
-	}
-}
-
-// newLockingPool returns a new stand-alone pool that
-// locks and allocates new writers.
-func newLockingPool() *pool {
+func newLockingPool() *maps.Pool[uint64, io.StringWriter] {
 	lock := &sync.Mutex{}
-	alloc := &newPoolAllocator{}
-	builders := make(map[uint64]*stringBuilder)
-	return &pool{lock: lock, alloc: alloc, builders: builders}
+	interner := &stringPoolInterner{}
+	return maps.NewPool[uint64, io.StringWriter](lock, interner)
 }
 
-// newPoolAllocator is used to create new builders.
-type newPoolAllocator struct {
+type stringPoolInterner struct {
 	count atomic.Uint64
 }
 
-func (a *newPoolAllocator) New() io.StringWriter {
-	id := a.count.Add(1)
+func (p *stringPoolInterner) Key(w io.StringWriter) (uint64, bool) {
+	if b, ok := w.(*stringBuilder); ok {
+		return b.id, true
+	}
+	return 0, false
+}
+
+func (p *stringPoolInterner) New() io.StringWriter {
+	id := p.count.Add(1)
 	var sb strings.Builder
 	return &stringBuilder{id: id, sb: &sb}
+}
+
+func (p *stringPoolInterner) Initialize(w io.StringWriter) {
+	if b, ok := w.(*stringBuilder); ok {
+		b.Reset()
+	}
 }
 
 // AcquireWriter removes and answers a new string writer from the global pool.

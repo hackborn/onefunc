@@ -1,16 +1,20 @@
 package strings
 
 import (
+	_ "fmt"
 	"io"
 	"testing"
+
+	"github.com/hackborn/onefunc/maps"
 )
 
 // ---------------------------------------------------------
 // TEST-STRING-WRITER-POOL
 func TestStringWriterPool(t *testing.T) {
 	type State struct {
-		pool  *pool
-		Stack []io.StringWriter
+		pool    Pool
+		rawPool *maps.Pool[uint64, io.StringWriter]
+		Stack   []io.StringWriter
 	}
 	type ActionFunc func(*State) error
 	acquire := func(s *State) error {
@@ -26,7 +30,13 @@ func TestStringWriterPool(t *testing.T) {
 		}
 		return nil
 	}
-
+	/*
+		m := maps.Pool[uint64, io.StringWriter]{}
+		fmt.Println("map", m)
+		m2 := newPool()
+		fmt.Println("pool", m2)
+		panic(nil)
+	*/
 	table := []struct {
 		actions []ActionFunc
 		want    string
@@ -40,14 +50,15 @@ func TestStringWriterPool(t *testing.T) {
 	}
 	for i, v := range table {
 		state := &State{}
-		state.pool = newLockingPool()
+		state.rawPool = newLockingPool()
+		state.pool = state.rawPool
 
 		var haveErr error
 		for _, action := range v.actions {
 			haveErr = firstErr(haveErr, action(state))
 		}
 		have := ""
-		haveLen := len(state.pool.builders)
+		haveLen := state.rawPool.CacheSize()
 
 		if v.wantErr == nil && haveErr != nil {
 			t.Fatalf("TestStringWriterPool %v expected no error but has %v", i, haveErr)
