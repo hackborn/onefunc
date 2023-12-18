@@ -1,5 +1,7 @@
 package extract
 
+import "fmt"
+
 // ---------------------------------------------------------
 // HANDLING
 
@@ -64,6 +66,8 @@ func NewChain(items ...any) Chain {
 			h = Slice(*t)
 		case map[string]string:
 			h = FilterMap(FilterMapOpts{F: t})
+		default:
+			fmt.Printf("new chain unknown type %T\n", t)
 		}
 		if h != nil {
 			chain = append(chain, h)

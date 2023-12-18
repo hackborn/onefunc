@@ -10,38 +10,6 @@ import (
 )
 
 // ---------------------------------------------------------
-// TEST-TAIL
-/*
-func TestTail(t *testing.T) {
-	table := []struct {
-		h    Handler
-		want string
-	}{
-		{nil, ""},
-		{&Chainer1{A: "s"}, "s"},
-		{newChainer1("s"), "s"},
-		{newChainer1("s", "t"), "t"},
-		{newChainer1("s", "t", "v"), "v"},
-	}
-	for i, v := range table {
-		c := tail(v.h)
-		have := ""
-		if last, ok := c.(*Chainer1); ok {
-			have = last.A
-		}
-
-		if v.h == nil && c != nil {
-			t.Fatalf("TestTail %v expected nil but has %v", i, c)
-		} else if v.h != nil && c == nil {
-			t.Fatalf("TestTail %v expected value but has nil", i)
-		} else if have != v.want {
-			t.Fatalf("TestTail %v has \"%v\" but wanted \"%v\"", i, have, v.want)
-		}
-	}
-}
-*/
-
-// ---------------------------------------------------------
 // TEST-FROM
 func TestFrom(t *testing.T) {
 	table := []struct {
@@ -54,6 +22,8 @@ func TestFrom(t *testing.T) {
 		{Data2{A: "n", B: 10}, newHandler1(), `{"A":"n","B":10}`},
 		{Data2{A: "n", B: 10}, NewChain(filterMap1, newHandler1()), `{"name":"n"}`},
 		{Data2{A: "n", B: 10}, NewChain(FilterMapOpts{F: filterMap1, Passthrough: true}, newHandler1()), `{"B":10,"name":"n"}`},
+		{Data1{A: "n"}, &pairHandler{}, `["A"],["n"]`},
+		{Data1{A: "n"}, NewChain(filterMap1, &pairHandler{}), `["name"],["n"]`},
 	}
 	for i, v := range table {
 		From(v.src, v.handler)
@@ -205,6 +175,29 @@ func (h *Handler1) Handle(name string, value any) (string, any) {
 
 func (h *Handler1) Flatten() string {
 	return flattenMap(h.results)
+}
+
+type pairHandler struct {
+	fields []any
+	values []any
+}
+
+func (h *pairHandler) Handle(name string, value any) (string, any) {
+	h.fields = append(h.fields, name)
+	h.values = append(h.values, value)
+	return name, value
+}
+
+func (h *pairHandler) Flatten() string {
+	var sb strings.Builder
+	b, err := json.Marshal(h.fields)
+	panicErr(err)
+	sb.WriteString(string(b))
+	sb.WriteString(",")
+	b, err = json.Marshal(h.values)
+	panicErr(err)
+	sb.WriteString(string(b))
+	return sb.String()
 }
 
 // ---------------------------------------------------------
