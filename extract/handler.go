@@ -1,100 +1,180 @@
 package extract
 
+// ---------------------------------------------------------
+// HANDLING
+
+// Handler is used to handle name/value pairs from a struct.
 type Handler interface {
-	// Handle the pair in some fashion. The basic system
+	// Handle the pair in some fashion, returning the (potentially
+	// changed, filtered etc. data). The basic system
 	// is designed to work without errors; if a client needs
 	// any error handling, it should track that in an internal state.
-	Handle(name string, value any)
+	Handle(name string, value any) (string, any)
 }
 
-type Chainer interface {
-	Handler
-	GetNext() Handler
-	SetNext(Handler)
+// Slicer can return a slice.
+type Slicer interface {
+	Slice() []any
 }
 
-type Chain struct {
-	Next Handler
+// Mapper can return a map.
+type Mapper interface {
+	Map() map[string]any
 }
 
-func (c *Chain) GetNext() Handler {
-	return c.Next
-}
+// ---------------------------------------------------------
+// CHAINING
 
-func (c *Chain) SetNext(h Handler) {
-	c.Next = h
-}
+type Chain []Handler
 
-func WithMap(h Handler, m map[string]string) Handler {
-	return &remapHandler{Chain: Chain{Next: h}, m: m, filter: false}
-}
-
-func WithFilterMap(h Handler, m map[string]string) Handler {
-	return &remapHandler{Chain: Chain{Next: h}, m: m, filter: true}
-}
-
-func Map(m map[string]string) Chainer {
-	return &remapHandler{m: m, filter: false}
-}
-
-func FilterMap(m map[string]string) Chainer {
-	return &remapHandler{m: m, filter: true}
-}
-
-func NewChain(chainers ...Chainer) Handler {
-	var first Chainer = nil
-	last := first
-	for _, c := range chainers {
-		if first == nil {
-			first = c
-			last = c
-		} else {
-			last.SetNext(c)
-			last = c
+func (c Chain) Handle(name string, value any) (string, any) {
+	for _, h := range c {
+		name, value = h.Handle(name, value)
+		if name == "" {
+			return "", nil
 		}
 	}
-	return first
+	return name, value
 }
 
-func tail(h Handler) Chainer {
-	var last Chainer = nil
-	for c, ok := h.(Chainer); ok; c, ok = h.(Chainer) {
-		last = c
-		h = c.GetNext()
+// NewChain takes a list of items and converts them into handlers,
+// answering the new handler Chain. Items can be:
+// * A Handler. It is added directly to the chain.
+// * An *Opts (SlicerOpts, etc.). It is converted to the associated
+// Handler and added to the chain.
+// * A map[string]string. It is converted to a FilterMap Handler.
+func NewChain(items ...any) Chain {
+	chain := make(Chain, 0, len(items))
+	for _, item := range items {
+		var h Handler
+		switch t := item.(type) {
+		case Handler:
+			h = t
+		case FilterMapOpts:
+			h = FilterMap(t)
+		case *FilterMapOpts:
+			h = FilterMap(*t)
+		case MapOpts:
+			h = Map(t)
+		case *MapOpts:
+			h = Map(*t)
+		case SliceOpts:
+			h = Slice(t)
+		case *SliceOpts:
+			h = Slice(*t)
+		case map[string]string:
+			h = FilterMap(FilterMapOpts{F: t})
+		}
+		if h != nil {
+			chain = append(chain, h)
+		}
 	}
-	return last
+	return chain
 }
 
-type remapHandler struct {
-	Chain
-	m      map[string]string
-	filter bool
+// ---------------------------------------------------------
+// HANDLER TYPES
+
+type FilterMapOpts struct {
+	F map[string]string
+	// When passthrough is true, anything not filtered is passed on unchanged.
+	Passthrough bool
 }
 
-func (h *remapHandler) Handle(name string, value any) {
-	if h.Next == nil {
-		return
+func FilterMap(opts FilterMapOpts) Handler {
+	return &filterMapHandler{opts: opts}
+}
+
+type SliceOpts struct {
+	Assign  string
+	Combine string
+}
+
+func Slice(opts SliceOpts) Handler {
+	return &sliceHandler{opts: opts}
+}
+
+type MapOpts struct {
+}
+
+func Map(opts MapOpts) Handler {
+	result := make(map[string]any)
+	return &mapHandler{result: result, opts: opts}
+}
+
+// filterMapHandler
+type filterMapHandler struct {
+	opts FilterMapOpts
+}
+
+func (h *filterMapHandler) Handle(name string, value any) (string, any) {
+	if n, ok := h.opts.F[name]; ok {
+		return n, value
+	} else if h.opts.Passthrough {
+		return name, value
+	} else {
+		return "", nil
 	}
-	if n, ok := h.m[name]; ok {
-		h.Next.Handle(n, value)
-	} else if !h.filter {
-		h.Next.Handle(name, value)
-	}
 }
 
+// sliceHandler
 type sliceHandler struct {
-	result     []any
-	assignment string
-	connector  string
+	result []any
+	opts   SliceOpts
 }
 
-func (h *sliceHandler) Handle(name string, value any) {
-	if h.connector != "" && len(h.result) > 0 {
-		h.result = append(h.result, h.connector)
+func (h *sliceHandler) Handle(name string, value any) (string, any) {
+	if h.opts.Combine != "" && len(h.result) > 0 {
+		h.result = append(h.result, h.opts.Combine)
 	}
 	h.result = append(h.result, name)
-	if h.assignment != "" {
-		h.result = append(h.result, h.assignment)
+	if h.opts.Assign != "" {
+		h.result = append(h.result, h.opts.Assign)
 	}
 	h.result = append(h.result, value)
+
+	return name, value
+}
+
+func (h *sliceHandler) Slice() []any {
+	return h.result
+}
+
+// mapHandler
+type mapHandler struct {
+	result map[string]any
+	opts   MapOpts
+}
+
+func (h *mapHandler) Handle(name string, value any) (string, any) {
+	if name == "" {
+		return "", nil
+	}
+	h.result[name] = value
+	return name, value
+}
+
+func (h *mapHandler) Map() map[string]any {
+	return h.result
+}
+
+// ---------------------------------------------------------
+// SUPPORT
+
+// getLast answers the last handler in the (potential) chain
+// that matches type T.
+func getLast[T any](h Handler) (T, bool) {
+	if t, ok := h.(T); ok {
+		return t, true
+	}
+	switch t := h.(type) {
+	case Chain:
+		for i := len(t) - 1; i >= 0; i-- {
+			if ans, ok := getLast[T](t[i]); ok {
+				return ans, ok
+			}
+		}
+	}
+	var t T
+	return t, false
 }

@@ -4,24 +4,51 @@ import (
 	"reflect"
 )
 
-// Slice iterates the fields in a struct, adding the
-// results to a slice based on a handler.
-func Slice(s any, h Handler, connector, assignment string) []any {
-	sh := &sliceHandler{connector: connector,
-		assignment: assignment}
-	t := tail(h)
-	if t != nil {
-		t.SetNext(sh)
-	} else {
-		h = t
+// AsMap iterates the fields in a struct, adding the
+// results to a map based on a handler and returning the map.
+// The handler can be a chain. The final element of the
+// chain must be a Mapper, but you don't need to
+// include it: If the chain doesn't end in a Mapper, then
+// one will be added and provided the MapOpts.
+func AsMap(s any, h Handler, opts *MapOpts) map[string]any {
+	mapper, ok := getLast[Mapper](h)
+	if !ok {
+		if opts == nil {
+			opts = &MapOpts{}
+		}
+		h = NewChain(h, opts)
+		if mapper, ok = getLast[Mapper](h); !ok {
+			return nil
+		}
 	}
-	Values(s, h)
-	return sh.result
+	From(s, h)
+	return mapper.Map()
 }
 
-// Values iterates the fields in a struct, sending the results
+// AsSlice iterates the fields in a struct, adding the
+// results to a slice based on a handler and returning the slice.
+// The handler can be a chain. The final element of the
+// chain must be a Slicer, but you don't need to
+// include it: If the chain doesn't end in a Slicer, then
+// one will be added and provided the SliceOpts.
+func AsSlice(s any, h Handler, opts *SliceOpts) []any {
+	slicer, ok := getLast[Slicer](h)
+	if !ok {
+		if opts == nil {
+			opts = &SliceOpts{}
+		}
+		h = NewChain(h, opts)
+		if slicer, ok = getLast[Slicer](h); !ok {
+			return nil
+		}
+	}
+	From(s, h)
+	return slicer.Slice()
+}
+
+// From iterates the fields in a struct, sending the results
 // to a handler.
-func Values(s any, h Handler) {
+func From(s any, h Handler) {
 	s = getStruct(s)
 	rType := reflect.TypeOf(s)
 	rValue := reflect.ValueOf(s)

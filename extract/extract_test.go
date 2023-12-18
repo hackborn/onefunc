@@ -3,6 +3,7 @@ package extract
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -10,6 +11,7 @@ import (
 
 // ---------------------------------------------------------
 // TEST-TAIL
+/*
 func TestTail(t *testing.T) {
 	table := []struct {
 		h    Handler
@@ -37,24 +39,24 @@ func TestTail(t *testing.T) {
 		}
 	}
 }
+*/
 
 // ---------------------------------------------------------
-// TEST-VALUES
-func TestValues(t *testing.T) {
+// TEST-FROM
+func TestFrom(t *testing.T) {
 	table := []struct {
 		src     any
 		handler Handler
 		want    string
 	}{
 		{Data1{A: "n"}, newHandler1(), `{"A":"n"}`},
-		{Data1{A: "n"}, WithMap(newHandler1(), remap1), `{"name":"n"}`},
-		{Data1{A: "n"}, WithFilterMap(newHandler1(), remap1), `{"name":"n"}`},
+		{Data1{A: "n"}, NewChain(filterMap1, newHandler1()), `{"name":"n"}`},
 		{Data2{A: "n", B: 10}, newHandler1(), `{"A":"n","B":10}`},
-		{Data2{A: "n", B: 10}, WithMap(newHandler1(), remap1), `{"B":10,"name":"n"}`},
-		{Data2{A: "n", B: 10}, WithFilterMap(newHandler1(), remap1), `{"name":"n"}`},
+		{Data2{A: "n", B: 10}, NewChain(filterMap1, newHandler1()), `{"name":"n"}`},
+		{Data2{A: "n", B: 10}, NewChain(FilterMapOpts{F: filterMap1, Passthrough: true}, newHandler1()), `{"B":10,"name":"n"}`},
 	}
 	for i, v := range table {
-		Values(v.src, v.handler)
+		From(v.src, v.handler)
 		have := v.handler.(Flattener).Flatten()
 
 		if have != v.want {
@@ -64,10 +66,101 @@ func TestValues(t *testing.T) {
 }
 
 // ---------------------------------------------------------
+// TEST-GET-LAST
+func TestGetLast(t *testing.T) {
+	type ConvFunc func(Handler) (string, bool)
+	convHandler1 := func(h Handler) (string, bool) {
+		if t, ok := getLast[*Handler1](h); ok {
+			return reflect.TypeOf(t).Elem().Name(), true
+		}
+		return "", false
+	}
+	convSlicer := func(h Handler) (string, bool) {
+		if t, ok := getLast[Slicer](h); ok {
+			return reflect.TypeOf(t).Elem().Name(), true
+		}
+		return "", false
+	}
+
+	table := []struct {
+		h        Handler
+		fn       ConvFunc
+		wantName string // a type name
+		wantOk   bool
+	}{
+		{nil, convHandler1, "", false},
+		{&Handler1{}, convHandler1, "Handler1", true},
+		{&sliceHandler{}, convSlicer, "sliceHandler", true},
+		{NewChain(&Handler1{}, &sliceHandler{}), convSlicer, "sliceHandler", true},
+	}
+	for i, v := range table {
+		have, haveOk := v.fn(v.h)
+
+		if haveOk != v.wantOk {
+			t.Fatalf("TestGetLast %v has ok \"%v\" but wanted \"%v\"", i, haveOk, v.wantOk)
+		} else if have != v.wantName {
+			t.Fatalf("TestGetLast %v has \"%v\" but wanted \"%v\"", i, have, v.wantName)
+		}
+	}
+}
+
+// ---------------------------------------------------------
+// TEST-AS-MAP
+func TestAsMap(t *testing.T) {
+	table := []struct {
+		src     any
+		handler Handler
+		opts    *MapOpts
+		want    string
+	}{
+		{Data1{A: "n"}, newHandler1(), nil, `{"A":"n"}`},
+		{Data1{A: "n"}, NewChain(filterMap1, newHandler1()), nil, `{"name":"n"}`},
+		{Data1{A: "n"}, NewChain(filterMap1, newHandler1()), &MapOpts{}, `{"name":"n"}`},
+	}
+	for i, v := range table {
+		haveMap := AsMap(v.src, v.handler, v.opts)
+		have := ""
+		if len(haveMap) > 0 {
+			have = flattenMap(haveMap)
+		}
+
+		if have != v.want {
+			t.Fatalf("TestAsMap %v has \"%v\" but wanted \"%v\"", i, have, v.want)
+		}
+	}
+}
+
+// ---------------------------------------------------------
+// TEST-AS-SLICE
+func TestAsSlice(t *testing.T) {
+	table := []struct {
+		src     any
+		handler Handler
+		opts    *SliceOpts
+		want    string
+	}{
+		{Data1{A: "n"}, newHandler1(), nil, `["A","n"]`},
+		{Data1{A: "n"}, NewChain(filterMap1, newHandler1()), nil, `["name","n"]`},
+		{Data1{A: "n"}, NewChain(filterMap1, newHandler1()), &SliceOpts{Assign: "="}, `["name","=","n"]`},
+	}
+	for i, v := range table {
+		haveSlice := AsSlice(v.src, v.handler, v.opts)
+		have := ""
+		if len(haveSlice) > 0 {
+			have = flattenAny(haveSlice)
+		}
+
+		if have != v.want {
+			t.Fatalf("TestAsSlice %v has \"%v\" but wanted \"%v\"", i, have, v.want)
+		}
+	}
+}
+
+// ---------------------------------------------------------
 // SUPPORT var and const
 
 var (
-	remap1 = map[string]string{
+	filterMap1 = map[string]string{
 		"A": "name",
 	}
 )
@@ -105,35 +198,34 @@ type Handler1 struct {
 	results map[string]any
 }
 
-func (h *Handler1) Handle(name string, value any) {
+func (h *Handler1) Handle(name string, value any) (string, any) {
 	h.results[name] = value
+	return name, value
 }
 
 func (h *Handler1) Flatten() string {
 	return flattenMap(h.results)
 }
 
-type Chainer1 struct {
-	Chain
-	A string
-}
+// ---------------------------------------------------------
+// HANDLER SUPPORT
 
-func (c *Chainer1) Handle(name string, value any) {
-}
-
-func newChainer1(all ...string) Handler {
-	chain := make([]Chainer, 0, len(all))
-	for _, a := range all {
-		chain = append(chain, &Chainer1{A: a})
+func (c Chain) Flatten() string {
+	// Assume the last element has the data of interest
+	last := len(c) - 1
+	if last >= 0 && c[last] != nil {
+		return c[last].(Flattener).Flatten()
 	}
-	return NewChain(chain...)
+	return ""
 }
 
 // ---------------------------------------------------------
-// SUPPORT
+// FLATTEN SUPPORT
 
-func (h *remapHandler) Flatten() string {
-	return h.Next.(Flattener).Flatten()
+func flattenAny(a any) string {
+	b, err := json.Marshal(a)
+	panicErr(err)
+	return string(b)
 }
 
 func flattenMap(m map[string]any) string {
