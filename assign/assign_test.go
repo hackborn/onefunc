@@ -7,19 +7,27 @@ import (
 )
 
 // ---------------------------------------------------------
-// TEST-UNWRAP-VALUE
-func TestUnwrapValue(t *testing.T) {
+// TESTS
+
+// TestUnwrapValueToAny
+func TestUnwrapValueToAny(t *testing.T) {
 	table := []struct {
 		v       any
 		want    string
 		wantErr error
 	}{
-		{barkStr, `string "bark"`, nil},
-		{&barkStr, `string "bark"`, nil},
+		{tenStr, `string "ten"`, nil},
+		{&tenStr, `string "ten"`, nil},
 		{newAnyString("s"), `string "s"`, nil},
+		{tenInt, `int 10`, nil},
+		{&tenInt, `int 10`, nil},
+		{tenFloat64, `float64 10`, nil},
+		{&tenFloat64, `float64 10`, nil},
+		{stringMap, `map[string]string {"a":"b"}`, nil},
+		{&stringMap, `map[string]string {"a":"b"}`, nil},
 	}
 	for i, v := range table {
-		haveV, haveErr := unwrapValue(v.v)
+		haveV, haveErr := unwrapValueToAny(v.v)
 		haveB, jsonErr := json.Marshal(haveV)
 		panicErr(jsonErr)
 		have := fmt.Sprintf("%T %v", haveV, string(haveB))
@@ -32,8 +40,7 @@ func TestUnwrapValue(t *testing.T) {
 	}
 }
 
-// ---------------------------------------------------------
-// TEST-VALUES
+// TestValues
 func TestValues(t *testing.T) {
 	table := []struct {
 		req     ValuesRequest
@@ -41,7 +48,7 @@ func TestValues(t *testing.T) {
 		want    string
 		wantErr error
 	}{
-		{valuesReq1, &Data1{}, `{"A":"bark"}`, nil},
+		{valuesReq1, &Data1{}, `{"A":"ten"}`, nil},
 	}
 	for i, v := range table {
 		haveErr := Values(v.req, v.dst)
@@ -79,13 +86,17 @@ func newAnyString(s string) any {
 // ---------------------------------------------------------
 // CONST and VAR
 
+// Testing data. non-const because we use the address for some tests.
 var (
-	barkStr = "bark"
+	tenStr             = "ten"
+	tenInt             = 10
+	tenFloat64 float64 = 10.0
+	stringMap          = map[string]string{"a": "b"}
 )
 
 var (
 	valuesReq1 = ValuesRequest{
 		FieldNames: []string{"A"},
-		NewValues:  []any{&barkStr},
+		NewValues:  []any{&tenStr},
 	}
 )

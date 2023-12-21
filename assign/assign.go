@@ -5,49 +5,34 @@ import (
 	"reflect"
 )
 
-type ValuesRequest struct {
-	FieldNames []string
-	NewValues  []any
-}
-
-func (r ValuesRequest) Validate() error {
-	if len(r.FieldNames) != len(r.NewValues) {
-		return fmt.Errorf("Size mismatch (%v names but %v values)", len(r.FieldNames), len(r.NewValues))
-	}
-	return nil
-}
-
 // Values sets the value of each field to the supplied value.
-// func Values(r ValuesRequest, tox *_toxMetadata, tags, scanned []any, dst any) error {
 func Values(r ValuesRequest, dst any) error {
 	if err := r.Validate(); err != nil {
 		return err
 	}
-	reflectValue := reflect.ValueOf(dst)
-	if reflectValue.Kind() != reflect.Pointer {
+	dstValue := reflect.ValueOf(dst)
+	if dstValue.Kind() != reflect.Pointer {
 		return mustBePointerErr
 	}
-	reflectValue = reflectValue.Elem()
+
+	dstValue = dstValue.Elem()
 
 	for i, v := range r.NewValues {
 		if v == nil {
 			continue
 		}
-		value, err := unwrapValue(v)
+		srcValue, err := unwrapValueToValue(v)
 		if err != nil {
 			return err
 		}
 
 		reflectFieldName := r.FieldNames[i]
-		destField, err := getReflectFieldValue(reflectFieldName, reflectValue)
+		destField, err := getReflectFieldValue(reflectFieldName, dstValue)
 		if err != nil {
 			return err
 		}
 
-		// Technically we shouldn't fully unwrap the value,
-		// so I don't need to get it again here.
-		err = assignValue(reflect.ValueOf(value), destField)
-		if err != nil {
+		if err = assignValue(srcValue, destField); err != nil {
 			return err
 		}
 	}
@@ -86,19 +71,31 @@ func assignValue(src, dst reflect.Value) error {
 	return nil
 }
 
-func unwrapValue(v any) (any, error) {
-	va := reflect.ValueOf(v)
-	return unwrapReflectValue(va)
+func unwrapValueToAny(v any) (any, error) {
+	vt, err := unwrapValueToValue(v)
+	if err != nil {
+		return nil, err
+	}
+	return vt.Interface(), nil
 }
 
-func unwrapReflectValue(v reflect.Value) (any, error) {
+func unwrapValueToValue(v any) (reflect.Value, error) {
+	va := reflect.ValueOf(v)
+	return doUnwrapValueToValue(va)
+}
+
+func doUnwrapValueToValue(v reflect.Value) (reflect.Value, error) {
 	switch v.Kind() {
-	case reflect.String, reflect.Struct:
-		return v.Interface(), nil
+	// Directly handle the cases that need to unwrap,
+	// everything else is returned as the final value.
+	//	case reflect.String, reflect.Struct:
+	//		return v, nil
 	case reflect.Interface:
-		return unwrapReflectValue(v.Elem())
+		return doUnwrapValueToValue(v.Elem())
 	case reflect.Ptr:
-		return unwrapReflectValue(v.Elem())
+		return doUnwrapValueToValue(v.Elem())
+	default:
+		return v, nil
 	}
-	return nil, unhandledValueTypeErr
+	// return reflect.Value{}, unhandledValueTypeErr
 }
