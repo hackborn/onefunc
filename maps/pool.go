@@ -2,6 +2,8 @@ package maps
 
 import (
 	"sync"
+
+	"github.com/hackborn/onefunc/errors"
 )
 
 // NewPool answers a new generic pool object.
@@ -22,8 +24,13 @@ type PoolInterner[K comparable, V any] interface {
 	// Key answers the key for the pool object.
 	Key(v V) (K, bool)
 
-	// Initialize resets the state of the pool object before use.
-	Initialize(v V)
+	// OnGet is called in tandem with Get() for any
+	// needed initialization / reset.
+	OnGet(v V, eb errors.Block)
+
+	// OnPut is called in tandem with Put() for any
+	// needed cleanup.
+	OnPut(v V)
 }
 
 type Pool[K comparable, V any] struct {
@@ -34,12 +41,13 @@ type Pool[K comparable, V any] struct {
 	cache map[K]V
 }
 
-func (p *Pool[K, V]) Get() V {
-	if v, ok := p.getLocked(); ok {
-		p.interner.Initialize(v)
-		return v
+func (p *Pool[K, V]) Get(eb errors.Block) V {
+	v, ok := p.getLocked()
+	if !ok {
+		v = p.interner.New()
 	}
-	return p.interner.New()
+	p.interner.OnGet(v, eb)
+	return v
 }
 
 func (p *Pool[K, V]) getLocked() (V, bool) {
@@ -55,6 +63,7 @@ func (p *Pool[K, V]) getLocked() (V, bool) {
 
 func (p *Pool[K, V]) Put(v V) {
 	if k, ok := p.interner.Key(v); ok {
+		p.interner.OnPut(v)
 		p.lock.Lock()
 		p.cache[k] = v
 		p.lock.Unlock()

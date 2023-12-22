@@ -5,6 +5,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/hackborn/onefunc/errors"
 	"github.com/hackborn/onefunc/maps"
 )
 
@@ -18,7 +19,7 @@ func TestStringWriterPool(t *testing.T) {
 	}
 	type ActionFunc func(*State) error
 	get := func(s *State) error {
-		w := s.pool.Get()
+		w := s.pool.Get(nil)
 		s.Stack = append(s.Stack, w)
 		return nil
 	}
@@ -49,7 +50,7 @@ func TestStringWriterPool(t *testing.T) {
 
 		var haveErr error
 		for _, action := range v.actions {
-			haveErr = firstErr(haveErr, action(state))
+			haveErr = errors.First(haveErr, action(state))
 		}
 		have := ""
 		haveLen := state.rawPool.CacheSize()

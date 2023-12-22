@@ -6,6 +6,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/hackborn/onefunc/errors"
 	"github.com/hackborn/onefunc/maps"
 )
 
@@ -14,7 +15,7 @@ import (
 // receives ownership of string writers.
 type Pool interface {
 	// Acquire takes a writer out of the pool.
-	Get() io.StringWriter
+	Get(errors.Block) io.StringWriter
 
 	// Release puts a writer in the pool.
 	Put(io.StringWriter)
@@ -46,15 +47,25 @@ func (p *stringPoolInterner) New() io.StringWriter {
 	return &stringBuilder{id: id, sb: &sb}
 }
 
-func (p *stringPoolInterner) Initialize(w io.StringWriter) {
+func (p *stringPoolInterner) OnGet(w io.StringWriter, eb errors.Block) {
+	if b, ok := w.(*stringBuilder); ok {
+		b.Reset()
+		b.eb = eb
+		if b.eb == nil {
+			b.eb = nullErrorBlock
+		}
+	}
+}
+
+func (p *stringPoolInterner) OnPut(w io.StringWriter) {
 	if b, ok := w.(*stringBuilder); ok {
 		b.Reset()
 	}
 }
 
 // GetWriter removes and answers a new string writer from the global pool.
-func GetWriter() io.StringWriter {
-	return globalPool.Get()
+func GetWriter(eb errors.Block) io.StringWriter {
+	return globalPool.Get(eb)
 }
 
 // PutWriter places a writer into the global pool.
@@ -81,6 +92,7 @@ func StringErr(w io.StringWriter) error {
 type stringBuilder struct {
 	id  uint64
 	sb  *strings.Builder
+	eb  errors.Block
 	err error
 }
 
@@ -93,15 +105,19 @@ func (b *stringBuilder) WriteString(s string) (int, error) {
 	if b.err == nil {
 		b.err = err
 	}
+	b.eb.Add(err)
 	return n, err
 }
 
 func (b *stringBuilder) Reset() {
 	b.sb.Reset()
 	b.err = nil
+	b.eb = nil
 }
 
 // ---------------------------------------------------------
 // CONST and VAR
 
 var globalPool = newLockingPool()
+
+var nullErrorBlock = &errors.NullBlock{}
