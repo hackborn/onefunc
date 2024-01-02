@@ -9,3 +9,12 @@ func First(errs ...error) error {
 	}
 	return nil
 }
+
+// Panic panics if any error is non-nil.
+func Panic(errs ...error) {
+	for _, err := range errs {
+		if err != nil {
+			panic(err)
+		}
+	}
+}
