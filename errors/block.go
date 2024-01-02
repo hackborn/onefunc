@@ -1,4 +1,4 @@
-package errors
+package oferrors
 
 type Block interface {
 	Add(error)

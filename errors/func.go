@@ -1,4 +1,4 @@
-package errors
+package oferrors
 
 // First answers the first non-nil error in the list.
 func First(errs ...error) error {

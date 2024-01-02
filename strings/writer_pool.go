@@ -15,7 +15,7 @@ import (
 // receives ownership of string writers.
 type Pool interface {
 	// Acquire takes a writer out of the pool.
-	Get(errors.Block) io.StringWriter
+	Get(oferrors.Block) io.StringWriter
 
 	// Release puts a writer in the pool.
 	Put(io.StringWriter)
@@ -47,7 +47,7 @@ func (p *stringPoolInterner) New() io.StringWriter {
 	return &stringBuilder{id: id, sb: &sb}
 }
 
-func (p *stringPoolInterner) OnGet(w io.StringWriter, eb errors.Block) {
+func (p *stringPoolInterner) OnGet(w io.StringWriter, eb oferrors.Block) {
 	if b, ok := w.(*stringBuilder); ok {
 		b.Reset()
 		b.eb = eb
@@ -64,7 +64,7 @@ func (p *stringPoolInterner) OnPut(w io.StringWriter) {
 }
 
 // GetWriter removes and answers a new string writer from the global pool.
-func GetWriter(eb errors.Block) io.StringWriter {
+func GetWriter(eb oferrors.Block) io.StringWriter {
 	return globalPool.Get(eb)
 }
 
@@ -92,7 +92,7 @@ func StringErr(w io.StringWriter) error {
 type stringBuilder struct {
 	id  uint64
 	sb  *strings.Builder
-	eb  errors.Block
+	eb  oferrors.Block
 	err error
 }
 
@@ -120,4 +120,4 @@ func (b *stringBuilder) Reset() {
 
 var globalPool = newLockingPool()
 
-var nullErrorBlock = &errors.NullBlock{}
+var nullErrorBlock = &oferrors.NullBlock{}

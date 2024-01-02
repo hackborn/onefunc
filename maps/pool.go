@@ -26,7 +26,7 @@ type PoolInterner[K comparable, V any] interface {
 
 	// OnGet is called in tandem with Get() for any
 	// needed initialization / reset.
-	OnGet(v V, eb errors.Block)
+	OnGet(v V, eb oferrors.Block)
 
 	// OnPut is called in tandem with Put() for any
 	// needed cleanup.
@@ -41,7 +41,7 @@ type Pool[K comparable, V any] struct {
 	cache map[K]V
 }
 
-func (p *Pool[K, V]) Get(eb errors.Block) V {
+func (p *Pool[K, V]) Get(eb oferrors.Block) V {
 	v, ok := p.getLocked()
 	if !ok {
 		v = p.interner.New()
