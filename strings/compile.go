@@ -9,7 +9,7 @@ import (
 type CompileArgs struct {
 	Quote     string
 	Separator string
-	Eb        oferrors.Block
+	Eb        errors.Block
 }
 
 // Compile all values into a single comma-separated string.
