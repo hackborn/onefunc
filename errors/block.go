@@ -1,14 +1,14 @@
 package errors
 
 type Block interface {
-	Add(error)
+	AddError(error)
 }
 
 type FirstBlock struct {
 	Err error
 }
 
-func (c *FirstBlock) Add(e error) {
+func (c *FirstBlock) AddError(e error) {
 	if c.Err == nil {
 		c.Err = e
 	}
@@ -17,5 +17,5 @@ func (c *FirstBlock) Add(e error) {
 type NullBlock struct {
 }
 
-func (c *NullBlock) Add(e error) {
+func (c *NullBlock) AddError(e error) {
 }

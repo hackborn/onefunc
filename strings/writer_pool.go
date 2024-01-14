@@ -105,7 +105,7 @@ func (b *stringBuilder) WriteString(s string) (int, error) {
 	if b.err == nil {
 		b.err = err
 	}
-	b.eb.Add(err)
+	b.eb.AddError(err)
 	return n, err
 }
 
