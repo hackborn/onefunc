@@ -33,6 +33,12 @@ type PoolInterner[K comparable, V any] interface {
 	OnPut(v V)
 }
 
+// Pool is a generic value store, for recycling objects. It is
+// provided a key, but otherwise is identical to sync.Pool (except
+// not as sophisticated). I noticed that class immediately after
+// wriiting this one; haven't thought about it too deeply yet but
+// I strongly suspect there is no reason for this class to exist,
+// and will likely deprecated it. Do not use it.
 type Pool[K comparable, V any] struct {
 	interner PoolInterner[K, V]
 	emptyV   V

@@ -1,30 +1,51 @@
 package pipeline
 
+import (
+	"fmt"
+)
+
 type Pipeline struct {
-	//	srcNodes []srcNode
+	active []*runningNode
+
+	roots []*runningNode
+	pins  []*runningPin
 	nodes []*runningNode
-	pins  []*pin
 }
 
-type pin struct {
+func (p *Pipeline) prepareForRun() error {
+	if len(p.roots) < 1 {
+		return fmt.Errorf("No roots")
+	}
+	p.active = make([]*runningNode, 0, len(p.roots))
+	for _, n := range p.roots {
+		p.active = append(p.active, n)
+		n.input = nil
+	}
+	for _, n := range p.nodes {
+		n.inputCount = 0
+	}
+	for _, p := range p.pins {
+		p.ready = false
+	}
+	return nil
+}
+
+type runningPin struct {
 	inName string
-	node   Node
+	toNode *runningNode
 	ready  bool
 }
 
-/*
-type srcNode struct {
-	node   Node
-	output []*pin
-}
-*/
-
 type runningNode struct {
-	node  Node
-	input []*pin
+	node          Node
+	inputCount    int
+	maxInputCount int
+	input         []*runningPin
+	output        []*runningPin
 }
 
 func (n *runningNode) ready() bool {
+	return n.inputCount >= n.maxInputCount
 	for _, pin := range n.input {
 		if !pin.ready {
 			return false
@@ -32,5 +53,3 @@ func (n *runningNode) ready() bool {
 	}
 	return true
 }
-
-// OK how does this work -- we need a notion of pins connecting nodes, and to know when a node has had all pins tickled so it can run
