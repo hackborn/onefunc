@@ -1,15 +1,19 @@
 package pipeline
 
+import (
+	"fmt"
+)
+
 func Run(p *Pipeline, input *RunInput) (*RunOutput, error) {
-	err := p.prepareForRun(input)
+	active, err := prepareForRun(p, input)
 	if err != nil {
 		return nil, err
 	}
 	state := &State{}
 	finalOutput := RunOutput{}
-	for len(p.active) > 0 {
+	for len(active) > 0 {
 		var nextNodesMap map[*runningNode]struct{}
-		for _, n := range p.active {
+		for _, n := range active {
 			output, err := n.node.Run(state, n.input)
 			if err != nil {
 				return nil, err
@@ -31,10 +35,33 @@ func Run(p *Pipeline, input *RunInput) (*RunOutput, error) {
 				finalOutput.Pins = append(finalOutput.Pins, output.Pins...)
 			}
 		}
-		p.active = make([]*runningNode, 0, len(nextNodesMap))
+		active = make([]*runningNode, 0, len(nextNodesMap))
 		for k, _ := range nextNodesMap {
-			p.active = append(p.active, k)
+			active = append(active, k)
 		}
 	}
 	return &finalOutput, nil
+}
+
+func prepareForRun(p *Pipeline, input *RunInput) ([]*runningNode, error) {
+	if len(p.roots) < 1 {
+		return nil, fmt.Errorf("No roots")
+	}
+	active := make([]*runningNode, 0, len(p.roots))
+	for _, n := range p.roots {
+		active = append(active, n)
+		n.input.Pins = nil
+	}
+	for _, n := range p.nodes {
+		n.inputCount = 0
+	}
+	if input != nil && len(input.Pins) > 0 {
+		for _, n := range active {
+			if n.input.Pins == nil {
+				n.input.Pins = make([]PinData, 0, len(input.Pins))
+			}
+			n.input.Pins = append(n.input.Pins, input.Pins...)
+		}
+	}
+	return active, nil
 }

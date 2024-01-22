@@ -46,7 +46,6 @@ func Compile(expr string) (*Pipeline, error) {
 		delete(roots, pin.toNode)
 		rp := &runningPin{toNode: toNode}
 		toNode.maxInputCount += 1
-		pipeline.pins = append(pipeline.pins, rp)
 		fromNode.output = append(fromNode.output, rp)
 	}
 	if len(roots) < 1 {
