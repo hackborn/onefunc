@@ -92,3 +92,14 @@ func (s *StructPin) FieldFor(tagName string) *Field {
 	return nil
 }
 */
+
+// ContentData provides a generic content string.
+type ContentData struct {
+	pinName string
+	Name    string
+	Data    string
+}
+
+func (s *ContentData) PinName() string {
+	return s.pinName
+}

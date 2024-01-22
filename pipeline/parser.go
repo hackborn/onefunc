@@ -70,6 +70,7 @@ func (p *parser) scan(input string, h tokenHandler) error {
 			tt.tt = intToken
 		case scanner.String:
 			tt.tt = stringToken
+			tt.text = strings.Trim(tt.text, `"`)
 		case scanner.Ident:
 			tt.tt = identToken
 		case ' ', '\r', '\t', '\n':

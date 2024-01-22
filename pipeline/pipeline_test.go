@@ -61,6 +61,7 @@ func TestParser(t *testing.T) {
 		{`graph ( na/a -> nb )`, `graph (na/a -> nb)`, nil},
 		{`graph (na(S=f))`, `graph (na) vars (na/S=f)`, nil},
 		{`graph (na/a na/b)`, `graph (na/a na/b)`, nil},
+		{`graph (na(S="f"))`, `graph (na) vars (na/S=f)`, nil},
 	}
 	for i, v := range table {
 		ast, haveErr := parse(v.pipeline)
