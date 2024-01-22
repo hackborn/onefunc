@@ -12,20 +12,25 @@ type Pipeline struct {
 	nodes []*runningNode
 }
 
-func (p *Pipeline) prepareForRun() error {
+func (p *Pipeline) prepareForRun(input *RunInput) error {
 	if len(p.roots) < 1 {
 		return fmt.Errorf("No roots")
 	}
 	p.active = make([]*runningNode, 0, len(p.roots))
 	for _, n := range p.roots {
 		p.active = append(p.active, n)
-		n.input = nil
+		n.input.Pins = nil
 	}
 	for _, n := range p.nodes {
 		n.inputCount = 0
 	}
-	for _, p := range p.pins {
-		p.ready = false
+	if input != nil && len(input.Pins) > 0 {
+		for _, n := range p.active {
+			if n.input.Pins == nil {
+				n.input.Pins = make([]PinData, 0, len(input.Pins))
+			}
+			n.input.Pins = append(n.input.Pins, input.Pins...)
+		}
 	}
 	return nil
 }
@@ -33,23 +38,16 @@ func (p *Pipeline) prepareForRun() error {
 type runningPin struct {
 	inName string
 	toNode *runningNode
-	ready  bool
 }
 
 type runningNode struct {
 	node          Node
 	inputCount    int
 	maxInputCount int
-	input         []*runningPin
+	input         RunInput
 	output        []*runningPin
 }
 
 func (n *runningNode) ready() bool {
 	return n.inputCount >= n.maxInputCount
-	for _, pin := range n.input {
-		if !pin.ready {
-			return false
-		}
-	}
-	return true
 }

@@ -86,6 +86,9 @@ func TestRunString(t *testing.T) {
 	}{
 		{`graph (na(S=!))`, ``, `!`, nil},
 		{`graph (na(S=!))`, `hi`, `hi!`, nil},
+		// XXX This doesn't work because we aren't generating unique names for nodes, but clearly this should be supported
+		//		{`graph (na(S=!) -> na(S=?))`, ``, `!?`, nil},
+		{`graph (na/a(S=!) -> na/b(S=?))`, ``, `!?`, nil},
 	}
 	for i, v := range table {
 		have, haveErr := runAsString(v.pipeline, v.input)

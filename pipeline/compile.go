@@ -16,7 +16,6 @@ func Compile(expr string) (*Pipeline, error) {
 	nodes := make(map[string]*runningNode)
 	roots := make(map[string]*runningNode)
 	for _, nn := range ast.nodes {
-		fmt.Println("compile ", nn.nodeName)
 		splitName := strings.Split(nn.nodeName, "/")
 		node, err := newNode(splitName[0])
 		if err != nil {
