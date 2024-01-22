@@ -1,8 +1,8 @@
 package pipeline
 
 import (
-	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -55,11 +55,12 @@ func TestParser(t *testing.T) {
 		{`graph (na)`, `graph (na)`, nil},
 		{`graph (na -> nb)`, `graph (na -> nb)`, nil},
 		{`graph ( na -> nb )`, `graph (na -> nb)`, nil},
-		{`graph ( na s -> nb )`, `graph (nas -> nb)`, nil},
+		{`graph ( na s -> nb )`, `graph (na s -> nb)`, nil},
 		{`graph ( na/s -> nb )`, `graph (na/s -> nb)`, nil},
 		{`graph ( na -pa> nb )`, `graph (na -pa> nb)`, nil},
 		{`graph ( na/a -> nb )`, `graph (na/a -> nb)`, nil},
 		{`graph (na(S=f))`, `graph (na) vars (na/S=f)`, nil},
+		{`graph (na/a na/b)`, `graph (na/a na/b)`, nil},
 	}
 	for i, v := range table {
 		ast, haveErr := parse(v.pipeline)
@@ -81,14 +82,15 @@ func TestRunString(t *testing.T) {
 	table := []struct {
 		pipeline string
 		input    string
-		want     string
+		want     []string
 		wantErr  error
 	}{
-		{`graph (na(S=!))`, ``, `!`, nil},
-		{`graph (na(S=!))`, `hi`, `hi!`, nil},
+		{`graph (na(S=!))`, ``, []string{`!`}, nil},
+		{`graph (na(S=!))`, `hi`, []string{`hi!`}, nil},
 		// XXX This doesn't work because we aren't generating unique names for nodes, but clearly this should be supported
-		//		{`graph (na(S=!) -> na(S=?))`, ``, `!?`, nil},
-		{`graph (na/a(S=!) -> na/b(S=?))`, ``, `!?`, nil},
+		//		{`graph (na(S=!) -> na(S=?))`, ``, []string{`!?`}, nil},
+		{`graph (na/a(S=!) -> na/b(S=?))`, ``, []string{`!?`}, nil},
+		{`graph (na/a(S=!) na/b(S=?))`, ``, []string{`!`, `?`}, nil},
 	}
 	for i, v := range table {
 		have, haveErr := runAsString(v.pipeline, v.input)
@@ -97,33 +99,34 @@ func TestRunString(t *testing.T) {
 			t.Fatalf("TestRunString %v expected no error but has %v", i, haveErr)
 		} else if v.wantErr != nil && haveErr == nil {
 			t.Fatalf("TestRunString %v has no error but exptected %v", i, v.wantErr)
-		} else if have != v.want {
+		} else if slices.Compare(have, v.want) != 0 {
 			t.Fatalf("TestRunString %v has \"%v\" but wanted \"%v\"", i, have, v.want)
 		}
 	}
 }
 
-func runAsString(expr, input string) (string, error) {
+func runAsString(expr, input string) ([]string, error) {
 	p, err := Compile(expr)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	data := &stringData{s: input}
 	ri := NewInput(data)
 	ro, err := Run(p, &ri)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if ro == nil || len(ro.Pins) < 1 {
-		return "", nil
+		return nil, nil
 	}
+	var ans []string
 	for _, pin := range ro.Pins {
 		switch pt := pin.(type) {
 		case *stringData:
-			return pt.s, nil
+			ans = append(ans, pt.s)
 		}
 	}
-	return "", fmt.Errorf("No stringData pin")
+	return ans, nil
 }
 
 // ---------------------------------------------------------
@@ -132,6 +135,15 @@ func BenchmarkParser(b *testing.B) {
 	const input string = `graph (na -> nb)`
 	for n := 0; n < b.N; n++ {
 		parse(input)
+	}
+}
+
+// ---------------------------------------------------------
+// BENCHMARK-RUN-AS-STRING
+func BenchmarkRunAsString(b *testing.B) {
+	const input string = `graph (na(S=!))`
+	for n := 0; n < b.N; n++ {
+		runAsString(input, "hi")
 	}
 }
 

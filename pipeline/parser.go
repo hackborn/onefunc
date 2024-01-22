@@ -53,30 +53,32 @@ func (p *parser) scan(input string, h tokenHandler) error {
 	lexer.Whitespace = 0
 	lexer.Mode = scanner.ScanChars | scanner.ScanComments | scanner.ScanFloats | scanner.ScanIdents | scanner.ScanInts | scanner.ScanRawStrings | scanner.ScanStrings
 
-	//	accum := &accumHandler{h: h}
-	accum := h
 	lexer.Error = func(s *scanner.Scanner, msg string) {
 		p.AddError(fmt.Errorf("scan error: %v", msg))
 	}
+	tt := token{}
 	for tok := lexer.Scan(); tok != scanner.EOF; tok = lexer.Scan() {
 		if p.Err != nil {
 			return p.Err
 		}
 		// fmt.Println("TOK", tok, "name", scanner.TokenString(tok), "text", lexer.TokenText())
+		tt.text = lexer.TokenText()
 		switch tok {
 		case scanner.Float:
-			accum.HandleToken(token{tt: floatToken, text: lexer.TokenText()})
+			tt.tt = floatToken
 		case scanner.Int:
-			accum.HandleToken(token{tt: intToken, text: lexer.TokenText()})
+			tt.tt = intToken
 		case scanner.String:
-			accum.HandleToken(token{tt: stringToken, text: lexer.TokenText()})
+			tt.tt = stringToken
 		case scanner.Ident:
-			accum.HandleToken(token{tt: identToken, text: lexer.TokenText()})
+			tt.tt = identToken
 		case ' ', '\r', '\t', '\n':
-			accum.HandleToken(token{tt: whitespaceToken})
+			tt.tt = whitespaceToken
+			tt.text = ""
 		default:
-			accum.HandleToken(token{tt: stringToken, text: lexer.TokenText()})
+			tt.tt = stringToken
 		}
+		h.HandleToken(tt)
 	}
 	return p.Err
 }
@@ -95,8 +97,23 @@ func (t astPipeline) print() string {
 	defer ofstrings.PutWriter(w)
 
 	w.WriteString("graph (")
+	// Display unattached nodes
+	needsSpace := false
+	unattached := t.unattachedNodes()
+	for i, node := range unattached {
+		if i > 0 {
+			w.WriteString(" ")
+		}
+		w.WriteString(node.nodeName)
+		needsSpace = true
+	}
+	// Display connected nodes
 	lastNode := ""
 	for _, pin := range t.pins {
+		if needsSpace {
+			needsSpace = false
+			w.WriteString(" ")
+		}
 		if lastNode != pin.fromNode {
 			w.WriteString(pin.fromNode)
 		}
@@ -106,19 +123,9 @@ func (t astPipeline) print() string {
 		w.WriteString(pin.toNode)
 		lastNode = pin.toNode
 	}
-	// Hack to display nodes with no pins, but need to figute
-	// a better way to reconstruct the input
-	if len(t.pins) < 1 {
-		for i, node := range t.nodes {
-			if i > 0 {
-				w.WriteString(" ")
-			}
-			w.WriteString(node.nodeName)
-		}
-	}
 	w.WriteString(")")
-	first := true
 	// Vars
+	first := true
 	for _, node := range t.nodes {
 		if len(node.vars) < 1 && len(node.envVars) < 1 {
 			continue
@@ -156,6 +163,28 @@ func (t astPipeline) print() string {
 	}
 
 	return ofstrings.String(w)
+}
+
+func (t astPipeline) unattachedNodes() []*astNode {
+	m := make(map[*astNode]struct{})
+	for _, n := range t.nodes {
+		m[n] = struct{}{}
+	}
+	for _, pin := range t.pins {
+		for k, _ := range m {
+			if pin.fromNode == k.nodeName || pin.toNode == k.nodeName {
+				delete(m, k)
+			}
+		}
+	}
+	// Keep initial order preserved
+	var ans []*astNode
+	for _, n := range t.nodes {
+		if _, ok := m[n]; ok {
+			ans = append(ans, n)
+		}
+	}
+	return ans
 }
 
 type astNode struct {
@@ -243,6 +272,10 @@ type graphHandler struct {
 }
 
 func (h *graphHandler) HandleToken(t token) {
+	if t.tt == whitespaceToken {
+		h.flush()
+		return
+	}
 	txt := strings.ToLower(t.text)
 	switch txt {
 	case "(":
@@ -364,7 +397,6 @@ func (h *varsHandler) HandleToken(t token) {
 	case "(":
 		return
 	case ")":
-		h.flush()
 		s := varState{current: h.current, vars: h.vars, envVars: h.envVars}
 		h.base.pop(func(h tokenHandler) { h.HandleVars(s) })
 	case "=":
@@ -389,20 +421,6 @@ func (h *varsHandler) Pushed(base *baseHandler) {
 	h.needsCurrent = true
 	h.vars = make(map[string]any)
 	h.envVars = make(map[string]string)
-}
-
-func (h *varsHandler) flush() {
-	if h.vars != nil {
-		/*
-			h.currentNode = &astNode{nodeName: h.currentNodeName}
-			h.currentNodeName = ""
-			h.base.nodes = append(h.base.nodes, h.currentNode)
-			size := len(h.base.pins)
-			if size > 0 {
-				h.base.pins[size-1].toNode = h.currentNode.nodeName
-			}
-		*/
-	}
 }
 
 // ------------------------------------------------------------
