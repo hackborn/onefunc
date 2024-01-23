@@ -6,6 +6,9 @@ import (
 
 func init() {
 	pipeline.RegisterNode("loadfile", func() pipeline.Node {
-		return &LoadFile{}
+		return &LoadFileNode{}
+	})
+	pipeline.RegisterNode("struct", func() pipeline.Node {
+		return &StructNode{}
 	})
 }

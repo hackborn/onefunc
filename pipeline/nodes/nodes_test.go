@@ -36,6 +36,33 @@ func TestLoadFile(t *testing.T) {
 }
 
 // ---------------------------------------------------------
+// TEST-PIPELINE
+func TestPipeline(t *testing.T) {
+	table := []struct {
+		pipeline string
+		want     pinsCompare
+		wantErr  error
+	}{
+		{`graph (loadfile(Glob="` + testDataDomainGlob + `") -> struct)`, newPinsCompare("struct", "name", "Company", "struct", "name", "Filing"), nil},
+	}
+	for i, v := range table {
+		p, err := pipeline.Compile(v.pipeline)
+		if err != nil {
+			t.Fatalf("TestLoadFile %v compile err %v", i, err)
+		}
+		output, haveErr := pipeline.Run(p, nil)
+		cmpErr := v.want.Compare(output)
+		if v.wantErr == nil && haveErr != nil {
+			t.Fatalf("TestLoadFile %v expected no error but has %v", i, haveErr)
+		} else if v.wantErr != nil && haveErr == nil {
+			t.Fatalf("TestLoadFile %v has no error but exptected %v", i, v.wantErr)
+		} else if cmpErr != nil {
+			t.Fatalf("TestLoadFile %v comparison error: %v", i, cmpErr)
+		}
+	}
+}
+
+// ---------------------------------------------------------
 // PINS COMPARE
 
 // Create a new comparison object on the provided state.
@@ -43,8 +70,9 @@ func TestLoadFile(t *testing.T) {
 // parameters you want to check.
 // Types:
 // "content" params "name" (string), "data" (string)
+// "struct" params "name" (string)
 // example:
-// "content", "name", "filename.txt"
+// "content", "name", "filename.txt", "struct", "name", "Parser"
 func newPinsCompare(as ...any) pinsCompare {
 	ans := pinsCompare{}
 	var cmp pinDataCmp
@@ -82,6 +110,8 @@ func newCmpFrom(a any) pinDataCmp {
 		switch s {
 		case "content":
 			return &contentCmp{}
+		case "struct":
+			return &structCmp{}
 		}
 	}
 	return nil
@@ -147,6 +177,33 @@ func (c *contentCmp) Compare(pin pipeline.PinData) error {
 	}
 	if c.data != nil && *c.data != cd.Data {
 		return fmt.Errorf("mismatched data, have %v but want %v", cd.Data, *c.data)
+	}
+	return nil
+}
+
+type structCmp struct {
+	name *string
+}
+
+func (c *structCmp) Assign(key string, value any) error {
+	switch key {
+	case "name":
+		if vs, ok := value.(string); ok {
+			c.name = &vs
+		}
+	default:
+		return fmt.Errorf("unknown key %v", key)
+	}
+	return nil
+}
+
+func (c *structCmp) Compare(pin pipeline.PinData) error {
+	cd, ok := pin.(*pipeline.StructData)
+	if !ok {
+		return fmt.Errorf("mismatched pin types, have structCmp but supplied %t", pin)
+	}
+	if c.name != nil && *c.name != cd.Name() {
+		return fmt.Errorf("mismatched names, have %v but want %v", cd.Name(), *c.name)
 	}
 	return nil
 }

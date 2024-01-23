@@ -7,11 +7,11 @@ import (
 	"github.com/hackborn/onefunc/pipeline"
 )
 
-type LoadFile struct {
+type LoadFileNode struct {
 	Glob string
 }
 
-func (n *LoadFile) Run(s *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
+func (n *LoadFileNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
 	filenames, err := n.filenamesGlob(n.Glob)
 	if err != nil {
 		return nil, err
@@ -27,6 +27,6 @@ func (n *LoadFile) Run(s *pipeline.State, input pipeline.RunInput) (*pipeline.Ru
 	return &output, nil
 }
 
-func (n *LoadFile) filenamesGlob(glob string) ([]string, error) {
+func (n *LoadFileNode) filenamesGlob(glob string) ([]string, error) {
 	return filepath.Glob(glob)
 }
