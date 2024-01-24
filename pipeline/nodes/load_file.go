@@ -22,7 +22,7 @@ func (n *LoadFileNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipelin
 		if err != nil {
 			return nil, err
 		}
-		output.Pins = append(output.Pins, &pipeline.ContentData{Name: fn, Data: string(dat)})
+		output.Pins = append(output.Pins, pipeline.Pin{Payload: &pipeline.ContentData{Name: fn, Data: string(dat)}})
 	}
 	return &output, nil
 }

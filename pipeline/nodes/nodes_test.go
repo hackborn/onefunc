@@ -133,7 +133,7 @@ func (c *pinsCompare) Compare(output *pipeline.RunOutput) error {
 		return fmt.Errorf("pin mismatch, have %v but want %v", outputCount, len(c.pins))
 	}
 	for i, pin := range c.pins {
-		err := pin.Compare(output.Pins[i])
+		err := pin.Compare(output.Pins[i].Payload)
 		if err != nil {
 			return err
 		}
@@ -143,7 +143,7 @@ func (c *pinsCompare) Compare(output *pipeline.RunOutput) error {
 
 type pinDataCmp interface {
 	Assign(key string, value any) error
-	Compare(pipeline.PinData) error
+	Compare(any) error
 }
 
 type contentCmp struct {
@@ -167,10 +167,10 @@ func (c *contentCmp) Assign(key string, value any) error {
 	return nil
 }
 
-func (c *contentCmp) Compare(pin pipeline.PinData) error {
-	cd, ok := pin.(*pipeline.ContentData)
+func (c *contentCmp) Compare(payload any) error {
+	cd, ok := payload.(*pipeline.ContentData)
 	if !ok {
-		return fmt.Errorf("mismatched pin types, have contentCmp but supplied %t", pin)
+		return fmt.Errorf("mismatched pin types, have contentCmp but supplied %T", payload)
 	}
 	if c.name != nil && *c.name != cd.Name {
 		return fmt.Errorf("mismatched names, have %v but want %v", cd.Name, *c.name)
@@ -197,10 +197,10 @@ func (c *structCmp) Assign(key string, value any) error {
 	return nil
 }
 
-func (c *structCmp) Compare(pin pipeline.PinData) error {
-	cd, ok := pin.(*pipeline.StructData)
+func (c *structCmp) Compare(payload any) error {
+	cd, ok := payload.(*pipeline.StructData)
 	if !ok {
-		return fmt.Errorf("mismatched pin types, have structCmp but supplied %t", pin)
+		return fmt.Errorf("mismatched pin types, have structCmp but supplied %T", payload)
 	}
 	if c.name != nil && *c.name != cd.Name() {
 		return fmt.Errorf("mismatched names, have %v but want %v", cd.Name(), *c.name)

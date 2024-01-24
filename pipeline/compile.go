@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/hackborn/onefunc/assign"
@@ -14,8 +15,8 @@ func Compile(expr string) (*Pipeline, error) {
 	}
 	pipeline := &Pipeline{}
 	nodes := make(map[string]*runningNode)
-	roots := make(map[string]*runningNode)
-	for _, nn := range ast.nodes {
+	roots := make(map[string]compileRoot)
+	for i, nn := range ast.nodes {
 		splitName := strings.Split(nn.nodeName, "/")
 		node, err := newNode(splitName[0])
 		if err != nil {
@@ -23,7 +24,7 @@ func Compile(expr string) (*Pipeline, error) {
 		}
 		rn := &runningNode{node: node}
 		nodes[nn.nodeName] = rn
-		roots[nn.nodeName] = rn
+		roots[nn.nodeName] = compileRoot{index: i, node: rn}
 		pipeline.nodes = append(pipeline.nodes, rn)
 		// apply fixed vars
 		if len(nn.vars) > 0 {
@@ -48,11 +49,37 @@ func Compile(expr string) (*Pipeline, error) {
 		toNode.maxInputCount += 1
 		fromNode.output = append(fromNode.output, rp)
 	}
-	if len(roots) < 1 {
+	pipeline.roots = compileRoots(roots)
+	if len(pipeline.roots) < 1 {
 		return nil, fmt.Errorf("No roots")
 	}
-	for _, v := range roots {
-		pipeline.roots = append(pipeline.roots, v)
-	}
 	return pipeline, nil
+}
+
+func compileRoots(mapRoots map[string]compileRoot) []*runningNode {
+	// Keep the roots in the same order as the AST nodes. Not
+	// strictly necessary, but it does make tests predictable.
+	sortedRoots := make([]compileRoot, 0, len(mapRoots))
+	for _, r := range mapRoots {
+		sortedRoots = append(sortedRoots, r)
+	}
+	slices.SortFunc(sortedRoots, func(a, b compileRoot) int {
+		if a.index < b.index {
+			return -1
+		} else if a.index > b.index {
+			return 1
+		} else {
+			return 0
+		}
+	})
+	roots := make([]*runningNode, 0, len(sortedRoots))
+	for _, r := range sortedRoots {
+		roots = append(roots, r.node)
+	}
+	return roots
+}
+
+type compileRoot struct {
+	index int
+	node  *runningNode
 }

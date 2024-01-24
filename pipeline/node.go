@@ -8,25 +8,20 @@ type Node interface {
 	Run(*State, RunInput) (*RunOutput, error)
 }
 
-func NewInput(pins ...PinData) RunInput {
+func NewInput(pins ...Pin) RunInput {
 	return RunInput{Pins: pins}
 }
 
 // RunInput trapnsports pin data into a Run function.
 type RunInput struct {
-	Pins []PinData
+	Pins []Pin
 }
 
-func (r RunInput) NewOutput(pins []PinData) *RunOutput {
+func (r RunInput) NewOutput(pins []Pin) *RunOutput {
 	return &RunOutput{Pins: pins}
 }
 
 // RunOutput transports pin data out of a Run function.
 type RunOutput struct {
-	Pins []PinData
-}
-
-// NewInput creates a new input object on all the output pin data.
-func (r RunOutput) newInput() RunInput {
-	return RunInput{Pins: r.Pins}
+	Pins []Pin
 }

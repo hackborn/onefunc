@@ -1,15 +1,5 @@
 package pipeline
 
-import (
-// "go/ast"
-)
-
-// PinData is a single piece of data assigned to a pin.
-// It supplies the name of the owning pin, if any.
-type PinData interface {
-	PinName() string
-}
-
 func NewStructData(name string, fields []StructField) *StructData {
 	return &StructData{name: name, fields: fields}
 }
@@ -17,14 +7,9 @@ func NewStructData(name string, fields []StructField) *StructData {
 // StructData provides information about a single struct from
 // source data.
 type StructData struct {
-	pinName string
-	name    string
-	fields  []StructField
+	name   string
+	fields []StructField
 	// keys    []any
-}
-
-func (s *StructData) PinName() string {
-	return s.pinName
 }
 
 func (s *StructData) Name() string {
@@ -71,11 +56,6 @@ type StructField struct {
 
 // ContentData provides a generic content string.
 type ContentData struct {
-	pinName string
-	Name    string
-	Data    string
-}
-
-func (s *ContentData) PinName() string {
-	return s.pinName
+	Name string
+	Data string
 }

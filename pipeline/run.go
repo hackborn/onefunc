@@ -58,7 +58,7 @@ func prepareForRun(p *Pipeline, input *RunInput) ([]*runningNode, error) {
 	if input != nil && len(input.Pins) > 0 {
 		for _, n := range active {
 			if n.input.Pins == nil {
-				n.input.Pins = make([]PinData, 0, len(input.Pins))
+				n.input.Pins = make([]Pin, 0, len(input.Pins))
 			}
 			n.input.Pins = append(n.input.Pins, input.Pins...)
 		}

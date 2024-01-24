@@ -92,6 +92,7 @@ func TestRunString(t *testing.T) {
 		//		{`graph (na(S=!) -> na(S=?))`, ``, []string{`!?`}, nil},
 		{`graph (na/a(S=!) -> na/b(S=?))`, ``, []string{`!?`}, nil},
 		{`graph (na/a(S=!) na/b(S=?))`, ``, []string{`!`, `?`}, nil},
+		{`graph (na/a(S=a) na/b(S=b) na/c(S=c) na/d(S=d))`, ``, []string{`a`, `b`, `c`, `d`}, nil},
 	}
 	for i, v := range table {
 		have, haveErr := runAsString(v.pipeline, v.input)
@@ -111,8 +112,8 @@ func runAsString(expr, input string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	data := &stringData{s: input}
-	ri := NewInput(data)
+	pin := Pin{Payload: &stringData{s: input}}
+	ri := NewInput(pin)
 	ro, err := Run(p, &ri)
 	if err != nil {
 		return nil, err
@@ -122,7 +123,7 @@ func runAsString(expr, input string) ([]string, error) {
 	}
 	var ans []string
 	for _, pin := range ro.Pins {
-		switch pt := pin.(type) {
+		switch pt := pin.Payload.(type) {
 		case *stringData:
 			ans = append(ans, pt.s)
 		}
@@ -195,10 +196,6 @@ type stringData struct {
 	s string
 }
 
-func (d *stringData) PinName() string {
-	return ""
-}
-
 // ---------------------------------------------------------
 // NODES
 
@@ -209,9 +206,9 @@ type nodeNa struct {
 func (n *nodeNa) Run(s *State, input RunInput) (*RunOutput, error) {
 	out := RunOutput{}
 	for _, p := range input.Pins {
-		switch pt := p.(type) {
+		switch pt := p.Payload.(type) {
 		case *stringData:
-			out.Pins = append(out.Pins, &stringData{s: pt.s + n.S})
+			out.Pins = append(out.Pins, Pin{Payload: &stringData{s: pt.s + n.S}})
 		}
 	}
 	return &out, nil

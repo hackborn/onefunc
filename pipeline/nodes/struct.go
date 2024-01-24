@@ -16,7 +16,7 @@ type StructNode struct {
 func (n *StructNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
 	output := pipeline.RunOutput{}
 	for _, pin := range input.Pins {
-		switch t := pin.(type) {
+		switch t := pin.Payload.(type) {
 		case *pipeline.ContentData:
 			err := n.runContent(t, &output)
 			if err != nil {
@@ -43,7 +43,7 @@ func (n *StructNode) readAst(file *astpkg.File, output *pipeline.RunOutput) erro
 			//				fmt.Printf("READ %v type %T type type %v %T\n", t, t, t.Type, t.Type)
 			switch tt := t.Type.(type) {
 			case *astpkg.StructType:
-				output.Pins = append(output.Pins, newSructData(t, tt))
+				output.Pins = append(output.Pins, pipeline.Pin{Payload: newSructData(t, tt)})
 			}
 		}
 		return true
