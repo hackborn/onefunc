@@ -6,14 +6,26 @@ import (
 	"strconv"
 	"strings"
 	"text/scanner"
+	"unicode"
 
 	"github.com/hackborn/onefunc/errors"
 )
 
-func Run(dst any, exprs ...string) error {
-	for _, expr := range exprs {
-		r := &runner{dst: dst}
-		err := r.runExpr(expr)
+// Run compares a list of terms against a target. Target can be anything.
+// Terms are described by the grammar
+// {term} = {path}{comparison_operator}{value}
+// Where {path} is a "/" separated list of identifiers
+// {comparison_operator} is "="
+// {value} is a string
+// {path} identifiers can be either an integer to index slices, or
+// a string for named fields.
+// Example term:
+// "0/Name=Ireland"
+// where the target is a slice of structs that have a Name field.
+func Run(target any, terms ...string) error {
+	for _, term := range terms {
+		r := &runner{target: target}
+		err := r.runTerm(term)
 		if err != nil {
 			return err
 		}
@@ -22,15 +34,16 @@ func Run(dst any, exprs ...string) error {
 }
 
 type runner struct {
-	first errors.FirstBlock
-	dst   any
+	first  errors.FirstBlock
+	target any
 }
 
-func (r *runner) runExpr(expr string) error {
+func (r *runner) runTerm(term string) error {
 	var scan scanner.Scanner
-	scan.Init(strings.NewReader(expr))
+	scan.Init(strings.NewReader(term))
 	scan.Whitespace = 0
 	scan.Mode = scanner.ScanChars | scanner.ScanComments | scanner.ScanFloats | scanner.ScanIdents | scanner.ScanInts | scanner.ScanRawStrings | scanner.ScanStrings
+	scan.IsIdentRune = r.isIdentRune
 	scan.Error = func(s *scanner.Scanner, msg string) {
 		r.first.AddError(fmt.Errorf("run error: %v", msg))
 	}
@@ -51,7 +64,7 @@ func (r *runner) runExpr(expr string) error {
 		text := scan.TokenText()
 		// If there are any tokens passed the comparison, error
 		if stage == finishedCompare {
-			return fmt.Errorf("expr \"%v\" contains tokens past the comparison (%v)", expr, text)
+			return fmt.Errorf("expr \"%v\" contains tokens past the comparison (%v)", term, text)
 		}
 		if stage == runCompare {
 			r.first.AddError(r.handleCompare(tok, text))
@@ -60,15 +73,22 @@ func (r *runner) runExpr(expr string) error {
 		}
 		if text == "=" {
 			if stage != noCompare {
-				return fmt.Errorf("expr \"%v\" has multiple comparisons", expr)
+				return fmt.Errorf("expr \"%v\" has multiple comparisons", term)
 			}
 			stage = runCompare
 			continue
 		}
 
-		r.first.AddError(r.handleNavigate(tok, text))
+		r.first.AddError(r.handlePath(tok, text))
 	}
 	return r.first.Err
+}
+
+func (r *runner) isIdentRune(ch rune, i int) bool {
+	// This is the standard text scanner ident rune, plus "{" and "}"
+	// for keywords.
+	ident := ch == '_' || ch == '{' || ch == '}' || unicode.IsLetter(ch) || (unicode.IsDigit(ch) && i > 0)
+	return ident
 }
 
 func (r *runner) handleCompare(tok rune, t string) error {
@@ -90,9 +110,9 @@ func (r *runner) handleCompare(tok rune, t string) error {
 }
 
 func (r *runner) handleStringCompare(s string) error {
-	cmp, ok := r.dst.(string)
+	cmp, ok := r.target.(string)
 	if !ok {
-		return fmt.Errorf("Can't compare %v with %v", r.dst, s)
+		return fmt.Errorf("Can't compare %v with %v", r.target, s)
 	}
 	if cmp != s {
 		return fmt.Errorf("Have value \"%v\" but want \"%v\"", cmp, s)
@@ -100,7 +120,7 @@ func (r *runner) handleStringCompare(s string) error {
 	return nil
 }
 
-func (r *runner) handleNavigate(tok rune, t string) error {
+func (r *runner) handlePath(tok rune, t string) error {
 	switch tok {
 	case scanner.Float:
 		return fmt.Errorf("Can't navigate to float \"%v\"", t)
@@ -109,12 +129,12 @@ func (r *runner) handleNavigate(tok rune, t string) error {
 		if err != nil {
 			return err
 		}
-		return r.handleNavigateInt(i)
+		return r.handlePathInt(i)
 	case scanner.String:
 		t = strings.Trim(t, `"`)
-		return r.handleNavigateString(t)
+		return r.handlePathString(t)
 	case scanner.Ident:
-		return r.handleNavigateString(t)
+		return r.handlePathString(t)
 	default:
 		if t == "/" {
 			// Path separator, continue
@@ -124,50 +144,70 @@ func (r *runner) handleNavigate(tok rune, t string) error {
 	}
 }
 
-func (r *runner) handleNavigateInt(i int) error {
-	dstValue := reflect.ValueOf(r.dst)
-	switch dstValue.Kind() {
+func (r *runner) handlePathInt(i int) error {
+	targetValue := reflect.ValueOf(r.target)
+	switch targetValue.Kind() {
 	case reflect.Slice:
-		return r.handleNavigateIntOnSlice(i)
+		return r.handlePathIntOnSlice(i)
 	default:
-		return fmt.Errorf("Can't navigate to int \"%v\" on kind %v", i, dstValue.Kind())
+		return fmt.Errorf("Can't navigate to int \"%v\" on kind %v", i, targetValue.Kind())
 	}
 }
 
-func (r *runner) handleNavigateIntOnSlice(i int) error {
+func (r *runner) handlePathIntOnSlice(i int) error {
 	// We know r.dst is Kind slice
-	sliceValue := reflect.ValueOf(r.dst)
+	sliceValue := reflect.ValueOf(r.target)
 	if i >= sliceValue.Len() {
 		return fmt.Errorf("Index %v is out of range on slice with len %v", i, sliceValue.Len())
 	}
 	v := sliceValue.Index(i)
-	r.dst = v.Interface()
+	r.target = v.Interface()
 	return nil
 }
 
-func (r *runner) handleNavigateString(s string) error {
-	dstValue := reflect.ValueOf(r.dst)
-	switch dstValue.Kind() {
+func (r *runner) handlePathString(s string) error {
+	// Intercept keywords
+	if s == keywordType {
+		r.target = getTypeName(r.target)
+		return nil
+	}
+
+	targetValue := reflect.ValueOf(r.target)
+	switch targetValue.Kind() {
 	case reflect.Struct:
-		return r.handleNavigateStringOnStruct(s)
+		return r.handlePathStringOnStruct(s)
 	case reflect.Ptr:
-		elem := dstValue.Elem()
-		r.dst = elem.Interface()
-		return r.handleNavigateString(s)
+		elem := targetValue.Elem()
+		r.target = elem.Interface()
+		return r.handlePathString(s)
 	default:
-		return fmt.Errorf("Can't navigate to string \"%v\" on kind %v", s, dstValue.Kind())
+		return fmt.Errorf("Can't navigate to string \"%v\" on kind %v", s, targetValue.Kind())
 	}
 }
 
-func (r *runner) handleNavigateStringOnStruct(fieldName string) error {
+func (r *runner) handlePathStringOnStruct(fieldName string) error {
 	// We know r.dst is Kind struct
-	structValue := reflect.ValueOf(r.dst)
+	structValue := reflect.ValueOf(r.target)
 	field := structValue.FieldByName(fieldName)
 	if !field.IsValid() {
-		return fmt.Errorf("no field for %v on %v", fieldName, r.dst)
+		return fmt.Errorf("no field for %v on %v", fieldName, r.target)
 	}
-	r.dst = field.Interface()
+	r.target = field.Interface()
 	return nil
+}
+
+// ---------------------------------------------------------
+// SUPPORT
+
+// getTypeName answers the type of a, without the package name.
+func getTypeName(a any) string {
+	t := reflect.TypeOf(a)
+	switch t.Kind() {
+	case reflect.Ptr:
+		return "*" + t.Elem().Name()
+	default:
+		return t.Name()
+	}
 }
 
 // ---------------------------------------------------------
@@ -179,4 +219,8 @@ const (
 	noCompare       compareStage = iota // No comparison token has been hit
 	runCompare                          // The comparison token was processed; next token is the value
 	finishedCompare                     // The comparison is finished
+)
+
+const (
+	keywordType = `{type}`
 )

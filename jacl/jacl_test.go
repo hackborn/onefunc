@@ -15,6 +15,9 @@ func TestRun(t *testing.T) {
 	}{
 		{Field{Name: "a"}, []string{`Name=a`}, nil},
 		{[]Field{{Name: "a"}}, []string{`0/Name=a`}, nil},
+		{Field{}, []string{`{type}="Field"`}, nil},
+		{&Field{}, []string{`{type}="*Field"`}, nil},
+		// Errors
 		{[]Field{{Name: "a"}}, []string{`1/Name=a`}, fmt.Errorf("out of range")},
 	}
 	for i, v := range table {
