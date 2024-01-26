@@ -11,6 +11,10 @@ import (
 // StructNode takes ContentData with source code and converts it
 // to StructData.
 type StructNode struct {
+	// Optional. Supply a name to extract from the tag field. For example,
+	// if a field as the tag `json:"..."` and you supply a Tag of "json" then
+	// the StructData field will have a tag value of "...".
+	Tag string
 }
 
 func (n *StructNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {

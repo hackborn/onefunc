@@ -4,6 +4,14 @@ import (
 	"fmt"
 )
 
+func RunExpr(expr string, input *RunInput) (*RunOutput, error) {
+	p, err := Compile(expr)
+	if err != nil {
+		return nil, err
+	}
+	return Run(p, input)
+}
+
 func Run(p *Pipeline, input *RunInput) (*RunOutput, error) {
 	active, err := prepareForRun(p, input)
 	if err != nil {

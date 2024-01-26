@@ -108,13 +108,9 @@ func TestRunString(t *testing.T) {
 }
 
 func runAsString(expr, input string) ([]string, error) {
-	p, err := Compile(expr)
-	if err != nil {
-		return nil, err
-	}
 	pin := Pin{Payload: &stringData{s: input}}
 	ri := NewInput(pin)
-	ro, err := Run(p, &ri)
+	ro, err := RunExpr(expr, &ri)
 	if err != nil {
 		return nil, err
 	}
