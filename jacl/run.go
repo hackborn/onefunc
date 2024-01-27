@@ -23,8 +23,15 @@ import (
 // "0/Name=Ireland"
 // where the target is a slice of structs that have a Name field.
 func Run(target any, terms ...string) error {
+	return RunOpts(Opts{}, target, terms...)
+}
+
+// RunOpts compares a list of terms against a target. Target can be anything.
+// See Run docs for a decription of target and terms.
+// Opts adds some configuration options, see Opts docs for a description.
+func RunOpts(opts Opts, target any, terms ...string) error {
 	for _, term := range terms {
-		r := &runner{target: target}
+		r := &runner{opts: opts, target: target}
 		err := r.runTerm(term)
 		if err != nil {
 			return err
@@ -35,6 +42,7 @@ func Run(target any, terms ...string) error {
 
 type runner struct {
 	first  errors.FirstBlock
+	opts   Opts
 	target any
 }
 
@@ -114,7 +122,7 @@ func (r *runner) handleStringCompare(s string) error {
 	if !ok {
 		return fmt.Errorf("Can't compare %v with %v", r.target, s)
 	}
-	if cmp != s {
+	if cmp != r.opts.processValue(s) {
 		return fmt.Errorf("Have value \"%v\" but want \"%v\"", cmp, s)
 	}
 	return nil

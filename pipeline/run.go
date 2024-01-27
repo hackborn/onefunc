@@ -18,6 +18,7 @@ func Run(p *Pipeline, input *RunInput) (*RunOutput, error) {
 		return nil, err
 	}
 	state := &State{}
+	flushState := &State{Flush: true}
 	finalOutput := RunOutput{}
 	for len(active) > 0 {
 		var nextNodesMap map[*runningNode]struct{}
@@ -26,6 +27,16 @@ func Run(p *Pipeline, input *RunInput) (*RunOutput, error) {
 			if err != nil {
 				return nil, err
 			}
+			// This node is done, flush it.
+			flushOutput, _ := n.node.Run(flushState, RunInput{})
+			if flushOutput != nil && len(flushOutput.Pins) > 0 {
+				if output == nil || len(output.Pins) < 1 {
+					output = flushOutput
+				} else {
+					output.Pins = append(output.Pins, flushOutput.Pins...)
+				}
+			}
+
 			if len(n.output) > 0 {
 				for _, topin := range n.output {
 					topin.toNode.inputCount++

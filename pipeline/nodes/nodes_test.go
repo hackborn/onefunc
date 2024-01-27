@@ -10,14 +10,39 @@ import (
 )
 
 // ---------------------------------------------------------
-// TEST-LOAD-FILE
-func TestLoadFile(t *testing.T) {
+// TEST-FILTER-TAG
+func TestFilterTag(t *testing.T) {
+	table := []struct {
+		tag    string
+		filter string
+		need   string
+	}{
+		{"", "doc", ""},
+		{"a", "doc", ""},
+		{`json:"jj"`, "doc", ""},
+		{`doc:"id`, "doc", ``},
+		{`doc:"id"`, "doc", `id`},
+		{`json:"jj" doc:"id"`, "doc", `id`},
+		{`doc:"id" json:"jj"`, "doc", `id`},
+		{`doc:"id, key"`, "doc", `id, key`},
+	}
+	for i, v := range table {
+		have := filterTag(v.tag, v.filter)
+		if have != v.need {
+			t.Fatalf("TestFilterTag %v expected %v but got %v", i, v.need, have)
+		}
+	}
+}
+
+// ---------------------------------------------------------
+// TEST-LOAD
+func TestLoad(t *testing.T) {
 	table := []struct {
 		pipeline string
 		cmp      []string
 		wantErr  error
 	}{
-		{`graph (loadfile(Glob="` + testDataShortGlob + `"))`, []string{`0/Payload/Data=a`, `1/Payload/Data=b`, `2/Payload/Data=c`}, nil},
+		{`graph (load(Glob="` + testDataShortGlob + `"))`, []string{`0/Payload/Data=a`, `1/Payload/Data=b`, `2/Payload/Data=c`}, nil},
 	}
 	for i, v := range table {
 		p, err := pipeline.Compile(v.pipeline)
@@ -31,11 +56,11 @@ func TestLoadFile(t *testing.T) {
 			cmpErr = jacl.Run(output.Pins, v.cmp...)
 		}
 		if v.wantErr == nil && haveErr != nil {
-			t.Fatalf("TestLoadFile %v expected no error but has %v", i, haveErr)
+			t.Fatalf("TestLoad %v expected no error but has %v", i, haveErr)
 		} else if v.wantErr != nil && haveErr == nil {
-			t.Fatalf("TestLoadFile %v has no error but exptected %v", i, v.wantErr)
+			t.Fatalf("TestLoad %v has no error but exptected %v", i, v.wantErr)
 		} else if cmpErr != nil {
-			t.Fatalf("TestLoadFile %v comparison error: %v", i, cmpErr)
+			t.Fatalf("TestLoad %v comparison error: %v", i, cmpErr)
 		}
 	}
 }
@@ -48,7 +73,11 @@ func TestPipeline(t *testing.T) {
 		cmp      []string
 		wantErr  error
 	}{
-		{`graph (loadfile(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Name=Company`, `1/Payload/Name=Filing`}, nil},
+		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/{type}="*StructData"`, `1/Payload/{type}="*StructData"`}, nil},
+		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Name=Company`, `1/Payload/Name=Filing`}, nil},
+		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Fields/0/Name=Id`}, nil},
+		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Fields/0/Tag="doc:''id, key''"`}, nil},
+		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct(Tag=doc))`, []string{`0/Payload/Fields/0/Tag="id, key"`}, nil},
 	}
 	for i, v := range table {
 		p, err := pipeline.Compile(v.pipeline)

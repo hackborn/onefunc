@@ -12,6 +12,9 @@ type LoadFileNode struct {
 }
 
 func (n *LoadFileNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
+	if s.Flush == true {
+		return nil, nil
+	}
 	filenames, err := n.filenamesGlob(n.Glob)
 	if err != nil {
 		return nil, err
@@ -22,7 +25,8 @@ func (n *LoadFileNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipelin
 		if err != nil {
 			return nil, err
 		}
-		output.Pins = append(output.Pins, pipeline.Pin{Payload: &pipeline.ContentData{Name: fn, Data: string(dat)}})
+		base := filepath.Base(fn)
+		output.Pins = append(output.Pins, pipeline.Pin{Payload: &pipeline.ContentData{Name: base, Data: string(dat)}})
 	}
 	return &output, nil
 }

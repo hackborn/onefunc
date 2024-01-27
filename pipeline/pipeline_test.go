@@ -93,6 +93,9 @@ func TestRunString(t *testing.T) {
 		{`graph (na/a(S=!) -> na/b(S=?))`, ``, []string{`!?`}, nil},
 		{`graph (na/a(S=!) na/b(S=?))`, ``, []string{`!`, `?`}, nil},
 		{`graph (na/a(S=a) na/b(S=b) na/c(S=c) na/d(S=d))`, ``, []string{`a`, `b`, `c`, `d`}, nil},
+		{`graph (nb(S1=a, S2=b))`, ``, []string{`ab`}, nil},
+		{`graph (nc(S=!))`, `hi`, []string{`hi!`}, nil},
+		{`graph (na(S=x) -> nc(S=y))`, `hi`, []string{`hixy`}, nil},
 	}
 	for i, v := range table {
 		have, haveErr := runAsString(v.pipeline, v.input)
@@ -195,6 +198,7 @@ type stringData struct {
 // ---------------------------------------------------------
 // NODES
 
+// nodeNa has a string value and adds it to any incoming stringData.
 type nodeNa struct {
 	S string
 }
@@ -210,12 +214,59 @@ func (n *nodeNa) Run(s *State, input RunInput) (*RunOutput, error) {
 	return &out, nil
 }
 
+// nodeNb has multiple string values that are appended to incoming stringData.
+type nodeNb struct {
+	S1 string
+	S2 string
+}
+
+func (n *nodeNb) Run(s *State, input RunInput) (*RunOutput, error) {
+	out := RunOutput{}
+	for _, p := range input.Pins {
+		switch pt := p.Payload.(type) {
+		case *stringData:
+			out.Pins = append(out.Pins, Pin{Payload: &stringData{s: pt.s + n.S1 + n.S2}})
+		}
+	}
+	return &out, nil
+}
+
+// nodeNc accumulates string values without producing output.
+// When it receives a FlushData{}, it adds its string value to
+// the accumulation and sends out data.
+type nodeNc struct {
+	S string
+
+	accum string
+}
+
+func (n *nodeNc) Run(s *State, input RunInput) (*RunOutput, error) {
+	out := RunOutput{}
+	if s.Flush == true {
+		out.Pins = append(out.Pins, Pin{Payload: &stringData{s: n.accum + n.S}})
+		return &out, nil
+	}
+	for _, p := range input.Pins {
+		switch pt := p.Payload.(type) {
+		case *stringData:
+			n.accum += pt.s
+		}
+	}
+	return &out, nil
+}
+
 // ---------------------------------------------------------
 // LIFECYCLE
 
 func setupTests() {
 	RegisterNode("na", func() Node {
 		return &nodeNa{}
+	})
+	RegisterNode("nb", func() Node {
+		return &nodeNb{}
+	})
+	RegisterNode("nc", func() Node {
+		return &nodeNc{}
 	})
 }
 
