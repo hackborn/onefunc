@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"fmt"
 	"os"
 	"slices"
 	"strings"
@@ -62,6 +63,7 @@ func TestParser(t *testing.T) {
 		{`graph (na(S=f))`, `graph (na) vars (na/S=f)`, nil},
 		{`graph (na/a na/b)`, `graph (na/a na/b)`, nil},
 		{`graph (na(S="f"))`, `graph (na) vars (na/S=f)`, nil},
+		{`graph (na(S=$cat))`, `graph (na) vars (na/S=$cat) env ($cat)`, nil},
 	}
 	for i, v := range table {
 		ast, haveErr := parse(v.pipeline)
@@ -83,22 +85,27 @@ func TestRunString(t *testing.T) {
 	table := []struct {
 		pipeline string
 		input    string
+		env      map[string]any
 		want     []string
 		wantErr  error
 	}{
-		{`graph (na(S=!))`, ``, []string{`!`}, nil},
-		{`graph (na(S=!))`, `hi`, []string{`hi!`}, nil},
+		{`graph (na(S=!))`, ``, nil, []string{`!`}, nil},
+		{`graph (na(S=!))`, `hi`, nil, []string{`hi!`}, nil},
 		// XXX This doesn't work because we aren't generating unique names for nodes, but clearly this should be supported
-		//		{`graph (na(S=!) -> na(S=?))`, ``, []string{`!?`}, nil},
-		{`graph (na/a(S=!) -> na/b(S=?))`, ``, []string{`!?`}, nil},
-		{`graph (na/a(S=!) na/b(S=?))`, ``, []string{`!`, `?`}, nil},
-		{`graph (na/a(S=a) na/b(S=b) na/c(S=c) na/d(S=d))`, ``, []string{`a`, `b`, `c`, `d`}, nil},
-		{`graph (nb(S1=a, S2=b))`, ``, []string{`ab`}, nil},
-		{`graph (nc(S=!))`, `hi`, []string{`hi!`}, nil},
-		{`graph (na(S=x) -> nc(S=y))`, `hi`, []string{`hixy`}, nil},
+		//		{`graph (na(S=!) -> na(S=?))`, ``, nil, []string{`!?`}, nil},
+		{`graph (na/a(S=!) -> na/b(S=?))`, ``, nil, []string{`!?`}, nil},
+		{`graph (na/a(S=!) na/b(S=?))`, ``, nil, []string{`!`, `?`}, nil},
+		{`graph (na/a(S=a) na/b(S=b) na/c(S=c) na/d(S=d))`, ``, nil, []string{`a`, `b`, `c`, `d`}, nil},
+		{`graph (nb(S1=a, S2=b))`, ``, nil, []string{`ab`}, nil},
+		{`graph (nc(S=!))`, `hi`, nil, []string{`hi!`}, nil},
+		{`graph (na(S=x) -> nc(S=y))`, `hi`, nil, []string{`hixy`}, nil},
+		{`graph (na(S=$env))`, `hi`, map[string]any{`$env`: `!`}, []string{`hi!`}, nil},
+		// ERRORS
+		// No env var
+		{`graph (na(S=$env))`, `hi`, nil, []string{}, fmt.Errorf("missing env var")},
 	}
 	for i, v := range table {
-		have, haveErr := runAsString(v.pipeline, v.input)
+		have, haveErr := runAsString(v.pipeline, v.input, v.env)
 
 		if v.wantErr == nil && haveErr != nil {
 			t.Fatalf("TestRunString %v expected no error but has %v", i, haveErr)
@@ -110,10 +117,10 @@ func TestRunString(t *testing.T) {
 	}
 }
 
-func runAsString(expr, input string) ([]string, error) {
+func runAsString(expr, input string, env map[string]any) ([]string, error) {
 	pin := Pin{Payload: &stringData{s: input}}
 	ri := NewInput(pin)
-	ro, err := RunExpr(expr, &ri)
+	ro, err := RunExpr(expr, &ri, env)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +151,7 @@ func BenchmarkParser(b *testing.B) {
 func BenchmarkRunAsString(b *testing.B) {
 	const input string = `graph (na(S=!))`
 	for n := 0; n < b.N; n++ {
-		runAsString(input, "hi")
+		runAsString(input, "hi", nil)
 	}
 }
 

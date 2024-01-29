@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"text/scanner"
+	"unicode"
 
 	"github.com/hackborn/onefunc/errors"
 	ofstrings "github.com/hackborn/onefunc/strings"
@@ -52,7 +53,7 @@ func (p *parser) scan(input string, h tokenHandler) error {
 	lexer.Init(strings.NewReader(input))
 	lexer.Whitespace = 0
 	lexer.Mode = scanner.ScanChars | scanner.ScanComments | scanner.ScanFloats | scanner.ScanIdents | scanner.ScanInts | scanner.ScanRawStrings | scanner.ScanStrings
-
+	lexer.IsIdentRune = p.isIdentRune
 	lexer.Error = func(s *scanner.Scanner, msg string) {
 		p.AddError(fmt.Errorf("scan error: %v", msg))
 	}
@@ -82,6 +83,12 @@ func (p *parser) scan(input string, h tokenHandler) error {
 		h.HandleToken(tt)
 	}
 	return p.Err
+}
+
+func (p *parser) isIdentRune(ch rune, i int) bool {
+	// This is the standard text scanner ident rune, plus "$" at the start for env vars.
+	ident := ch == '_' || unicode.IsLetter(ch) || (unicode.IsDigit(ch) && i > 0) || (ch == '$' && i == 0)
+	return ident
 }
 
 // ------------------------------------------------------------
@@ -156,6 +163,31 @@ func (t astPipeline) print() string {
 			}
 			w.WriteString(node.nodeName + "/" + k)
 			w.WriteString("=")
+			w.WriteString(fmt.Sprintf("%v", v))
+		}
+	}
+	if !first {
+		w.WriteString(")")
+	}
+	// Env
+	first = true
+	for _, node := range t.nodes {
+		if len(node.envVars) < 1 {
+			continue
+		}
+		if first {
+			w.WriteString(" env (")
+			first = false
+		} else {
+			w.WriteString(", ")
+		}
+		needsComma := false
+		for _, v := range node.envVars {
+			if !needsComma {
+				needsComma = true
+			} else {
+				w.WriteString(", ")
+			}
 			w.WriteString(fmt.Sprintf("%v", v))
 		}
 	}
@@ -406,7 +438,11 @@ func (h *varsHandler) HandleToken(t token) {
 		if h.needsCurrent {
 			h.current = t.text
 		} else {
-			h.vars[h.current] = t.text
+			if strings.HasPrefix(t.text, "$") {
+				h.envVars[h.current] = t.text
+			} else {
+				h.vars[h.current] = t.text
+			}
 			h.needsCurrent = true
 		}
 	}

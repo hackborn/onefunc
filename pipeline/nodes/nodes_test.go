@@ -82,7 +82,7 @@ func TestPipeline(t *testing.T) {
 	for i, v := range table {
 		p, err := pipeline.Compile(v.pipeline)
 		if err != nil {
-			t.Fatalf("TestLoadFile %v compile err %v", i, err)
+			t.Fatalf("TestPipeline %v compile err %v", i, err)
 		}
 		output, haveErr := pipeline.Run(p, nil)
 		var cmpErr error
@@ -90,11 +90,11 @@ func TestPipeline(t *testing.T) {
 			cmpErr = jacl.Run(output.Pins, v.cmp...)
 		}
 		if v.wantErr == nil && haveErr != nil {
-			t.Fatalf("TestLoadFile %v expected no error but has %v", i, haveErr)
+			t.Fatalf("TestPipeline %v expected no error but has %v", i, haveErr)
 		} else if v.wantErr != nil && haveErr == nil {
-			t.Fatalf("TestLoadFile %v has no error but exptected %v", i, v.wantErr)
+			t.Fatalf("TestPipeline %v has no error but exptected %v", i, v.wantErr)
 		} else if cmpErr != nil {
-			t.Fatalf("TestLoadFile %v comparison error: %v", i, cmpErr)
+			t.Fatalf("TestPipeline %v comparison error: %v", i, cmpErr)
 		}
 	}
 }

@@ -2,18 +2,20 @@ package pipeline
 
 import (
 	"fmt"
+
+	"github.com/hackborn/onefunc/assign"
 )
 
-func RunExpr(expr string, input *RunInput) (*RunOutput, error) {
+func RunExpr(expr string, input *RunInput, env map[string]any) (*RunOutput, error) {
 	p, err := Compile(expr)
 	if err != nil {
 		return nil, err
 	}
-	return Run(p, input)
+	return Run(p, input, env)
 }
 
-func Run(p *Pipeline, input *RunInput) (*RunOutput, error) {
-	active, err := prepareForRun(p, input)
+func Run(p *Pipeline, input *RunInput, env map[string]any) (*RunOutput, error) {
+	active, err := prepareForRun(p, input, env)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +64,7 @@ func Run(p *Pipeline, input *RunInput) (*RunOutput, error) {
 	return &finalOutput, nil
 }
 
-func prepareForRun(p *Pipeline, input *RunInput) ([]*runningNode, error) {
+func prepareForRun(p *Pipeline, input *RunInput, env map[string]any) ([]*runningNode, error) {
 	if len(p.roots) < 1 {
 		return nil, fmt.Errorf("No roots")
 	}
@@ -72,7 +74,10 @@ func prepareForRun(p *Pipeline, input *RunInput) ([]*runningNode, error) {
 		n.input.Pins = nil
 	}
 	for _, n := range p.nodes {
-		n.inputCount = 0
+		err := prepareNodeForRun(n, env)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if input != nil && len(input.Pins) > 0 {
 		for _, n := range active {
@@ -83,4 +88,37 @@ func prepareForRun(p *Pipeline, input *RunInput) ([]*runningNode, error) {
 		}
 	}
 	return active, nil
+}
+
+func prepareNodeForRun(rn *runningNode, env map[string]any) error {
+	// Reset input accumulator
+	rn.inputCount = 0
+
+	// Apply env vars
+	envlen := len(rn.envVars)
+	if envlen > 0 {
+		req := assign.ValuesRequest{}
+		req.FieldNames = make([]string, envlen, envlen)
+		req.NewValues = make([]any, envlen, envlen)
+		i := -1
+		for k, v := range rn.envVars {
+			i++
+			req.FieldNames[i] = k
+			if vv, ok := mapAt(v, env); ok {
+				req.NewValues[i] = vv
+			} else {
+				return fmt.Errorf("Missing environment variable \"%v\"", v)
+			}
+		}
+		return assign.Values(req, rn.node)
+	}
+	return nil
+}
+
+func mapAt(key string, m map[string]any) (any, bool) {
+	if m == nil {
+		return nil, false
+	}
+	v, ok := m[key]
+	return v, ok
 }

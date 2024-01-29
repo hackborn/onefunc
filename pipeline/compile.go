@@ -22,7 +22,7 @@ func Compile(expr string) (*Pipeline, error) {
 		if err != nil {
 			return nil, err
 		}
-		rn := &runningNode{node: node}
+		rn := &runningNode{node: node, envVars: nn.envVars}
 		nodes[nn.nodeName] = rn
 		roots[nn.nodeName] = compileRoot{index: i, node: rn}
 		pipeline.nodes = append(pipeline.nodes, rn)

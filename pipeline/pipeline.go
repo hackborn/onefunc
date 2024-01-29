@@ -16,6 +16,7 @@ type runningNode struct {
 	maxInputCount int
 	input         RunInput
 	output        []*runningPin
+	envVars       map[string]string
 }
 
 func (n *runningNode) ready() bool {
