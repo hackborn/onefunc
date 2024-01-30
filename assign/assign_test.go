@@ -49,6 +49,12 @@ func TestValues(t *testing.T) {
 		wantErr error
 	}{
 		{valuesReq1, &Data1{}, `{"A":"ten"}`, nil},
+		{valReqBool(true), &Data1{}, `{"E":true}`, nil},
+		{valReqBool(false), &Data1{}, `{}`, nil},
+		{valReqBool("true"), &Data1{}, `{"E":true}`, nil},
+		{valReqBool("t"), &Data1{}, `{"E":true}`, nil},
+		{valReqBool("false"), &Data1{}, `{}`, nil},
+		{valReqBool("f"), &Data1{}, `{}`, nil},
 	}
 	for i, v := range table {
 		haveErr := Values(v.req, v.dst)
@@ -72,6 +78,7 @@ type Data1 struct {
 	B int     `json:",omitempty"`
 	C int64   `json:",omitempty"`
 	D float64 `json:",omitempty"`
+	E bool    `json:",omitempty"`
 }
 
 // ---------------------------------------------------------
@@ -81,6 +88,13 @@ func newAnyString(s string) any {
 	n := new(any)
 	*n = s
 	return n
+}
+
+func valReqBool(v any) ValuesRequest {
+	return ValuesRequest{
+		FieldNames: []string{"E"},
+		NewValues:  []any{v},
+	}
 }
 
 // ---------------------------------------------------------

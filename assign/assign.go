@@ -3,6 +3,7 @@ package assign
 import (
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 // Values sets the value of each field to the supplied value.
@@ -52,6 +53,12 @@ func getReflectFieldValue(fieldName string, structValue reflect.Value) (reflect.
 
 func assignValue(src, dst reflect.Value) error {
 	switch dst.Kind() {
+	case reflect.Bool:
+		v, err := valueToBool(src)
+		if err != nil {
+			return err
+		}
+		dst.Set(reflect.ValueOf(v))
 	case reflect.Int:
 		dst.Set(reflect.ValueOf(int(src.Int())))
 	case reflect.Int8:
@@ -98,4 +105,19 @@ func doUnwrapValueToValue(v reflect.Value) (reflect.Value, error) {
 		return v, nil
 	}
 	// return reflect.Value{}, unhandledValueTypeErr
+}
+
+func valueToBool(src reflect.Value) (bool, error) {
+	switch src.Kind() {
+	case reflect.Bool:
+		return src.Bool(), nil
+	case reflect.String:
+		s := strings.ToLower(src.Interface().(string))
+		if s == "t" || s == "true" {
+			return true, nil
+		} else if s == "f" || s == "false" {
+			return false, nil
+		}
+	}
+	return false, fmt.Errorf("unsupported bool conversion on type %T", src.Interface())
 }
