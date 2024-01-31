@@ -7,7 +7,6 @@ import (
 	"unicode"
 
 	"github.com/hackborn/onefunc/errors"
-	ofstrings "github.com/hackborn/onefunc/strings"
 )
 
 type tokenType int
@@ -92,146 +91,6 @@ func (p *parser) isIdentRune(ch rune, i int) bool {
 }
 
 // ------------------------------------------------------------
-// AST
-
-type astPipeline struct {
-	nodes []*astNode
-	pins  []*astPin
-}
-
-func (t astPipeline) print() string {
-	eb := errors.FirstBlock{}
-	w := ofstrings.GetWriter(&eb)
-	defer ofstrings.PutWriter(w)
-
-	w.WriteString("graph (")
-	// Display unattached nodes
-	needsSpace := false
-	unattached := t.unattachedNodes()
-	for i, node := range unattached {
-		if i > 0 {
-			w.WriteString(" ")
-		}
-		w.WriteString(node.nodeName)
-		needsSpace = true
-	}
-	// Display connected nodes
-	lastNode := ""
-	for _, pin := range t.pins {
-		if needsSpace {
-			needsSpace = false
-			w.WriteString(" ")
-		}
-		if lastNode != pin.fromNode {
-			w.WriteString(pin.fromNode)
-		}
-		w.WriteString(" -")
-		w.WriteString(pin.pinName)
-		w.WriteString("> ")
-		w.WriteString(pin.toNode)
-		lastNode = pin.toNode
-	}
-	w.WriteString(")")
-	// Vars
-	first := true
-	for _, node := range t.nodes {
-		if len(node.vars) < 1 && len(node.envVars) < 1 {
-			continue
-		}
-		if first {
-			w.WriteString(" vars (")
-			first = false
-		} else {
-			w.WriteString(", ")
-		}
-		needsComma := false
-		for k, v := range node.vars {
-			if !needsComma {
-				needsComma = true
-			} else {
-				w.WriteString(", ")
-			}
-			w.WriteString(node.nodeName + "/" + k)
-			w.WriteString("=")
-			w.WriteString(fmt.Sprintf("%v", v))
-		}
-		for k, v := range node.envVars {
-			if !needsComma {
-				needsComma = true
-			} else {
-				w.WriteString(", ")
-			}
-			w.WriteString(node.nodeName + "/" + k)
-			w.WriteString("=")
-			w.WriteString(fmt.Sprintf("%v", v))
-		}
-	}
-	if !first {
-		w.WriteString(")")
-	}
-	// Env
-	first = true
-	for _, node := range t.nodes {
-		if len(node.envVars) < 1 {
-			continue
-		}
-		if first {
-			w.WriteString(" env (")
-			first = false
-		} else {
-			w.WriteString(", ")
-		}
-		needsComma := false
-		for _, v := range node.envVars {
-			if !needsComma {
-				needsComma = true
-			} else {
-				w.WriteString(", ")
-			}
-			w.WriteString(fmt.Sprintf("%v", v))
-		}
-	}
-	if !first {
-		w.WriteString(")")
-	}
-
-	return ofstrings.String(w)
-}
-
-func (t astPipeline) unattachedNodes() []*astNode {
-	m := make(map[*astNode]struct{})
-	for _, n := range t.nodes {
-		m[n] = struct{}{}
-	}
-	for _, pin := range t.pins {
-		for k, _ := range m {
-			if pin.fromNode == k.nodeName || pin.toNode == k.nodeName {
-				delete(m, k)
-			}
-		}
-	}
-	// Keep initial order preserved
-	var ans []*astNode
-	for _, n := range t.nodes {
-		if _, ok := m[n]; ok {
-			ans = append(ans, n)
-		}
-	}
-	return ans
-}
-
-type astNode struct {
-	nodeName string
-	vars     map[string]any
-	envVars  map[string]string
-}
-
-type astPin struct {
-	pinName          string
-	fromNode, toNode string
-}
-
-// ------------------------------------------------------------
 // TOKEN HANDLING
 
 type tokenHandler interface {
@@ -294,14 +153,18 @@ func (h *baseHandler) pop(fn poppedFunc) {
 func (h *baseHandler) flush() {
 }
 
-// graphHandler
+// graphHandler handles creating nodes, pins, and connecting them.
 type graphHandler struct {
 	base *baseHandler
 
-	handledOpen     bool
-	currentNodeName string
-	currentNode     *astNode
-	currentAst      any // will be *astNode or *astPin (or nil)
+	handledOpen bool
+	current     currentObj
+	currentName string
+
+	nodePushed nodePushedFunc
+
+	// Store existing node names so I don't reuse.
+	nodeNames map[string]*astNode
 }
 
 func (h *graphHandler) HandleToken(t token) {
@@ -324,32 +187,29 @@ func (h *graphHandler) HandleToken(t token) {
 		h.base.pop(nil)
 	case "-":
 		h.flush()
-		if h.currentNode == nil {
+		if h.current.node == nil {
 			h.base.AddError(fmt.Errorf("illegal syntax, missing node before pin"))
 			return
 		}
-		h.base.stack = append(h.base.stack, &pinHandler{base: h.base, currentNode: h.currentNode})
-		h.currentNode = nil
+		h.base.stack = append(h.base.stack, &pinHandler{base: h.base, currentNode: h.current.node})
+		h.current = currentObj{}
 	case "->":
 		h.flush()
-		if h.currentNode == nil {
+		if h.current.node == nil {
 			h.base.AddError(fmt.Errorf("illegal syntax, missing node before pin"))
 			return
 		}
-		pin := &astPin{fromNode: h.currentNode.nodeName}
-		h.base.pins = append(h.base.pins, pin)
-		h.currentAst = pin
+		h.pushNewPin(&astPin{fromNode: h.current.node.nodeName})
 	default:
-		h.currentNodeName += t.text
+		h.currentName += t.text
 	}
 }
 
 func (h *graphHandler) HandleVars(s varState) {
-	switch t := h.currentAst.(type) {
-	case *astNode:
-		h.handleVarsOnNode(s, t)
-	case *astPin:
-		h.handleVarsOnPin(s, t)
+	if h.current.node != nil {
+		h.handleVarsOnNode(s, h.current.node)
+	} else if h.current.pin != nil {
+		h.handleVarsOnPin(s, h.current.pin)
 	}
 }
 
@@ -364,20 +224,43 @@ func (h *graphHandler) handleVarsOnPin(s varState, n *astPin) {
 func (h *graphHandler) Pushed(base *baseHandler) {
 	h.base = base
 	h.handledOpen = false
-	h.currentAst = nil
+	h.current = currentObj{}
+	h.currentName = ""
+	h.nodePushed = h.nullNodePushed
+	h.nodeNames = make(map[string]*astNode)
 }
 
 func (h *graphHandler) flush() {
-	if h.currentNodeName != "" {
-		h.currentNode = &astNode{nodeName: h.currentNodeName}
-		h.currentAst = h.currentNode
-		h.currentNodeName = ""
-		h.base.nodes = append(h.base.nodes, h.currentNode)
-		size := len(h.base.pins)
-		if size > 0 {
-			h.base.pins[size-1].toNode = h.currentNode.nodeName
-		}
+	if h.currentName != "" {
+		h.pushNewNode(&astNode{nodeName: h.currentName})
+		h.currentName = ""
 	}
+}
+
+func (h *graphHandler) pushNewNode(node *astNode) {
+	if found, ok := h.nodeNames[node.nodeName]; ok {
+		node = found
+	} else {
+		h.nodeNames[node.nodeName] = node
+		h.base.nodes = append(h.base.nodes, node)
+	}
+
+	h.current = currentObj{node: node}
+	h.nodePushed(node)
+	h.nodePushed = h.nullNodePushed
+}
+
+func (h *graphHandler) pushNewPin(pin *astPin) {
+	h.current = currentObj{pin: pin}
+	h.base.pins = append(h.base.pins, pin)
+	h.nodePushed = func(n *astNode) {
+		// This happens when a node is pushed that the current
+		// pin is connected to. Hook up the connection.
+		pin.toNode = n.nodeName
+	}
+}
+
+func (h *graphHandler) nullNodePushed(n *astNode) {
 }
 
 // pinHandler
@@ -393,7 +276,6 @@ func (h *pinHandler) HandleToken(t token) {
 	switch txt {
 	case ">":
 		pin := &astPin{pinName: h.pinName, fromNode: h.currentNode.nodeName}
-		h.base.pins = append(h.base.pins, pin)
 		h.base.pop(func(t tokenHandler) {
 			h.onPoppedFunc(pin, t)
 		})
@@ -410,7 +292,7 @@ func (h *pinHandler) Pushed(base *baseHandler) {
 
 func (h *pinHandler) onPoppedFunc(pin *astPin, t tokenHandler) {
 	if g, ok := t.(*graphHandler); ok {
-		g.currentAst = pin
+		g.pushNewPin(pin)
 	}
 }
 
@@ -469,9 +351,19 @@ type varState struct {
 	envVars map[string]string
 }
 
+// currentObj tracks the most recent object on the graph handler
+// The node and pin are mutually exclusive.
+type currentObj struct {
+	node *astNode
+	pin  *astPin
+}
+
 // ------------------------------------------------------------
 // TOKEN HANDLING FUNCS
 
 // poppedFunc is called on a handler when the handler below it
 // is popped from the stack.
 type poppedFunc func(h tokenHandler)
+
+// nodePushedFunc is called when a new node is pushed on the graph.
+type nodePushedFunc func(n *astNode)

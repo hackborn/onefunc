@@ -64,6 +64,10 @@ func TestParser(t *testing.T) {
 		{`graph (na/a na/b)`, `graph (na/a na/b)`, nil},
 		{`graph (na(S="f"))`, `graph (na) vars (na/S=f)`, nil},
 		{`graph (na(S=$cat))`, `graph (na) vars (na/S=$cat) env ($cat)`, nil},
+		{`graph (na1 -> na3 na2->na3 )`, `graph (na1 -> na3 na2 -> na3)`, nil},
+		{`graph (na1/1(S=a) na1/2 )`, `graph (na1/1 na1/2) vars (na1/1/S=a)`, nil},
+		{`graph (na1 -> na3(S=a) na2 -> na3 )`, `graph (na1 -> na3 na2 -> na3) vars (na3/S=a)`, nil},
+		{`graph (na1 -> na3(S=a) na2 -> na3(S=b) )`, `graph (na1 -> na3 na2 -> na3) vars (na3/S=b)`, nil},
 	}
 	for i, v := range table {
 		ast, haveErr := parse(v.pipeline)
@@ -100,6 +104,10 @@ func TestRunString(t *testing.T) {
 		{`graph (nc(S=!))`, `hi`, nil, []string{`hi!`}, nil},
 		{`graph (na(S=x) -> nc(S=y))`, `hi`, nil, []string{`hixy`}, nil},
 		{`graph (na(S=$env))`, `hi`, map[string]any{`$env`: `!`}, []string{`hi!`}, nil},
+		{`graph (na1(S=a) -> na3(S=!) )`, ``, nil, []string{`a!`}, nil},
+		{`graph (na1(S=a) -> na3(S=!) na2(S=b) -> na3(S=!))`, ``, nil, []string{`a!`, `b!`}, nil},
+		{`graph (na1(S=a) -> na3(S=!) na2(S=b) -> na3)`, ``, nil, []string{`a!`, `b!`}, nil},
+		{`graph (na1(S=a) -> na3(S=a) na2(S=b) -> na3(S=!))`, ``, nil, []string{`a!`, `b!`}, nil},
 		// ERRORS
 		// No env var
 		{`graph (na(S=$env))`, `hi`, nil, []string{}, fmt.Errorf("missing env var")},
@@ -212,6 +220,7 @@ type nodeNa struct {
 
 func (n *nodeNa) Run(s *State, input RunInput) (*RunOutput, error) {
 	out := RunOutput{}
+	//	fmt.Println("Input len", len(input.Pins))
 	for _, p := range input.Pins {
 		switch pt := p.Payload.(type) {
 		case *stringData:
@@ -275,8 +284,21 @@ func setupTests() {
 	RegisterNode("nc", func() Node {
 		return &nodeNc{}
 	})
+
+	// Aliases
+	RegisterNode("na1", func() Node {
+		return &nodeNa{}
+	})
+	RegisterNode("na2", func() Node {
+		return &nodeNa{}
+	})
+	RegisterNode("na3", func() Node {
+		return &nodeNa{}
+	})
 }
 
 func shutdownTests() {
 	reg = newRegistry()
 }
+
+var genErr = fmt.Errorf("generic")

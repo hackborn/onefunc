@@ -19,6 +19,7 @@ func Run(p *Pipeline, input *RunInput, env map[string]any) (*RunOutput, error) {
 	if err != nil {
 		return nil, err
 	}
+	//	fmt.Println("pipeline running, roots", len(p.roots), "active", len(active))
 	state := &State{}
 	flushState := &State{Flush: true}
 	finalOutput := RunOutput{}

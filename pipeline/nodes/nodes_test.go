@@ -49,7 +49,7 @@ func TestLoad(t *testing.T) {
 		if err != nil {
 			t.Fatalf("TestLoadFile %v compile err %v", i, err)
 		}
-		output, haveErr := pipeline.Run(p, nil)
+		output, haveErr := pipeline.Run(p, nil, nil)
 		fmt.Println("output", output)
 		var cmpErr error
 		if output != nil {
@@ -84,7 +84,7 @@ func TestPipeline(t *testing.T) {
 		if err != nil {
 			t.Fatalf("TestPipeline %v compile err %v", i, err)
 		}
-		output, haveErr := pipeline.Run(p, nil)
+		output, haveErr := pipeline.Run(p, nil, nil)
 		var cmpErr error
 		if output != nil {
 			cmpErr = jacl.Run(output.Pins, v.cmp...)
