@@ -68,6 +68,9 @@ func TestParser(t *testing.T) {
 		{`graph (na1/1(S=a) na1/2 )`, `graph (na1/1 na1/2) vars (na1/1/S=a)`, nil},
 		{`graph (na1 -> na3(S=a) na2 -> na3 )`, `graph (na1 -> na3 na2 -> na3) vars (na3/S=a)`, nil},
 		{`graph (na1 -> na3(S=a) na2 -> na3(S=b) )`, `graph (na1 -> na3 na2 -> na3) vars (na3/S=b)`, nil},
+		{`graph (na) env (Path=$Path)`, `graph (na) env (Path=$Path)`, nil},
+		// Errors
+		{`graph (na`, ``, newSyntaxError("")},
 	}
 	for i, v := range table {
 		ast, haveErr := parse(v.pipeline)

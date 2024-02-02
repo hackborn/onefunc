@@ -24,9 +24,13 @@ type astPin struct {
 type astPipeline struct {
 	nodes []*astNode
 	pins  []*astPin
+	env   map[string]any
 }
 
 func (t astPipeline) print() string {
+	if len(t.nodes) < 1 && len(t.pins) < 1 {
+		return ""
+	}
 	eb := errors.FirstBlock{}
 	w := ofstrings.GetWriter(&eb)
 	defer ofstrings.PutWriter(w)
@@ -122,6 +126,25 @@ func (t astPipeline) print() string {
 		}
 	}
 	if !first {
+		w.WriteString(")")
+	}
+
+	// Env
+	if len(t.env) > 0 {
+		if ofstrings.StringLen(w) > 0 {
+			w.WriteString(" ")
+		}
+		w.WriteString("env (")
+		first := true
+		for k, v := range t.env {
+			if !first {
+				w.WriteString(", ")
+				first = true
+			}
+			w.WriteString(k)
+			w.WriteString("=")
+			w.WriteString(fmt.Sprintf("%v", v))
+		}
 		w.WriteString(")")
 	}
 

@@ -3,6 +3,15 @@ package pipeline
 type Pipeline struct {
 	roots []*runningNode
 	nodes []*runningNode
+	env   map[string]any
+}
+
+// Env answers the contents of the env() term in the initial
+// expression, if any. This has no functional impact, but serves
+// as a form of documentation to let clients discover what env vars
+// the pipeline supports.
+func (p Pipeline) Env() map[string]any {
+	return p.env
 }
 
 type runningPin struct {

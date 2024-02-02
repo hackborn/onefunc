@@ -87,6 +87,13 @@ func StringErr(w io.StringWriter) error {
 	return nil
 }
 
+func StringLen(w io.StringWriter) int {
+	if b, ok := w.(*stringBuilder); ok {
+		return b.sb.Len()
+	}
+	return 0
+}
+
 // stringBuilder is a small convenience on strings.Builder that
 // tracks any errors generated.
 type stringBuilder struct {

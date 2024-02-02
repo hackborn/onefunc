@@ -39,9 +39,10 @@ type parser struct {
 
 func (p *parser) parse(input string) (astPipeline, error) {
 	h := &baseHandler{}
-	err := p.scan(input, h)
-	if err != nil {
-		return astPipeline{}, err
+	h.AddError(p.scan(input, h))
+	h.finished()
+	if h.Err != nil {
+		return astPipeline{}, h.Err
 	}
 	return h.astPipeline, nil
 }
@@ -106,8 +107,9 @@ type baseHandler struct {
 	stack []tokenHandler
 
 	// Cached handlers. Push these onto the stack when needed.
-	graph graphHandler
-	vars  varsHandler
+	graph      graphHandler
+	vars       varsHandler
+	envHandler envHandler
 }
 
 func (h *baseHandler) AddError(e error) {
@@ -125,6 +127,8 @@ func (h *baseHandler) HandleToken(t token) {
 	switch txt {
 	case "graph":
 		h.push(&h.graph)
+	case "env":
+		h.push(&h.envHandler)
 	}
 }
 
@@ -150,7 +154,10 @@ func (h *baseHandler) pop(fn poppedFunc) {
 	}
 }
 
-func (h *baseHandler) flush() {
+func (h *baseHandler) finished() {
+	if len(h.stack) > 0 {
+		h.AddError(newSyntaxError("did you forget a \")\"?"))
+	}
 }
 
 // graphHandler handles creating nodes, pins, and connecting them.
@@ -340,6 +347,46 @@ func (h *varsHandler) Pushed(base *baseHandler) {
 	h.needsCurrent = true
 	h.vars = make(map[string]any)
 	h.envVars = make(map[string]string)
+}
+
+// envHandler
+type envHandler struct {
+	base *baseHandler
+
+	current      string
+	needsCurrent bool
+	env          map[string]any
+}
+
+func (h *envHandler) HandleToken(t token) {
+	txt := strings.ToLower(t.text)
+	switch txt {
+	case "(":
+		return
+	case ")":
+		h.base.env = h.env
+		h.base.pop(nil)
+	case "=":
+		h.needsCurrent = false
+	default:
+		if h.needsCurrent {
+			h.current = t.text
+		} else {
+			h.env[h.current] = t.text
+			h.needsCurrent = true
+		}
+	}
+}
+
+func (h *envHandler) HandleVars(s varState) {
+	h.base.AddError(fmt.Errorf("envHandler can't handle vars"))
+}
+
+func (h *envHandler) Pushed(base *baseHandler) {
+	h.base = base
+	h.current = ""
+	h.needsCurrent = true
+	h.env = make(map[string]any)
 }
 
 // ------------------------------------------------------------

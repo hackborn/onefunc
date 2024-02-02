@@ -8,12 +8,16 @@ import (
 	"github.com/hackborn/onefunc/assign"
 )
 
+// Compile converts an expression into a Pipeline. It also supplies
+// the results of the expressions env() term, if anything -- this
+// has no functional impact, but serves as a form of documentation
+// to let clients discover what env vars the pipeline supports.
 func Compile(expr string) (*Pipeline, error) {
 	ast, err := parse(expr)
 	if err != nil {
 		return nil, err
 	}
-	pipeline := &Pipeline{}
+	pipeline := &Pipeline{env: ast.env}
 	nodes := make(map[string]*runningNode)
 	roots := make(map[string]compileRoot)
 	for i, nn := range ast.nodes {
