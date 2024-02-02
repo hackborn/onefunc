@@ -32,5 +32,5 @@ func (n *LoadFileNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipelin
 }
 
 func (n *LoadFileNode) filenamesGlob(glob string) ([]string, error) {
-	return filepath.Glob(glob)
+	return filepath.Glob(filepath.FromSlash(glob))
 }

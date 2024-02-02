@@ -31,7 +31,10 @@ func Run(p *Pipeline, input *RunInput, env map[string]any) (*RunOutput, error) {
 				return nil, err
 			}
 			// This node is done, flush it.
-			flushOutput, _ := n.node.Run(flushState, RunInput{})
+			flushOutput, err := n.node.Run(flushState, RunInput{})
+			if err != nil {
+				return nil, err
+			}
 			if flushOutput != nil && len(flushOutput.Pins) > 0 {
 				if output == nil || len(output.Pins) < 1 {
 					output = flushOutput

@@ -11,7 +11,13 @@ type Pipeline struct {
 // as a form of documentation to let clients discover what env vars
 // the pipeline supports.
 func (p Pipeline) Env() map[string]any {
-	return p.env
+	// There is an experimental maps package that has a Clone,
+	// but until that's in std do this.
+	env := make(map[string]any)
+	for k, v := range p.env {
+		env[k] = v
+	}
+	return env
 }
 
 type runningPin struct {

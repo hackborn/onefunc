@@ -15,14 +15,16 @@ type SaveFileNode struct {
 }
 
 func (n *SaveFileNode) Run(state *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
-	err := n.verify()
+	path := filepath.FromSlash(n.Path)
+	// fmt.Println("save", path, "inputs", len(input.Pins), "flush", state.Flush)
+	err := n.verify(path)
 	if err != nil {
 		return nil, err
 	}
 	for _, pin := range input.Pins {
 		switch p := pin.Payload.(type) {
 		case *pipeline.ContentData:
-			err = n.runContentPin(state, p)
+			err = n.runContentPin(state, p, path)
 			if err != nil {
 				return nil, err
 			}
@@ -31,18 +33,18 @@ func (n *SaveFileNode) Run(state *pipeline.State, input pipeline.RunInput) (*pip
 	return nil, nil
 }
 
-func (n *SaveFileNode) verify() error {
-	if _, err := os.Stat(n.Path); os.IsNotExist(err) {
-		return fmt.Errorf("SaveFileNode: path \"" + n.Path + "\"does not exist")
+func (n *SaveFileNode) verify(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return fmt.Errorf("SaveFileNode: path \"" + path + "\"does not exist")
 	}
 	return nil
 }
 
-func (n *SaveFileNode) runContentPin(state *pipeline.State, pin *pipeline.ContentData) error {
+func (n *SaveFileNode) runContentPin(state *pipeline.State, pin *pipeline.ContentData, path string) error {
 	if pin.Name == "" {
 		return fmt.Errorf("SaveFileNode: pin supplied with no name")
 	}
-	fn := filepath.Join(n.Path, pin.Name)
+	fn := filepath.Join(path, pin.Name)
 	content := []byte(pin.Data)
 	return os.WriteFile(fn, content, 0644)
 }
