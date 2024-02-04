@@ -21,12 +21,40 @@ type LoadFileNode struct {
 }
 
 func (n *LoadFileNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
-	filenames, err := n.getFilenames(n.Fs, n.Glob)
+	if n.Fs == "" {
+		return n.runLocal(s, input)
+	}
+	return n.runFs(s, input)
+}
+
+func (n *LoadFileNode) runFs(s *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
+	fsys, ok := pipeline.FindFs(n.Fs)
+	if !ok {
+		return nil, fmt.Errorf("LoadFileNode: no registered filesystem named \"%v\"", n.Fs)
+	}
+	matches, err := fs.Glob(fsys, n.Glob)
 	if err != nil {
 		return nil, err
 	}
 	output := pipeline.RunOutput{}
-	for _, fn := range filenames {
+	for _, fn := range matches {
+		dat, err := fs.ReadFile(fsys, fn)
+		if err != nil {
+			return nil, err
+		}
+		base := filepath.Base(fn)
+		output.Pins = append(output.Pins, pipeline.Pin{Payload: &pipeline.ContentData{Name: base, Data: string(dat)}})
+	}
+	return &output, nil
+}
+
+func (n *LoadFileNode) runLocal(s *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
+	matches, err := filepath.Glob(filepath.FromSlash(n.Glob))
+	if err != nil {
+		return nil, err
+	}
+	output := pipeline.RunOutput{}
+	for _, fn := range matches {
 		dat, err := os.ReadFile(fn)
 		if err != nil {
 			return nil, err
