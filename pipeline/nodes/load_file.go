@@ -1,6 +1,8 @@
 package nodes
 
 import (
+	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -8,11 +10,18 @@ import (
 )
 
 type LoadFileNode struct {
+	// Name of the filesystem to load from. If this is an
+	// empty string, the local filesystem is used. Otherwise
+	// the name must have been previously registered with
+	// RegisterFs.
+	Fs string
+
+	// Glob pattern used to select which files are loaded.
 	Glob string
 }
 
 func (n *LoadFileNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
-	filenames, err := n.filenamesGlob(n.Glob)
+	filenames, err := n.getFilenames(n.Fs, n.Glob)
 	if err != nil {
 		return nil, err
 	}
@@ -28,6 +37,13 @@ func (n *LoadFileNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipelin
 	return &output, nil
 }
 
-func (n *LoadFileNode) filenamesGlob(glob string) ([]string, error) {
-	return filepath.Glob(filepath.FromSlash(glob))
+func (n *LoadFileNode) getFilenames(fsname string, glob string) ([]string, error) {
+	if fsname == "" {
+		return filepath.Glob(filepath.FromSlash(glob))
+	}
+	fsys, ok := pipeline.FindFs(fsname)
+	if !ok {
+		return nil, fmt.Errorf("LoadFileNode: no registered filesystem named \"%v\"", fsname)
+	}
+	return fs.Glob(fsys, glob)
 }

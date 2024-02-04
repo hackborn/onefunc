@@ -30,12 +30,12 @@ func newRegistry() *registry {
 }
 
 type registry struct {
-	mu        sync.Mutex
+	lock      sync.Mutex
 	factories map[string]factory
 }
 
 func (r *registry) register(name string, f factory) error {
-	lock.Locker(&r.mu).Unlock()
+	lock.Locker(&r.lock).Unlock()
 	if _, ok := r.factories[name]; ok {
 		return fmt.Errorf("Node \"%v\" already registered", name)
 	}
@@ -52,7 +52,7 @@ func (r *registry) new(name string) (Runner, error) {
 }
 
 func (r *registry) get(name string) (factory, bool) {
-	lock.Locker(&r.mu).Unlock()
+	lock.Locker(&r.lock).Unlock()
 	f, ok := r.factories[name]
 	return f, ok
 }

@@ -1,6 +1,8 @@
 package nodes
 
 import (
+	"embed"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -83,7 +85,11 @@ func TestPipeline(t *testing.T) {
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Fields/0/Name=Id`}, nil},
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Fields/0/Tag="doc:''id, key''"`}, nil},
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct(Tag=doc))`, []string{`0/Payload/Fields/0/Tag="id, key"`}, nil},
+		{`graph (load(Glob="` + testDataShortGlob + `"))`, []string{`0/Payload/{type}="*ContentData"`, `0/Payload/Data="a"`}, nil},
+		{`graph (load(Fs="test", Glob="` + testEmbedShortGlob + `"))`, []string{`0/Payload/{type}="*ContentData"`, `0/Payload/Data="a"`}, nil},
 		{`graph (anna -> regexp(Target="Content.Name",Expr="be"))`, []string{`0/Payload/{type}="*ContentData"`, `0/Payload/Name="Annath"`}, nil},
+		// Errors
+		{`graph (load(Fs="-"))`, nil, fmt.Errorf("no filesystem")},
 	}
 	for i, v := range table {
 		p, err := pipeline.Compile(v.pipeline)
@@ -125,6 +131,8 @@ func (n *contentSrcNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipel
 // LIFECYCLE
 
 func setupTests() {
+	pipeline.RegisterFs("test", testdataFs)
+
 	pipeline.RegisterNode("anna", func() pipeline.Runner {
 		n := &contentSrcNode{}
 		n.data = append(n.data, &pipeline.ContentData{Name: "Annabeth", Data: "born 2002 of fair skin and stout heart"})
@@ -132,8 +140,12 @@ func setupTests() {
 	})
 }
 
+//go:embed test_data/*
+var testdataFs embed.FS
+
 // Globs
 var (
 	testDataDomainGlob = filepath.Join(".", "test_data", "domain_*")
 	testDataShortGlob  = filepath.Join(".", "test_data", "short_*")
+	testEmbedShortGlob = "test_data/short_*"
 )
