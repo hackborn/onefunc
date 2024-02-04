@@ -26,7 +26,7 @@ type runningPin struct {
 }
 
 type runningNode struct {
-	node          Node
+	node          Runner
 	inputCount    int
 	maxInputCount int
 	input         RunInput

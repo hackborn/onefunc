@@ -21,7 +21,6 @@ func Run(p *Pipeline, input *RunInput, env map[string]any) (*RunOutput, error) {
 	}
 	//	fmt.Println("pipeline running, roots", len(p.roots), "active", len(active))
 	state := &State{}
-	flushState := &State{Flush: true}
 	finalOutput := RunOutput{}
 	for len(active) > 0 {
 		var nextNodesMap map[*runningNode]struct{}
@@ -30,17 +29,10 @@ func Run(p *Pipeline, input *RunInput, env map[string]any) (*RunOutput, error) {
 			if err != nil {
 				return nil, err
 			}
-			// This node is done, flush it.
-			flushOutput, err := n.node.Run(flushState, RunInput{})
+			// This node is done processing, flush it.
+			output, err = flush(state, n.node, output)
 			if err != nil {
 				return nil, err
-			}
-			if flushOutput != nil && len(flushOutput.Pins) > 0 {
-				if output == nil || len(output.Pins) < 1 {
-					output = flushOutput
-				} else {
-					output.Pins = append(output.Pins, flushOutput.Pins...)
-				}
 			}
 
 			if len(n.output) > 0 {
@@ -117,6 +109,25 @@ func prepareNodeForRun(rn *runningNode, env map[string]any) error {
 		return assign.Values(req, rn.node)
 	}
 	return nil
+}
+
+func flush(state *State, node Runner, output *RunOutput) (*RunOutput, error) {
+	flushnode, ok := node.(Flusher)
+	if !ok {
+		return output, nil
+	}
+	flushOutput, err := flushnode.Flush(state)
+	if err != nil {
+		return output, err
+	}
+	if flushOutput != nil && len(flushOutput.Pins) > 0 {
+		if output == nil || len(output.Pins) < 1 {
+			output = flushOutput
+		} else {
+			output.Pins = append(output.Pins, flushOutput.Pins...)
+		}
+	}
+	return output, nil
 }
 
 func mapAt(key string, m map[string]any) (any, bool) {

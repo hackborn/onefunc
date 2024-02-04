@@ -114,9 +114,6 @@ type contentSrcNode struct {
 }
 
 func (n *contentSrcNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
-	if s.Flush == true {
-		return nil, nil
-	}
 	output := pipeline.RunOutput{}
 	for _, cd := range n.data {
 		output.Pins = append(output.Pins, pipeline.Pin{Payload: cd})
@@ -128,7 +125,7 @@ func (n *contentSrcNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipel
 // LIFECYCLE
 
 func setupTests() {
-	pipeline.RegisterNode("anna", func() pipeline.Node {
+	pipeline.RegisterNode("anna", func() pipeline.Runner {
 		n := &contentSrcNode{}
 		n.data = append(n.data, &pipeline.ContentData{Name: "Annabeth", Data: "born 2002 of fair skin and stout heart"})
 		return n

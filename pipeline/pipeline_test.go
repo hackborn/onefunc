@@ -260,17 +260,18 @@ type nodeNc struct {
 }
 
 func (n *nodeNc) Run(s *State, input RunInput) (*RunOutput, error) {
-	out := RunOutput{}
-	if s.Flush == true {
-		out.Pins = append(out.Pins, Pin{Payload: &stringData{s: n.accum + n.S}})
-		return &out, nil
-	}
 	for _, p := range input.Pins {
 		switch pt := p.Payload.(type) {
 		case *stringData:
 			n.accum += pt.s
 		}
 	}
+	return nil, nil
+}
+
+func (n *nodeNc) Flush(s *State) (*RunOutput, error) {
+	out := RunOutput{}
+	out.Pins = append(out.Pins, Pin{Payload: &stringData{s: n.accum + n.S}})
 	return &out, nil
 }
 
@@ -278,24 +279,24 @@ func (n *nodeNc) Run(s *State, input RunInput) (*RunOutput, error) {
 // LIFECYCLE
 
 func setupTests() {
-	RegisterNode("na", func() Node {
+	RegisterNode("na", func() Runner {
 		return &nodeNa{}
 	})
-	RegisterNode("nb", func() Node {
+	RegisterNode("nb", func() Runner {
 		return &nodeNb{}
 	})
-	RegisterNode("nc", func() Node {
+	RegisterNode("nc", func() Runner {
 		return &nodeNc{}
 	})
 
 	// Aliases
-	RegisterNode("na1", func() Node {
+	RegisterNode("na1", func() Runner {
 		return &nodeNa{}
 	})
-	RegisterNode("na2", func() Node {
+	RegisterNode("na2", func() Runner {
 		return &nodeNa{}
 	})
-	RegisterNode("na3", func() Node {
+	RegisterNode("na3", func() Runner {
 		return &nodeNa{}
 	})
 }

@@ -12,9 +12,6 @@ type LoadFileNode struct {
 }
 
 func (n *LoadFileNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
-	if s.Flush == true {
-		return nil, nil
-	}
 	filenames, err := n.filenamesGlob(n.Glob)
 	if err != nil {
 		return nil, err

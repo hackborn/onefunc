@@ -33,9 +33,6 @@ type RegexpNode struct {
 }
 
 func (n *RegexpNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
-	if s.Flush == true {
-		return nil, nil
-	}
 	re, runFn, setFn, err := n.prepare()
 	if err != nil {
 		return nil, err

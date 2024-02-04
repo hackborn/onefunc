@@ -8,14 +8,14 @@ import (
 	"github.com/hackborn/onefunc/lock"
 )
 
-type NewNodeFunc func() Node
+type NewNodeFunc func() Runner
 
 func RegisterNode(name string, newfunc NewNodeFunc) error {
 	name = strings.ToLower(name)
 	return reg.register(name, factory{newfunc: newfunc})
 }
 
-func newNode(name string) (Node, error) {
+func newNode(name string) (Runner, error) {
 	name = strings.ToLower(name)
 	return reg.new(name)
 }
@@ -43,7 +43,7 @@ func (r *registry) register(name string, f factory) error {
 	return nil
 }
 
-func (r *registry) new(name string) (Node, error) {
+func (r *registry) new(name string) (Runner, error) {
 	f, ok := r.get(name)
 	if !ok {
 		return nil, fmt.Errorf("Node \"%v\" is not registered", name)

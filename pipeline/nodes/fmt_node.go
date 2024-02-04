@@ -12,11 +12,7 @@ type FmtNode struct {
 }
 
 func (n *FmtNode) Run(state *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
-	flushing := ""
-	if state.Flush {
-		flushing = " (flush)"
-	}
-	fmt.Println("fmt input pins:", len(input.Pins), flushing)
+	fmt.Println("fmt run input pins:", len(input.Pins))
 	for _, pin := range input.Pins {
 		switch p := pin.Payload.(type) {
 		case *pipeline.ContentData:

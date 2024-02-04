@@ -1,11 +1,17 @@
 package pipeline
 
-// Node is a processing node in the pipeline.
-// Nodes can also implement io.Closer to handle
-// any post-run behaviour.
-type Node interface {
+// Runner is the minimal interface for a node in a pipeline.
+// Optional interfaces:
+// * Flusher
+type Runner interface {
 	// Run the supplied pins, producing output pins or an error.
 	Run(*State, RunInput) (*RunOutput, error)
+}
+
+// Flusher implements a flush operation.
+type Flusher interface {
+	// Flush any data in the node.
+	Flush(*State) (*RunOutput, error)
 }
 
 func NewInput(pins ...Pin) RunInput {
