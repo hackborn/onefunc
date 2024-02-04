@@ -11,6 +11,9 @@ func init() {
 	pipeline.RegisterNode("load", func() pipeline.Node {
 		return &LoadFileNode{}
 	})
+	pipeline.RegisterNode("regexp", func() pipeline.Node {
+		return &RegexpNode{}
+	})
 	pipeline.RegisterNode("save", func() pipeline.Node {
 		return &SaveFileNode{}
 	})

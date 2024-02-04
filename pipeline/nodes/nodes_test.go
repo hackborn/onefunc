@@ -1,13 +1,19 @@
 package nodes
 
 import (
-	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/hackborn/onefunc/jacl"
 	"github.com/hackborn/onefunc/pipeline"
 )
+
+func TestMain(m *testing.M) {
+	setupTests()
+	code := m.Run()
+	os.Exit(code)
+}
 
 // ---------------------------------------------------------
 // TEST-FILTER-TAG
@@ -50,7 +56,6 @@ func TestLoad(t *testing.T) {
 			t.Fatalf("TestLoadFile %v compile err %v", i, err)
 		}
 		output, haveErr := pipeline.Run(p, nil, nil)
-		fmt.Println("output", output)
 		var cmpErr error
 		if output != nil {
 			cmpErr = jacl.Run(output.Pins, v.cmp...)
@@ -78,6 +83,7 @@ func TestPipeline(t *testing.T) {
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Fields/0/Name=Id`}, nil},
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Fields/0/Tag="doc:''id, key''"`}, nil},
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct(Tag=doc))`, []string{`0/Payload/Fields/0/Tag="id, key"`}, nil},
+		{`graph (anna -> regexp(Target="Content.Name",Expr="be"))`, []string{`0/Payload/{type}="*ContentData"`, `0/Payload/Name="Annath"`}, nil},
 	}
 	for i, v := range table {
 		p, err := pipeline.Compile(v.pipeline)
@@ -101,6 +107,33 @@ func TestPipeline(t *testing.T) {
 
 // ---------------------------------------------------------
 // SUPPORT
+
+// contentSrcNode can be used to generate ContentData.
+type contentSrcNode struct {
+	data []*pipeline.ContentData
+}
+
+func (n *contentSrcNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
+	if s.Flush == true {
+		return nil, nil
+	}
+	output := pipeline.RunOutput{}
+	for _, cd := range n.data {
+		output.Pins = append(output.Pins, pipeline.Pin{Payload: cd})
+	}
+	return &output, nil
+}
+
+// ---------------------------------------------------------
+// LIFECYCLE
+
+func setupTests() {
+	pipeline.RegisterNode("anna", func() pipeline.Node {
+		n := &contentSrcNode{}
+		n.data = append(n.data, &pipeline.ContentData{Name: "Annabeth", Data: "born 2002 of fair skin and stout heart"})
+		return n
+	})
+}
 
 // Globs
 var (
