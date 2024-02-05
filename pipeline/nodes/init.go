@@ -5,19 +5,19 @@ import (
 )
 
 func init() {
-	pipeline.RegisterNode("fmt", func() pipeline.Runner {
+	pipeline.RegisterNode("fmt", func() pipeline.Node {
 		return &FmtNode{}
 	})
-	pipeline.RegisterNode("load", func() pipeline.Runner {
+	pipeline.RegisterNode("load", func() pipeline.Node {
 		return &LoadFileNode{}
 	})
-	pipeline.RegisterNode("regexp", func() pipeline.Runner {
+	pipeline.RegisterNode("regexp", func() pipeline.Node {
 		return &RegexpNode{}
 	})
-	pipeline.RegisterNode("save", func() pipeline.Runner {
+	pipeline.RegisterNode("save", func() pipeline.Node {
 		return &SaveFileNode{}
 	})
-	pipeline.RegisterNode("struct", func() pipeline.Runner {
+	pipeline.RegisterNode("struct", func() pipeline.Node {
 		return &StructNode{}
 	})
 }

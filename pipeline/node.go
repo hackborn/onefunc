@@ -1,8 +1,13 @@
 package pipeline
 
-// Runner is the minimal interface for a node in a pipeline.
+// Node is a single processor in the pipeline graph.
 // Optional interfaces:
 // * Flusher
+type Node interface {
+	Runner
+}
+
+// Runner processes input.
 type Runner interface {
 	// Run the supplied pins, producing output pins or an error.
 	Run(*State, RunInput) (*RunOutput, error)

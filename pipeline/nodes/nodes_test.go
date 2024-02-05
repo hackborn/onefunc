@@ -133,7 +133,7 @@ func (n *contentSrcNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipel
 func setupTests() {
 	pipeline.RegisterFs("test", testdataFs)
 
-	pipeline.RegisterNode("anna", func() pipeline.Runner {
+	pipeline.RegisterNode("anna", func() pipeline.Node {
 		n := &contentSrcNode{}
 		n.data = append(n.data, &pipeline.ContentData{Name: "Annabeth", Data: "born 2002 of fair skin and stout heart"})
 		return n

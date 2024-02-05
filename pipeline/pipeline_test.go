@@ -279,24 +279,24 @@ func (n *nodeNc) Flush(s *State) (*RunOutput, error) {
 // LIFECYCLE
 
 func setupTests() {
-	RegisterNode("na", func() Runner {
+	RegisterNode("na", func() Node {
 		return &nodeNa{}
 	})
-	RegisterNode("nb", func() Runner {
+	RegisterNode("nb", func() Node {
 		return &nodeNb{}
 	})
-	RegisterNode("nc", func() Runner {
+	RegisterNode("nc", func() Node {
 		return &nodeNc{}
 	})
 
 	// Aliases
-	RegisterNode("na1", func() Runner {
+	RegisterNode("na1", func() Node {
 		return &nodeNa{}
 	})
-	RegisterNode("na2", func() Runner {
+	RegisterNode("na2", func() Node {
 		return &nodeNa{}
 	})
-	RegisterNode("na3", func() Runner {
+	RegisterNode("na3", func() Node {
 		return &nodeNa{}
 	})
 }
