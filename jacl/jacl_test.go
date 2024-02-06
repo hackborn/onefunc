@@ -18,6 +18,8 @@ func TestRun(t *testing.T) {
 		{Field{}, []string{`{type}="Field"`}, nil},
 		{&Field{}, []string{`{type}="*Field"`}, nil},
 		{map1, []string{`a/Name=blip`}, nil},
+		{map2, []string{`a/b/Name=dash`}, nil},
+		{map2, []string{`a/""/Name=found`}, nil},
 		// Errors
 		{[]Field{{Name: "a"}}, []string{`1/Name=a`}, fmt.Errorf("out of range")},
 	}
@@ -75,5 +77,12 @@ type Field struct {
 var (
 	map1 = map[string]Field{
 		"a": Field{Name: "blip", SV: "bloop"},
+	}
+
+	map2 = map[string]map[string]Field{
+		"a": map[string]Field{
+			"":  Field{Name: "found"},
+			"b": Field{Name: "dash"},
+		},
 	}
 )
