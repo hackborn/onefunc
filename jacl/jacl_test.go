@@ -7,7 +7,7 @@ import (
 
 // ---------------------------------------------------------
 // TEST-RUN
-func _TestRun(t *testing.T) {
+func TestRun(t *testing.T) {
 	table := []struct {
 		dst     any
 		exprs   []string
@@ -17,6 +17,7 @@ func _TestRun(t *testing.T) {
 		{[]Field{{Name: "a"}}, []string{`0/Name=a`}, nil},
 		{Field{}, []string{`{type}="Field"`}, nil},
 		{&Field{}, []string{`{type}="*Field"`}, nil},
+		{map1, []string{`a/Name=blip`}, nil},
 		// Errors
 		{[]Field{{Name: "a"}}, []string{`1/Name=a`}, fmt.Errorf("out of range")},
 	}
@@ -70,3 +71,9 @@ type Field struct {
 	IV   int
 	SV   string
 }
+
+var (
+	map1 = map[string]Field{
+		"a": Field{Name: "blip", SV: "bloop"},
+	}
+)

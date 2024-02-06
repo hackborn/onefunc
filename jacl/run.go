@@ -188,17 +188,30 @@ func (r *runner) handlePathString(s string) error {
 		elem := targetValue.Elem()
 		r.target = elem.Interface()
 		return r.handlePathString(s)
+	case reflect.Map:
+		return r.handlePathStringOnMap(s)
 	default:
 		return fmt.Errorf("Can't navigate to string \"%v\" on kind %v", s, targetValue.Kind())
 	}
 }
 
 func (r *runner) handlePathStringOnStruct(fieldName string) error {
-	// We know r.dst is Kind struct
+	// We know r.target is Kind struct
 	structValue := reflect.ValueOf(r.target)
 	field := structValue.FieldByName(fieldName)
 	if !field.IsValid() {
-		return fmt.Errorf("no field for %v on %v", fieldName, r.target)
+		return fmt.Errorf("no field for %v on struct %v", fieldName, r.target)
+	}
+	r.target = field.Interface()
+	return nil
+}
+
+func (r *runner) handlePathStringOnMap(fieldName string) error {
+	// We know r.target is Kind map
+	mapValue := reflect.ValueOf(r.target)
+	field := mapValue.MapIndex(reflect.ValueOf(fieldName))
+	if !field.IsValid() {
+		return fmt.Errorf("no field for %v on map %v", fieldName, r.target)
 	}
 	r.target = field.Interface()
 	return nil
