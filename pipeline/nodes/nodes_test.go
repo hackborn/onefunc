@@ -81,6 +81,7 @@ func TestPipeline(t *testing.T) {
 		wantErr  error
 	}{
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/{type}="*StructData"`, `1/Payload/{type}="*StructData"`}, nil},
+		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Fields/0/Type=string`}, nil},
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Name=Company`, `1/Payload/Name=Filing`}, nil},
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Fields/0/Name=Id`}, nil},
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Fields/0/Tag="doc:''id, key''"`}, nil},

@@ -18,8 +18,6 @@ type StructField struct {
 	Type string
 	// Tag data for the field.
 	Tag string
-	// The name assigned by the tag (or the Name, if no tag).
-	//	TagName string
 }
 
 // ContentData provides a generic content string.
