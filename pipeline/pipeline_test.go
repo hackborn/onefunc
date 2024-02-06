@@ -58,7 +58,10 @@ func TestParser(t *testing.T) {
 		{`graph ( na -> nb )`, `graph (na -> nb)`, nil},
 		{`graph ( na s -> nb )`, `graph (na s -> nb)`, nil},
 		{`graph ( na/s -> nb )`, `graph (na/s -> nb)`, nil},
-		{`graph ( na -pa> nb )`, `graph (na -pa> nb)`, nil},
+		{`graph ( na ---> nb )`, `graph (na -> nb)`, nil},
+		{`graph ( na <- nb )`, `graph (nb -> na)`, nil},
+		{`graph ( na <--- nb )`, `graph (nb -> na)`, nil},
+		{`graph ( na -> nc <- nb)`, `graph (na -> nc nb -> nc)`, nil},
 		{`graph ( na/a -> nb )`, `graph (na/a -> nb)`, nil},
 		{`graph (na(S=f))`, `graph (na) vars (na/S=f)`, nil},
 		{`graph (na/a na/b)`, `graph (na/a na/b)`, nil},
@@ -71,6 +74,7 @@ func TestParser(t *testing.T) {
 		{`graph (na) env (Path=$Path)`, `graph (na) env (Path=$Path)`, nil},
 		// Errors
 		{`graph (na`, ``, newSyntaxError("")},
+		{`graph ( na -- -> nb )`, ``, fmt.Errorf("no whitespace in right pins")},
 	}
 	for i, v := range table {
 		ast, haveErr := parse(v.pipeline)
@@ -203,7 +207,7 @@ func (h *fmtTokenHandler) HandleToken(t token) {
 func (h *fmtTokenHandler) HandleVars(s varState) {
 }
 
-func (h *fmtTokenHandler) Pushed(base *baseHandler) {
+func (h *fmtTokenHandler) Pushed() {
 }
 
 // ---------------------------------------------------------

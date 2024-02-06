@@ -9,16 +9,6 @@ import (
 	"github.com/hackborn/onefunc/errors"
 )
 
-type tokenType int
-
-const (
-	stringToken tokenType = iota
-	floatToken
-	intToken
-	identToken
-	whitespaceToken
-)
-
 type token struct {
 	tt   tokenType
 	text string
@@ -38,7 +28,7 @@ type parser struct {
 }
 
 func (p *parser) parse(input string) (astPipeline, error) {
-	h := &baseHandler{}
+	h := newBaseHandler()
 	h.AddError(p.scan(input, h))
 	h.finished()
 	if h.Err != nil {
@@ -97,7 +87,7 @@ func (p *parser) isIdentRune(ch rune, i int) bool {
 type tokenHandler interface {
 	HandleToken(t token)
 	HandleVars(s varState)
-	Pushed(base *baseHandler)
+	Pushed()
 }
 
 // baseHandler supplies the rules for turning tokens into AST nodes.
@@ -108,8 +98,18 @@ type baseHandler struct {
 
 	// Cached handlers. Push these onto the stack when needed.
 	graph      graphHandler
+	pinHandler pinHandler
 	vars       varsHandler
 	envHandler envHandler
+}
+
+func newBaseHandler() *baseHandler {
+	h := &baseHandler{}
+	h.graph.base = h
+	h.pinHandler.base = h
+	h.vars.base = h
+	h.envHandler.base = h
+	return h
 }
 
 func (h *baseHandler) AddError(e error) {
@@ -135,13 +135,13 @@ func (h *baseHandler) HandleToken(t token) {
 func (h *baseHandler) HandleVars(s varState) {
 }
 
-func (h *baseHandler) Pushed(base *baseHandler) {
+func (h *baseHandler) Pushed() {
 	h.AddError(fmt.Errorf("Illegal push on base handler"))
 }
 
 func (h *baseHandler) push(th tokenHandler) {
 	h.stack = append(h.stack, th)
-	th.Pushed(h)
+	th.Pushed()
 }
 
 func (h *baseHandler) pop(fn poppedFunc) {
@@ -193,20 +193,9 @@ func (h *graphHandler) HandleToken(t token) {
 		h.flush()
 		h.base.pop(nil)
 	case "-":
-		h.flush()
-		if h.current.node == nil {
-			h.base.AddError(fmt.Errorf("illegal syntax, missing node before pin"))
-			return
-		}
-		h.base.stack = append(h.base.stack, &pinHandler{base: h.base, currentNode: h.current.node})
-		h.current = currentObj{}
-	case "->":
-		h.flush()
-		if h.current.node == nil {
-			h.base.AddError(fmt.Errorf("illegal syntax, missing node before pin"))
-			return
-		}
-		h.pushNewPin(&astPin{fromNode: h.current.node.nodeName})
+		h.pushPinHandler(pinRight)
+	case "<":
+		h.pushPinHandler(pinLeft)
 	default:
 		h.currentName += t.text
 	}
@@ -228,8 +217,7 @@ func (h *graphHandler) handleVarsOnNode(s varState, n *astNode) {
 func (h *graphHandler) handleVarsOnPin(s varState, n *astPin) {
 }
 
-func (h *graphHandler) Pushed(base *baseHandler) {
-	h.base = base
+func (h *graphHandler) Pushed() {
 	h.handledOpen = false
 	h.current = currentObj{}
 	h.currentName = ""
@@ -257,13 +245,27 @@ func (h *graphHandler) pushNewNode(node *astNode) {
 	h.nodePushed = h.nullNodePushed
 }
 
-func (h *graphHandler) pushNewPin(pin *astPin) {
+func (h *graphHandler) pushPinHandler(dir pinDirection) {
+	h.flush()
+	if h.current.node == nil {
+		h.base.AddError(fmt.Errorf("illegal syntax, missing node before pin"))
+		return
+	}
+	h.base.pinHandler.push(dir, h.current.node)
+	h.current = currentObj{}
+}
+
+func (h *graphHandler) pushNewPin(pin *astPin, dir pinDirection) {
 	h.current = currentObj{pin: pin}
 	h.base.pins = append(h.base.pins, pin)
 	h.nodePushed = func(n *astNode) {
 		// This happens when a node is pushed that the current
 		// pin is connected to. Hook up the connection.
-		pin.toNode = n.nodeName
+		if dir == pinRight {
+			pin.toNode = n.nodeName
+		} else {
+			pin.fromNode = n.nodeName
+		}
 	}
 }
 
@@ -274,33 +276,57 @@ func (h *graphHandler) nullNodePushed(n *astNode) {
 type pinHandler struct {
 	base *baseHandler
 
+	dir         pinDirection
 	currentNode *astNode
-	pinName     string
 }
 
 func (h *pinHandler) HandleToken(t token) {
 	txt := strings.ToLower(t.text)
 	switch txt {
+	case "":
+		if h.dir == pinRight {
+			h.base.AddError(fmt.Errorf("Invalid syntax: \"%v\" not allowed in pin", t.text))
+		} else {
+			h.pop()
+		}
+	case "-":
 	case ">":
-		pin := &astPin{pinName: h.pinName, fromNode: h.currentNode.nodeName}
-		h.base.pop(func(t tokenHandler) {
-			h.onPoppedFunc(pin, t)
-		})
+		h.pop()
 	default:
-		h.pinName += t.text
+		h.base.AddError(fmt.Errorf("Invalid syntax: \"%v\" not allowed in pin", t.text))
 	}
 }
 
 func (h *pinHandler) HandleVars(s varState) {
 }
 
-func (h *pinHandler) Pushed(base *baseHandler) {
+func (h *pinHandler) Pushed() {
 }
 
-func (h *pinHandler) onPoppedFunc(pin *astPin, t tokenHandler) {
-	if g, ok := t.(*graphHandler); ok {
-		g.pushNewPin(pin)
+func (h *pinHandler) pop() {
+	pin := &astPin{}
+	if h.dir == pinRight {
+		pin.fromNode = h.currentNode.nodeName
+	} else if h.dir == pinLeft {
+		pin.toNode = h.currentNode.nodeName
+	} else {
+		h.base.AddError(fmt.Errorf("Unknown pin direction: %v", h.dir))
 	}
+	h.base.pop(h.newOnPoppedFunc(pin, h.dir))
+}
+
+func (h *pinHandler) newOnPoppedFunc(pin *astPin, dir pinDirection) func(tokenHandler) {
+	return func(t tokenHandler) {
+		if g, ok := t.(*graphHandler); ok {
+			g.pushNewPin(pin, dir)
+		}
+	}
+}
+
+func (h *pinHandler) push(dir pinDirection, currentNode *astNode) {
+	h.dir = dir
+	h.currentNode = currentNode
+	h.base.push(h)
 }
 
 // varsHandler
@@ -341,8 +367,7 @@ func (h *varsHandler) HandleVars(s varState) {
 	h.base.AddError(fmt.Errorf("varsHandler can't handle vars"))
 }
 
-func (h *varsHandler) Pushed(base *baseHandler) {
-	h.base = base
+func (h *varsHandler) Pushed() {
 	h.current = ""
 	h.needsCurrent = true
 	h.vars = make(map[string]any)
@@ -382,8 +407,7 @@ func (h *envHandler) HandleVars(s varState) {
 	h.base.AddError(fmt.Errorf("envHandler can't handle vars"))
 }
 
-func (h *envHandler) Pushed(base *baseHandler) {
-	h.base = base
+func (h *envHandler) Pushed() {
 	h.current = ""
 	h.needsCurrent = true
 	h.env = make(map[string]any)
@@ -414,3 +438,23 @@ type poppedFunc func(h tokenHandler)
 
 // nodePushedFunc is called when a new node is pushed on the graph.
 type nodePushedFunc func(n *astNode)
+
+// ------------------------------------------------------------
+// CONST
+
+type tokenType int
+
+const (
+	stringToken tokenType = iota
+	floatToken
+	intToken
+	identToken
+	whitespaceToken
+)
+
+type pinDirection int
+
+const (
+	pinRight pinDirection = iota
+	pinLeft
+)

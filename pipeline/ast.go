@@ -16,7 +16,6 @@ type astNode struct {
 
 // astPin stores an abstract pin from a parse.
 type astPin struct {
-	pinName          string
 	fromNode, toNode string
 }
 
@@ -59,9 +58,7 @@ func (t astPipeline) print() string {
 			}
 			w.WriteString(pin.fromNode)
 		}
-		w.WriteString(" -")
-		w.WriteString(pin.pinName)
-		w.WriteString("> ")
+		w.WriteString(" -> ")
 		w.WriteString(pin.toNode)
 		lastNode = pin.toNode
 	}
