@@ -57,10 +57,11 @@ func From(s any, h Handler) {
 		len := rType.NumField()
 
 		for i := 0; i < len; i++ {
-			typeField := rType.Field(i)
 			valueField := rValue.Field(i)
-
-			h.Handle(typeField.Name, valueField.Interface())
+			if valueField.CanInterface() {
+				typeField := rType.Field(i)
+				h.Handle(typeField.Name, valueField.Interface())
+			}
 		}
 	}
 }

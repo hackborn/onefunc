@@ -24,6 +24,7 @@ func TestFrom(t *testing.T) {
 		{Data2{A: "n", B: 10}, NewChain(FilterMapOpts{F: filterMap1, Passthrough: true}, newHandler1()), `{"B":10,"name":"n"}`},
 		{Data1{A: "n"}, &pairHandler{}, `["A"],["n"]`},
 		{Data1{A: "n"}, NewChain(filterMap1, &pairHandler{}), `["name"],["n"]`},
+		{Data3{A: "n"}, newHandler1(), `{"A":"n","B":0}`},
 	}
 	for i, v := range table {
 		From(v.src, v.handler)
@@ -157,6 +158,12 @@ type Data1 struct {
 type Data2 struct {
 	A string
 	B int
+}
+
+type Data3 struct {
+	A     string
+	B     int
+	_priv string
 }
 
 func newHandler1() Handler {
