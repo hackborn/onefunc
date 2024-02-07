@@ -1,14 +1,22 @@
 package pipeline
 
-func NewStructData(name string, fields []StructField) *StructData {
-	return &StructData{Name: name, Fields: fields}
+func NewStructData(name string, fields []StructField, unexportedFields []StructField) *StructData {
+	return &StructData{Name: name, Fields: fields, UnexportedFields: unexportedFields}
 }
 
 // StructData provides information about a single struct from
 // source data.
 type StructData struct {
-	Name   string
+	// The name of the source struct.
+	Name string
+
+	// All exported fields in the struct.
 	Fields []StructField
+
+	// All unexported fields in the struct. It should be rare
+	// for a client to want access to these fields, so we keep
+	// them in a separate slice to avoid polluting the fields list.
+	UnexportedFields []StructField
 }
 
 type StructField struct {

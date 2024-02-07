@@ -59,6 +59,7 @@ func (n *StructNode) readAst(file *astpkg.File, output *pipeline.RunOutput) erro
 func newStructData(spec *astpkg.TypeSpec, structType *astpkg.StructType, tagFilter string) *pipeline.StructData {
 	name := spec.Name.Name
 	fields := make([]pipeline.StructField, 0, len(structType.Fields.List))
+	unexportedFields := make([]pipeline.StructField, 0, len(structType.Fields.List))
 
 	// Iterate over struct fields
 	for _, field := range structType.Fields.List {
@@ -75,9 +76,13 @@ func newStructData(spec *astpkg.TypeSpec, structType *astpkg.StructType, tagFilt
 			}
 		}
 		sf.Tag = tag
-		fields = append(fields, sf)
+		if astpkg.IsExported(sf.Name) {
+			fields = append(fields, sf)
+		} else {
+			unexportedFields = append(unexportedFields, sf)
+		}
 	}
-	return pipeline.NewStructData(name, fields)
+	return pipeline.NewStructData(name, fields, unexportedFields)
 }
 
 // filterTag takes a tag string and finds the filter

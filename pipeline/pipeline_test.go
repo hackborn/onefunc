@@ -154,7 +154,7 @@ func runAsString(expr, input string, env map[string]any) ([]string, error) {
 
 // ---------------------------------------------------------
 // BENCHMARK-PARSER
-func BenchmarkParser(b *testing.B) {
+func __BenchmarkParser(b *testing.B) {
 	const input string = `graph (na -> nb)`
 	for n := 0; n < b.N; n++ {
 		parse(input)
@@ -163,10 +163,24 @@ func BenchmarkParser(b *testing.B) {
 
 // ---------------------------------------------------------
 // BENCHMARK-RUN-AS-STRING
-func BenchmarkRunAsString(b *testing.B) {
-	const input string = `graph (na(S=!))`
+func __BenchmarkRunAsString(b *testing.B) {
+	const expr string = `graph (na(S=!))`
 	for n := 0; n < b.N; n++ {
-		runAsString(input, "hi", nil)
+		runAsString(expr, "hi", nil)
+	}
+}
+
+// ---------------------------------------------------------
+// BENCHMARK-PRECOMPILE-AND-RUN
+func BenchmarkPrecompileAndRun(b *testing.B) {
+	const expr string = `graph (na(S=!))`
+	input := NewInput(Pin{Payload: &stringData{s: "hi"}})
+	p, err := Compile(expr)
+	if err != nil {
+		b.Fatalf("compile err: %v", err)
+	}
+	for n := 0; n < b.N; n++ {
+		Run(p, &input, nil)
 	}
 }
 
@@ -226,12 +240,15 @@ type nodeNa struct {
 }
 
 func (n *nodeNa) Run(s *State, input RunInput) (*RunOutput, error) {
+	// Process all items, passing through any types I don't handle.
 	out := RunOutput{}
-	//	fmt.Println("Input len", len(input.Pins))
+	out.Pins = make([]Pin, 0, len(input.Pins))
 	for _, p := range input.Pins {
 		switch pt := p.Payload.(type) {
 		case *stringData:
 			out.Pins = append(out.Pins, Pin{Payload: &stringData{s: pt.s + n.S}})
+		default:
+			out.Pins = append(out.Pins, p)
 		}
 	}
 	return &out, nil

@@ -85,6 +85,7 @@ func TestPipeline(t *testing.T) {
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Name=Company`, `1/Payload/Name=Filing`}, nil},
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Fields/0/Name=Id`}, nil},
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Fields/0/Tag="doc:''id, key''"`}, nil},
+		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/UnexportedFields/0/Name="_private"`, `0/Payload/UnexportedFields/0/Tag="json:''-''"`}, nil},
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct(Tag=doc))`, []string{`0/Payload/Fields/0/Tag="id, key"`}, nil},
 		{`graph (load(Glob="` + testDataShortGlob + `"))`, []string{`0/Payload/{type}="*ContentData"`, `0/Payload/Data="a"`}, nil},
 		{`graph (load(Fs="test", Glob="` + testEmbedShortGlob + `"))`, []string{`0/Payload/{type}="*ContentData"`, `0/Payload/Data="a"`}, nil},

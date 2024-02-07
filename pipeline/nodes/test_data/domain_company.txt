@@ -10,4 +10,7 @@ type Company struct {
 
 	// Value of the company (in some unknown units).
 	Value int64 `json:"val" doc:"val"`
+
+    // Private fields are included, but in a separate list.
+	_private int `json:"-"`
 }
