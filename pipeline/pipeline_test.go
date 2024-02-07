@@ -272,27 +272,31 @@ func (n *nodeNb) Run(s *State, input RunInput) (*RunOutput, error) {
 }
 
 // nodeNc accumulates string values without producing output.
-// When it receives a FlushData{}, it adds its string value to
-// the accumulation and sends out data.
+// On Flush() it adds its string value to he accumulation
+// and sends out data.
 type nodeNc struct {
 	S string
+}
 
+type nodeNcState struct {
 	accum string
 }
 
 func (n *nodeNc) Run(s *State, input RunInput) (*RunOutput, error) {
+	ns := GetNodeState[nodeNcState](n, s)
 	for _, p := range input.Pins {
 		switch pt := p.Payload.(type) {
 		case *stringData:
-			n.accum += pt.s
+			ns.accum += pt.s
 		}
 	}
 	return nil, nil
 }
 
 func (n *nodeNc) Flush(s *State) (*RunOutput, error) {
+	ns := GetNodeState[nodeNcState](n, s)
 	out := RunOutput{}
-	out.Pins = append(out.Pins, Pin{Payload: &stringData{s: n.accum + n.S}})
+	out.Pins = append(out.Pins, Pin{Payload: &stringData{s: ns.accum + n.S}})
 	return &out, nil
 }
 

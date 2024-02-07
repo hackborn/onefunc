@@ -1,6 +1,13 @@
 package pipeline
 
-// Node is a single processor in the pipeline graph.
+// Node is a single processor in the pipeline graph. It's basic
+// responsibility is to run an operation on some input, but it has
+// additional optional behaviour.
+//
+// Note that node implementations should be immutable and thread-safe.
+// If you have working state to persist beyond a single run, use
+// GetNodeState().
+//
 // Optional interfaces:
 // * Flusher
 type Node interface {
