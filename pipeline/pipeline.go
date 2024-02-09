@@ -26,7 +26,14 @@ type runningPin struct {
 }
 
 type runningNode struct {
-	node          Runner
+	node Runner
+
+	// nodeState will be either the result of StartNodeState() or the
+	// node itself, but never nil.
+	nodeState any
+	// hasNodeData is true if nodeState came from StartNodeState()
+	hasStartNodeState bool
+
 	inputCount    int
 	maxInputCount int
 	input         RunInput

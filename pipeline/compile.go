@@ -27,13 +27,21 @@ func Compile(expr string) (*Pipeline, error) {
 			return nil, err
 		}
 		rn := &runningNode{node: node, envVars: nn.envVars}
+		if starter, ok := node.(Starter); ok {
+			if rn.nodeState = starter.StartNodeState(); rn.nodeState != nil {
+				rn.hasStartNodeState = true
+			}
+		}
+		if rn.nodeState == nil {
+			rn.nodeState = node
+		}
 		nodes[nn.nodeName] = rn
 		roots[nn.nodeName] = compileRoot{index: i, node: rn}
 		pipeline.nodes = append(pipeline.nodes, rn)
 		// apply fixed vars
 		if len(nn.vars) > 0 {
 			req := assign.ValuesRequestFrom(nn.vars)
-			err = assign.Values(req, node)
+			err = assign.Values(req, rn.nodeState)
 			if err != nil {
 				return nil, err
 			}

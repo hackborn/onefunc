@@ -15,12 +15,12 @@ func RunExpr(expr string, input *RunInput, env map[string]any) (*RunOutput, erro
 }
 
 func Run(p *Pipeline, input *RunInput, env map[string]any) (*RunOutput, error) {
-	active, err := prepareForRun(p, input, env)
+	state := &State{}
+	active, err := preparePipelineForRun(p, state, input, env)
 	if err != nil {
 		return nil, err
 	}
 	//	fmt.Println("pipeline running, roots", len(p.roots), "active", len(active))
-	state := &State{}
 	finalOutput := RunOutput{}
 	for len(active) > 0 {
 		var nextNodesMap map[*runningNode]struct{}
@@ -60,7 +60,7 @@ func Run(p *Pipeline, input *RunInput, env map[string]any) (*RunOutput, error) {
 	return &finalOutput, nil
 }
 
-func prepareForRun(p *Pipeline, input *RunInput, env map[string]any) ([]*runningNode, error) {
+func preparePipelineForRun(p *Pipeline, state *State, input *RunInput, env map[string]any) ([]*runningNode, error) {
 	if len(p.roots) < 1 {
 		return nil, fmt.Errorf("No roots")
 	}
@@ -70,7 +70,7 @@ func prepareForRun(p *Pipeline, input *RunInput, env map[string]any) ([]*running
 		n.input.Pins = nil
 	}
 	for _, n := range p.nodes {
-		err := prepareNodeForRun(n, env)
+		err := prepareNodeForRun(n, state, env)
 		if err != nil {
 			return nil, err
 		}
@@ -86,10 +86,12 @@ func prepareForRun(p *Pipeline, input *RunInput, env map[string]any) ([]*running
 	return active, nil
 }
 
-func prepareNodeForRun(rn *runningNode, env map[string]any) error {
+func prepareNodeForRun(rn *runningNode, state *State, env map[string]any) error {
 	// Reset input accumulator
 	rn.inputCount = 0
-
+	if rn.hasStartNodeState {
+		setNodeState(rn.node, rn.nodeState, state)
+	}
 	// Apply env vars
 	envlen := len(rn.envVars)
 	if envlen > 0 {
@@ -106,7 +108,7 @@ func prepareNodeForRun(rn *runningNode, env map[string]any) error {
 				return fmt.Errorf("Missing environment variable \"%v\"", v)
 			}
 		}
-		return assign.Values(req, rn.node)
+		return assign.Values(req, rn.nodeState)
 	}
 	return nil
 }

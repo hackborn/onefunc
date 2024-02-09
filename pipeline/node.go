@@ -9,6 +9,7 @@ package pipeline
 // GetNodeState().
 //
 // Optional interfaces:
+// * Starter
 // * Flusher
 type Node interface {
 	Runner
@@ -18,6 +19,16 @@ type Node interface {
 type Runner interface {
 	// Run the supplied pins, producing output pins or an error.
 	Run(*State, RunInput) (*RunOutput, error)
+}
+
+// Starter is called at the start of a pipeline run. Implementing
+// starter, and placing all run state in a node state object,
+// will make your node thread-safe.
+type Starter interface {
+	// StartNodeData answers a data object that will have
+	// any env vars assigned. It will be available via
+	// GetNodeState().
+	StartNodeState() any
 }
 
 // Flusher implements a flush operation.

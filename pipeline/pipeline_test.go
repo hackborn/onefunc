@@ -102,7 +102,7 @@ func TestRunString(t *testing.T) {
 		{`graph (na(S=!))`, `hi`, nil, []string{`hi!`}, nil},
 		// XXX This doesn't work because we aren't generating unique names for nodes, but clearly this should be supported
 		//		{`graph (na(S=!) -> na(S=?))`, ``, nil, []string{`!?`}, nil},
-		{`graph (na/a(S=!) -> na/b(S=?))`, ``, nil, []string{`!?`}, nil},
+		{`graph (na/a(S="!") -> na/b(S=?))`, ``, nil, []string{`!?`}, nil},
 		{`graph (na/a(S=!) na/b(S=?))`, ``, nil, []string{`!`, `?`}, nil},
 		{`graph (na/a(S=a) na/b(S=b) na/c(S=c) na/d(S=d))`, ``, nil, []string{`a`, `b`, `c`, `d`}, nil},
 		{`graph (nb(S1=a, S2=b))`, ``, nil, []string{`ab`}, nil},
@@ -232,17 +232,26 @@ type stringData struct {
 
 // nodeNa has a string value and adds it to any incoming stringData.
 type nodeNa struct {
+	_ignore int // can't be empyy struct
+}
+
+type nodeNaData struct {
 	S string
 }
 
-func (n *nodeNa) Run(s *State, input RunInput) (*RunOutput, error) {
+func (n *nodeNa) StartNodeState() any {
+	return &nodeNaData{}
+}
+
+func (n *nodeNa) Run(state *State, input RunInput) (*RunOutput, error) {
 	// Process all items, passing through any types I don't handle.
+	data := GetNodeState[nodeNaData](n, state)
 	out := RunOutput{}
 	out.Pins = make([]Pin, 0, len(input.Pins))
 	for _, p := range input.Pins {
 		switch pt := p.Payload.(type) {
 		case *stringData:
-			out.Pins = append(out.Pins, Pin{Payload: &stringData{s: pt.s + n.S}})
+			out.Pins = append(out.Pins, Pin{Payload: &stringData{s: pt.s + data.S}})
 		default:
 			out.Pins = append(out.Pins, p)
 		}

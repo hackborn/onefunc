@@ -20,10 +20,20 @@ func GetNodeState[T any](key Node, s *State) *T {
 			}
 		}
 	}
-	ans := new(T)
-	if s.nodeState == nil {
-		s.nodeState = make(map[Node]any)
+	value := new(T)
+	setNodeState(key, value, s)
+	return value
+}
+
+func setNodeState(key Node, value any, s *State) {
+	if value == nil {
+		if s.nodeState != nil {
+			delete(s.nodeState, key)
+		}
+	} else {
+		if s.nodeState == nil {
+			s.nodeState = make(map[Node]any)
+		}
+		s.nodeState[key] = value
 	}
-	s.nodeState[key] = ans
-	return ans
 }
