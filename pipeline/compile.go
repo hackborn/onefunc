@@ -27,6 +27,19 @@ func Compile(expr string) (*Pipeline, error) {
 			return nil, err
 		}
 		rn := &runningNode{node: node, envVars: nn.envVars}
+		nodes[nn.nodeName] = rn
+		roots[nn.nodeName] = compileRoot{index: i, node: rn}
+		pipeline.nodes = append(pipeline.nodes, rn)
+		// apply fixed vars
+		if len(nn.vars) > 0 {
+			req := assign.ValuesRequestFrom(nn.vars)
+			err = assign.Values(req, rn.node)
+			if err != nil {
+				return nil, err
+			}
+		}
+		// Make node data, if any. Important to do this after the
+		// vars are assigned, so they will be correct in the node data.
 		if starter, ok := node.(Starter); ok {
 			if rn.nodeState = starter.StartNodeState(); rn.nodeState != nil {
 				rn.hasStartNodeState = true
@@ -34,17 +47,6 @@ func Compile(expr string) (*Pipeline, error) {
 		}
 		if rn.nodeState == nil {
 			rn.nodeState = node
-		}
-		nodes[nn.nodeName] = rn
-		roots[nn.nodeName] = compileRoot{index: i, node: rn}
-		pipeline.nodes = append(pipeline.nodes, rn)
-		// apply fixed vars
-		if len(nn.vars) > 0 {
-			req := assign.ValuesRequestFrom(nn.vars)
-			err = assign.Values(req, rn.nodeState)
-			if err != nil {
-				return nil, err
-			}
 		}
 	}
 	for _, pin := range ast.pins {

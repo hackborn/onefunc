@@ -232,7 +232,7 @@ type stringData struct {
 
 // nodeNa has a string value and adds it to any incoming stringData.
 type nodeNa struct {
-	_ignore int // can't be empyy struct
+	nodeNaData
 }
 
 type nodeNaData struct {
@@ -240,7 +240,8 @@ type nodeNaData struct {
 }
 
 func (n *nodeNa) StartNodeState() any {
-	return &nodeNaData{}
+	data := n.nodeNaData
+	return &data
 }
 
 func (n *nodeNa) Run(state *State, input RunInput) (*RunOutput, error) {
