@@ -18,7 +18,7 @@ func Compile(expr string) (*Pipeline, error) {
 		return nil, err
 	}
 	pipeline := &Pipeline{env: ast.env}
-	nodes := make(map[string]*runningNode)
+	nodes := make(map[string]*compiledNode)
 	roots := make(map[string]compileRoot)
 	for i, nn := range ast.nodes {
 		splitName := strings.Split(nn.nodeName, "/")
@@ -26,7 +26,8 @@ func Compile(expr string) (*Pipeline, error) {
 		if err != nil {
 			return nil, err
 		}
-		rn := &runningNode{node: node, envVars: nn.envVars}
+		rn := &compiledNode{node: node, envVars: nn.envVars}
+		rn.flusher, _ = node.(Flusher)
 		nodes[nn.nodeName] = rn
 		roots[nn.nodeName] = compileRoot{index: i, node: rn}
 		pipeline.nodes = append(pipeline.nodes, rn)
@@ -59,7 +60,7 @@ func Compile(expr string) (*Pipeline, error) {
 			return nil, fmt.Errorf("Missing node %v", pin.toNode)
 		}
 		delete(roots, pin.toNode)
-		rp := &runningPin{toNode: toNode}
+		rp := &compiledPin{toNode: toNode}
 		toNode.maxInputCount += 1
 		fromNode.output = append(fromNode.output, rp)
 	}
@@ -70,7 +71,7 @@ func Compile(expr string) (*Pipeline, error) {
 	return pipeline, nil
 }
 
-func compileRoots(mapRoots map[string]compileRoot) []*runningNode {
+func compileRoots(mapRoots map[string]compileRoot) []*compiledNode {
 	// Keep the roots in the same order as the AST nodes. Not
 	// strictly necessary, but it does make tests predictable.
 	sortedRoots := make([]compileRoot, 0, len(mapRoots))
@@ -86,7 +87,7 @@ func compileRoots(mapRoots map[string]compileRoot) []*runningNode {
 			return 0
 		}
 	})
-	roots := make([]*runningNode, 0, len(sortedRoots))
+	roots := make([]*compiledNode, 0, len(sortedRoots))
 	for _, r := range sortedRoots {
 		roots = append(roots, r.node)
 	}
@@ -95,5 +96,5 @@ func compileRoots(mapRoots map[string]compileRoot) []*runningNode {
 
 type compileRoot struct {
 	index int
-	node  *runningNode
+	node  *compiledNode
 }

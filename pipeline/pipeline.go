@@ -1,8 +1,8 @@
 package pipeline
 
 type Pipeline struct {
-	roots []*runningNode
-	nodes []*runningNode
+	roots []*compiledNode
+	nodes []*compiledNode
 	env   map[string]any
 }
 
@@ -20,13 +20,15 @@ func (p Pipeline) Env() map[string]any {
 	return env
 }
 
-type runningPin struct {
+type compiledPin struct {
 	inName string
-	toNode *runningNode
+	toNode *compiledNode
 }
 
-type runningNode struct {
-	node Runner
+type compiledNode struct {
+	node    Runner
+	flusher Flusher
+	starter Starter
 
 	// nodeState will be either the result of StartNodeState() or the
 	// node itself, but never nil.
@@ -34,13 +36,23 @@ type runningNode struct {
 	// hasNodeData is true if nodeState came from StartNodeState()
 	hasStartNodeState bool
 
-	inputCount    int
 	maxInputCount int
-	input         RunInput
-	output        []*runningPin
+	output        []*compiledPin
 	envVars       map[string]string
 }
 
+type runningPin struct {
+	cp     *compiledPin
+	toNode *runningNode
+}
+
+type runningNode struct {
+	cn         *compiledNode
+	inputCount int
+	input      RunInput
+	output     []*runningPin
+}
+
 func (n *runningNode) ready() bool {
-	return n.inputCount >= n.maxInputCount
+	return n.inputCount >= n.cn.maxInputCount
 }
