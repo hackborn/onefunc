@@ -6,6 +6,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/hackborn/onefunc/jacl"
 )
 
 func TestMain(m *testing.M) {
@@ -35,12 +37,10 @@ func TestParserScan(t *testing.T) {
 		haveErr := p.scan(v.pipeline, h)
 		have := h.b.String()
 
-		if v.wantErr == nil && haveErr != nil {
-			t.Fatalf("TestTokenizer %v expected no error but has %v", i, haveErr)
-		} else if v.wantErr != nil && haveErr == nil {
-			t.Fatalf("TestTokenizer %v has no error but exptected %v", i, v.wantErr)
+		if err := jacl.RunErr(haveErr, v.wantErr); err != nil {
+			t.Fatalf("TestParserScan %v %v", i, err.Error())
 		} else if have != v.want {
-			t.Fatalf("TestTokenizer %v has \"%v\" but wanted \"%v\"", i, have, v.want)
+			t.Fatalf("TestParserScan %v has \"%v\" but wanted \"%v\"", i, have, v.want)
 		}
 	}
 }
@@ -80,10 +80,8 @@ func TestParser(t *testing.T) {
 		ast, haveErr := parse(v.pipeline)
 		have := ast.print()
 
-		if v.wantErr == nil && haveErr != nil {
-			t.Fatalf("TestParser %v expected no error but has %v", i, haveErr)
-		} else if v.wantErr != nil && haveErr == nil {
-			t.Fatalf("TestParser %v has no error but exptected %v", i, v.wantErr)
+		if err := jacl.RunErr(haveErr, v.wantErr); err != nil {
+			t.Fatalf("TestParser %v %v", i, err.Error())
 		} else if have != v.want {
 			t.Fatalf("TestParser %v has \"%v\" but wanted \"%v\"", i, have, v.want)
 		}
@@ -122,10 +120,8 @@ func TestRunString(t *testing.T) {
 	for i, v := range table {
 		have, haveErr := runAsString(v.pipeline, v.input, v.env)
 
-		if v.wantErr == nil && haveErr != nil {
-			t.Fatalf("TestRunString %v expected no error but has %v", i, haveErr)
-		} else if v.wantErr != nil && haveErr == nil {
-			t.Fatalf("TestRunString %v has no error but exptected %v", i, v.wantErr)
+		if err := jacl.RunErr(haveErr, v.wantErr); err != nil {
+			t.Fatalf("TestRunString %v %v", i, err.Error())
 		} else if slices.Compare(have, v.want) != 0 {
 			t.Fatalf("TestRunString %v has \"%v\" but wanted \"%v\"", i, have, v.want)
 		}

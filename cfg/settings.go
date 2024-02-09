@@ -3,12 +3,11 @@ package cfg
 import (
 	"encoding/json"
 	"fmt"
-	"io/fs"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 
+	oferrors "github.com/hackborn/onefunc/errors"
 	"github.com/hackborn/onefunc/lock"
 )
 
@@ -19,36 +18,13 @@ type Settings struct {
 	t  tree
 }
 
-func LoadSettings(fsys fs.FS, fn string) (Settings, error) {
+func NewSettings(opts ...Option) (Settings, error) {
 	s := emptySettings(&sync.RWMutex{})
-	dat, err := readFileFS(fsys, fn)
-	if err != nil {
-		return s, err
+	eb := &oferrors.FirstBlock{}
+	for _, opt := range opts {
+		opt(s, eb)
 	}
-	err = json.Unmarshal(dat, &s.t)
-	return s, err
-}
-
-func LoadSettingsFolder(fsys fs.FS, fn string) (Settings, error) {
-	s := emptySettings(&sync.RWMutex{})
-	err := fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		ext := strings.ToLower(filepath.Ext(p))
-		if d.IsDir() || ext != ".json" {
-			return nil
-		}
-		dat, err := readFileFS(fsys, p)
-		if err != nil {
-			return err
-		}
-		s2 := emptySettings(s.rw)
-		err = json.Unmarshal(dat, &s2.t)
-		mergeKeys(s.t, s2.t)
-		return err
-	})
-	return s, err
+	return s, eb.Err
 }
 
 // SaveSettings saves the settings as JSON to the path.

@@ -62,10 +62,8 @@ func TestLoad(t *testing.T) {
 		if output != nil {
 			cmpErr = jacl.Run(output.Pins, v.cmp...)
 		}
-		if v.wantErr == nil && haveErr != nil {
-			t.Fatalf("TestLoad %v expected no error but has %v", i, haveErr)
-		} else if v.wantErr != nil && haveErr == nil {
-			t.Fatalf("TestLoad %v has no error but exptected %v", i, v.wantErr)
+		if err = jacl.RunErr(haveErr, v.wantErr); err != nil {
+			t.Fatalf("TestLoad %v %v", i, err.Error())
 		} else if cmpErr != nil {
 			t.Fatalf("TestLoad %v comparison error: %v", i, cmpErr)
 		}

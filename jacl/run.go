@@ -40,6 +40,20 @@ func RunOpts(opts Opts, target any, terms ...string) error {
 	return nil
 }
 
+// RunErr compares two errors, returning if they do not match.
+// I use a soft definition of "match"; the errors can be different,
+// it just checks if they are both nil or not. Ideally, error messages
+// are not part of an API.
+func RunErr(have, want error) error {
+	if want == nil && have != nil {
+		return fmt.Errorf("expected nil error but has %v", have)
+	} else if want != nil && have == nil {
+		return fmt.Errorf("has nil error but expected %v", want)
+	} else {
+		return nil
+	}
+}
+
 type runner struct {
 	first  errors.FirstBlock
 	opts   Opts
