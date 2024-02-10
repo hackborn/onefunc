@@ -25,17 +25,12 @@ type compiledPin struct {
 	toNode *compiledNode
 }
 
+// compiledNode is generated as part of the compilation.
+// It is immutable and thread-safe.
 type compiledNode struct {
-	node    Runner
-	flusher Flusher
-	starter Starter
-
-	// nodeState will be either the result of StartNodeState() or the
-	// node itself, but never nil.
-	nodeState any
-	// hasNodeData is true if nodeState came from StartNodeState()
-	hasStartNodeState bool
-
+	node          Runner
+	flusher       Flusher
+	starter       Starter
 	maxInputCount int
 	output        []*compiledPin
 	envVars       map[string]string
@@ -46,8 +41,11 @@ type runningPin struct {
 	toNode *runningNode
 }
 
+// runningNode is generated on each run. It stores per-run
+// data the needs to exist per-thread.
 type runningNode struct {
 	cn         *compiledNode
+	nodeData   any
 	inputCount int
 	input      RunInput
 	output     []*runningPin

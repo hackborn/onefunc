@@ -239,14 +239,14 @@ type nodeNaData struct {
 	S string
 }
 
-func (n *nodeNa) StartNodeState() any {
+func (n *nodeNa) StartNode(state *State) {
 	data := n.nodeNaData
-	return &data
+	state.NodeData = &data
 }
 
 func (n *nodeNa) Run(state *State, input RunInput) (*RunOutput, error) {
 	// Process all items, passing through any types I don't handle.
-	data := GetNodeState[nodeNaData](n, state)
+	data := state.NodeData.(*nodeNaData)
 	out := RunOutput{}
 	out.Pins = make([]Pin, 0, len(input.Pins))
 	for _, p := range input.Pins {
@@ -281,15 +281,21 @@ func (n *nodeNb) Run(s *State, input RunInput) (*RunOutput, error) {
 // On Flush() it adds its string value to he accumulation
 // and sends out data.
 type nodeNc struct {
-	S string
+	nodeNcData
 }
 
-type nodeNcState struct {
+type nodeNcData struct {
+	S     string
 	accum string
 }
 
-func (n *nodeNc) Run(s *State, input RunInput) (*RunOutput, error) {
-	ns := GetNodeState[nodeNcState](n, s)
+func (n *nodeNc) StartNode(state *State) {
+	data := n.nodeNcData
+	state.NodeData = &data
+}
+
+func (n *nodeNc) Run(state *State, input RunInput) (*RunOutput, error) {
+	ns := state.NodeData.(*nodeNcData)
 	for _, p := range input.Pins {
 		switch pt := p.Payload.(type) {
 		case *stringData:
@@ -299,10 +305,10 @@ func (n *nodeNc) Run(s *State, input RunInput) (*RunOutput, error) {
 	return nil, nil
 }
 
-func (n *nodeNc) Flush(s *State) (*RunOutput, error) {
-	ns := GetNodeState[nodeNcState](n, s)
+func (n *nodeNc) Flush(state *State) (*RunOutput, error) {
+	ns := state.NodeData.(*nodeNcData)
 	out := RunOutput{}
-	out.Pins = append(out.Pins, Pin{Payload: &stringData{s: ns.accum + n.S}})
+	out.Pins = append(out.Pins, Pin{Payload: &stringData{s: ns.accum + ns.S}})
 	return &out, nil
 }
 

@@ -22,13 +22,13 @@ type Runner interface {
 }
 
 // Starter is called at the start of a pipeline run. Implementing
-// starter, and placing all run state in a node state object,
+// starter, and placing all run state in a node data object,
 // will make your node thread-safe.
 type Starter interface {
-	// StartNodeData answers a data object that will have
-	// any env vars assigned. It will be available via
-	// GetNodeState().
-	StartNodeState() any
+	// One-time notification that the node is starting a run.
+	// Clients that want to use the NodeData pattern can assign
+	// the NodeData field and it will be available during the Run.
+	StartNode(*State)
 }
 
 // Flusher implements a flush operation.

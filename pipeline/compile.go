@@ -28,6 +28,7 @@ func Compile(expr string) (*Pipeline, error) {
 		}
 		rn := &compiledNode{node: node, envVars: nn.envVars}
 		rn.flusher, _ = node.(Flusher)
+		rn.starter, _ = node.(Starter)
 		nodes[nn.nodeName] = rn
 		roots[nn.nodeName] = compileRoot{index: i, node: rn}
 		pipeline.nodes = append(pipeline.nodes, rn)
@@ -38,16 +39,6 @@ func Compile(expr string) (*Pipeline, error) {
 			if err != nil {
 				return nil, err
 			}
-		}
-		// Make node data, if any. Important to do this after the
-		// vars are assigned, so they will be correct in the node data.
-		if starter, ok := node.(Starter); ok {
-			if rn.nodeState = starter.StartNodeState(); rn.nodeState != nil {
-				rn.hasStartNodeState = true
-			}
-		}
-		if rn.nodeState == nil {
-			rn.nodeState = node
 		}
 	}
 	for _, pin := range ast.pins {
