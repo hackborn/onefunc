@@ -1,12 +1,14 @@
 package pipeline
 
-// Node is a single processor in the pipeline graph. It's basic
-// responsibility is to run an operation on some input, but it has
-// additional optional behaviour.
+// Node is a single function in the pipeline graph. It runs an
+// operation on some input, optionally providing some output.
 //
-// Note that node implementations should be immutable and thread-safe.
-// If you have working state to persist beyond a single run, use
-// GetNodeState().
+// Node implementations should be thread-safe. The framework uses
+// a NodeData pattern to accomplish this in a simple way: Nodes have
+// a parallel NodeData struct that stores their data. A node anonymously
+// includes its NodeData, and also sets it to State.NodeData in the
+// Start() func. THe data is then passed back in State.Node data
+// during the Run() and Flush().
 //
 // Optional interfaces:
 // * Starter
@@ -28,7 +30,7 @@ type Starter interface {
 	// One-time notification that the node is starting a run.
 	// Clients that want to use the NodeData pattern can assign
 	// the NodeData field and it will be available during the Run.
-	StartNode(*State)
+	Start(*State)
 }
 
 // Flusher implements a flush operation.

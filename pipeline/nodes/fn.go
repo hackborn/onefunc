@@ -5,7 +5,7 @@ import (
 )
 
 // regexpOperationFn abstracts performing the RegexpNode.Operation.
-type regexpOperationFn func(re *regexp.Regexp, s string, n *RegexpNode) (string, error)
+type regexpOperationFn func(re *regexp.Regexp, s string, data *regexpData) (string, error)
 
 // regexpTargetFn abstracts performing the RegexpNode.Target.
-type regexpTargetFn func(pin any, fn regexpOperationFn, re *regexp.Regexp, n *RegexpNode) error
+type regexpTargetFn func(pin any, fn regexpOperationFn, re *regexp.Regexp, data *regexpData) error

@@ -12,6 +12,10 @@ import (
 )
 
 type LoadFileNode struct {
+	loadFileData
+}
+
+type loadFileData struct {
 	// Name of the filesystem to read from. If this is an
 	// empty string, the local filesystem is used, otherwise
 	// the name must have been previously registered with
@@ -22,20 +26,26 @@ type LoadFileNode struct {
 	Glob string
 }
 
-func (n *LoadFileNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
-	if n.Fs == "" {
-		return n.runLocal(s, input)
-	}
-	return n.runFs(s, input)
+func (n *LoadFileNode) Start(state *pipeline.State) {
+	data := n.loadFileData
+	state.NodeData = &data
 }
 
-func (n *LoadFileNode) runFs(s *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
-	fsys, ok := pipeline.FindFs(n.Fs)
+func (n *LoadFileNode) Run(state *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
+	data := state.NodeData.(*loadFileData)
+	if data.Fs == "" {
+		return n.runLocal(data, input)
+	}
+	return n.runFs(data, input)
+}
+
+func (n *LoadFileNode) runFs(data *loadFileData, input pipeline.RunInput) (*pipeline.RunOutput, error) {
+	fsys, ok := pipeline.FindFs(data.Fs)
 	if !ok {
-		return nil, fmt.Errorf("LoadFileNode: no registered filesystem named \"%v\"", n.Fs)
+		return nil, fmt.Errorf("LoadFileNode: no registered filesystem named \"%v\"", data.Fs)
 	}
 	eb := &oferrors.FirstBlock{}
-	matches, err := fs.Glob(fsys, n.Glob)
+	matches, err := fs.Glob(fsys, data.Glob)
 	eb.AddError(err)
 
 	output := pipeline.RunOutput{}
@@ -49,9 +59,9 @@ func (n *LoadFileNode) runFs(s *pipeline.State, input pipeline.RunInput) (*pipel
 	return &output, eb.Err
 }
 
-func (n *LoadFileNode) runLocal(s *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
+func (n *LoadFileNode) runLocal(data *loadFileData, input pipeline.RunInput) (*pipeline.RunOutput, error) {
 	eb := &oferrors.FirstBlock{}
-	matches, err := filepath.Glob(filepath.FromSlash(n.Glob))
+	matches, err := filepath.Glob(filepath.FromSlash(data.Glob))
 	eb.AddError(err)
 
 	output := pipeline.RunOutput{}

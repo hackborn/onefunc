@@ -10,6 +10,10 @@ import (
 )
 
 type RegexpNode struct {
+	regexpData
+}
+
+type regexpData struct {
 	// Expr is the expression used for the regex matching.
 	// See godocs for a description.
 	// A quick example, the following strips only the beginning
@@ -32,8 +36,14 @@ type RegexpNode struct {
 	Replace string
 }
 
-func (n *RegexpNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
-	re, runFn, setFn, err := n.prepare()
+func (n *RegexpNode) Start(state *pipeline.State) {
+	data := n.regexpData
+	state.NodeData = &data
+}
+
+func (n *RegexpNode) Run(state *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
+	data := state.NodeData.(*regexpData)
+	re, runFn, setFn, err := n.prepare(data)
 	if err != nil {
 		return nil, err
 	}
@@ -41,27 +51,27 @@ func (n *RegexpNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipeline.
 	output.Pins = make([]pipeline.Pin, 0, len(input.Pins))
 	eb := &oferrors.FirstBlock{}
 	for _, pin := range input.Pins {
-		eb.AddError(setFn(pin.Payload, runFn, re, n))
+		eb.AddError(setFn(pin.Payload, runFn, re, data))
 		output.Pins = append(output.Pins, pin)
 	}
 	return &output, eb.Err
 }
 
-func (n *RegexpNode) prepare() (*regexp.Regexp, regexpOperationFn, regexpTargetFn, error) {
-	if n.Expr == "" {
+func (n *RegexpNode) prepare(data *regexpData) (*regexp.Regexp, regexpOperationFn, regexpTargetFn, error) {
+	if data.Expr == "" {
 		return nil, nil, nil, fmt.Errorf("regexp node: No expression")
 	}
-	re, err := regexp.Compile(n.Expr)
+	re, err := regexp.Compile(data.Expr)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	runFn, ok := regexpOperations[strings.ToLower(n.Operation)]
+	runFn, ok := regexpOperations[strings.ToLower(data.Operation)]
 	if !ok {
-		return nil, nil, nil, fmt.Errorf("regexp node: No operation named \"%v\"", n.Operation)
+		return nil, nil, nil, fmt.Errorf("regexp node: No operation named \"%v\"", data.Operation)
 	}
-	setFn, ok := regexpTargets[strings.ToLower(n.Target)]
+	setFn, ok := regexpTargets[strings.ToLower(data.Target)]
 	if !ok {
-		return nil, nil, nil, fmt.Errorf("regexp node: No target named \"%v\"", n.Target)
+		return nil, nil, nil, fmt.Errorf("regexp node: No target named \"%v\"", data.Target)
 	}
 	return re, runFn, setFn, nil
 }

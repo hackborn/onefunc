@@ -10,12 +10,22 @@ import (
 
 // SaveFileNode handles ContentData by saving to a file.
 type SaveFileNode struct {
+	saveFileData
+}
+
+type saveFileData struct {
 	// Path gets prepended to all save files.
 	Path string
 }
 
+func (n *SaveFileNode) Start(state *pipeline.State) {
+	data := n.saveFileData
+	state.NodeData = &data
+}
+
 func (n *SaveFileNode) Run(state *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
-	path := filepath.FromSlash(n.Path)
+	data := state.NodeData.(*saveFileData)
+	path := filepath.FromSlash(data.Path)
 	// fmt.Println("save", path, "inputs", len(input.Pins), "flush", state.Flush)
 	err := n.verify(path)
 	if err != nil {

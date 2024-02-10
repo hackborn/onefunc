@@ -8,15 +8,25 @@ import (
 
 // FmtNode
 type FmtNode struct {
+	fmtData
+}
+
+type fmtData struct {
 	Verbose bool
+}
+
+func (n *FmtNode) Start(state *pipeline.State) {
+	data := n.fmtData
+	state.NodeData = &data
 }
 
 func (n *FmtNode) Run(state *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
 	fmt.Println("fmt run input pins:", len(input.Pins))
+	data := state.NodeData.(*fmtData)
 	for _, pin := range input.Pins {
 		switch p := pin.Payload.(type) {
 		case *pipeline.ContentData:
-			n.runContentPin(p)
+			n.runContentPin(data, p)
 		case *pipeline.StructData:
 			n.runStructPin(p)
 		default:
@@ -26,9 +36,9 @@ func (n *FmtNode) Run(state *pipeline.State, input pipeline.RunInput) (*pipeline
 	return &pipeline.RunOutput{Pins: input.Pins}, nil
 }
 
-func (n *FmtNode) runContentPin(pin *pipeline.ContentData) {
+func (n *FmtNode) runContentPin(data *fmtData, pin *pipeline.ContentData) {
 	fmt.Println("ContentData name:", pin.Name, "data:")
-	if n.Verbose {
+	if data.Verbose {
 		fmt.Println(pin.Data)
 	} else if len(pin.Data) < 40 {
 		fmt.Println(pin.Data)

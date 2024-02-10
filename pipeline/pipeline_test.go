@@ -239,7 +239,7 @@ type nodeNaData struct {
 	S string
 }
 
-func (n *nodeNa) StartNode(state *State) {
+func (n *nodeNa) Start(state *State) {
 	data := n.nodeNaData
 	state.NodeData = &data
 }
@@ -262,16 +262,26 @@ func (n *nodeNa) Run(state *State, input RunInput) (*RunOutput, error) {
 
 // nodeNb has multiple string values that are appended to incoming stringData.
 type nodeNb struct {
+	nodeNbData
+}
+
+type nodeNbData struct {
 	S1 string
 	S2 string
 }
 
-func (n *nodeNb) Run(s *State, input RunInput) (*RunOutput, error) {
+func (n *nodeNb) Start(state *State) {
+	data := n.nodeNbData
+	state.NodeData = &data
+}
+
+func (n *nodeNb) Run(state *State, input RunInput) (*RunOutput, error) {
+	data := state.NodeData.(*nodeNbData)
 	out := RunOutput{}
 	for _, p := range input.Pins {
 		switch pt := p.Payload.(type) {
 		case *stringData:
-			out.Pins = append(out.Pins, Pin{Payload: &stringData{s: pt.s + n.S1 + n.S2}})
+			out.Pins = append(out.Pins, Pin{Payload: &stringData{s: pt.s + data.S1 + data.S2}})
 		}
 	}
 	return &out, nil
@@ -289,7 +299,7 @@ type nodeNcData struct {
 	accum string
 }
 
-func (n *nodeNc) StartNode(state *State) {
+func (n *nodeNc) Start(state *State) {
 	data := n.nodeNcData
 	state.NodeData = &data
 }
