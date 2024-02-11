@@ -89,8 +89,9 @@ type buildRun struct {
 }
 
 func newBuildRun(compiled []*compiledNode) *buildRun {
+	running := make(map[*compiledNode]*runningNode, len(compiled))
 	b := &buildRun{compiled: compiled,
-		running: make(map[*compiledNode]*runningNode)}
+		running: running}
 	for _, cn := range compiled {
 		rn := &runningNode{cn: cn}
 		b.running[cn] = rn
@@ -136,12 +137,12 @@ func (b *buildRun) buildNode(rn *runningNode, env map[string]any) error {
 	rn.input.Pins = nil
 	rn.inputCount = 0
 	if rn.cn.starter != nil {
-		startState := &State{}
-		err := rn.cn.starter.Start(startState)
+		si := &_startInput{}
+		err := rn.cn.starter.Start(si)
 		if err != nil {
 			return err
 		}
-		rn.nodeData = startState.NodeData
+		rn.nodeData = si.nodeData
 	}
 	// This is questionable -- the env vars will be applied to
 	// the rn.nodeData. However, in the event there is no nodeData,
@@ -150,6 +151,8 @@ func (b *buildRun) buildNode(rn *runningNode, env map[string]any) error {
 	// Slightly less boilerplate code if someone is writing a node
 	// that truly doesn't need to be thread safe, but things will blow
 	// up if the node is actually used concurrently.
+	// Probably... probably should not do this and you just don't get
+	// env vars if you don't supply node data. Kind of annoying, but safe.
 	if rn.nodeData == nil {
 		rn.nodeData = rn.cn.node
 	}

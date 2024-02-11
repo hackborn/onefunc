@@ -168,8 +168,22 @@ func __BenchmarkRunAsString(b *testing.B) {
 
 // ---------------------------------------------------------
 // BENCHMARK-PRECOMPILE-AND-RUN
-func BenchmarkPrecompileAndRun(b *testing.B) {
+func _BenchmarkPrecompileAndRun(b *testing.B) {
 	const expr string = `graph (na(S=!))`
+	input := NewInput(Pin{Payload: &stringData{s: "hi"}})
+	p, err := Compile(expr)
+	if err != nil {
+		b.Fatalf("compile err: %v", err)
+	}
+	for n := 0; n < b.N; n++ {
+		Run(p, &input, nil)
+	}
+}
+
+// ---------------------------------------------------------
+// BENCHMARK-PRECOMPILE-AND-RUN-2
+func BenchmarkPrecompileAndRun2(b *testing.B) {
+	const expr string = `graph (na/a(S=!) -> na/b(S=!) -> na/c(S=!))`
 	input := NewInput(Pin{Payload: &stringData{s: "hi"}})
 	p, err := Compile(expr)
 	if err != nil {
