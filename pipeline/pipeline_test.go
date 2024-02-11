@@ -239,9 +239,10 @@ type nodeNaData struct {
 	S string
 }
 
-func (n *nodeNa) Start(state *State) {
+func (n *nodeNa) Start(input StartInput) error {
 	data := n.nodeNaData
-	state.NodeData = &data
+	input.SetNodeData(&data)
+	return nil
 }
 
 func (n *nodeNa) Run(state *State, input RunInput) (*RunOutput, error) {
@@ -270,9 +271,10 @@ type nodeNbData struct {
 	S2 string
 }
 
-func (n *nodeNb) Start(state *State) {
+func (n *nodeNb) Start(input StartInput) error {
 	data := n.nodeNbData
-	state.NodeData = &data
+	input.SetNodeData(&data)
+	return nil
 }
 
 func (n *nodeNb) Run(state *State, input RunInput) (*RunOutput, error) {
@@ -299,9 +301,10 @@ type nodeNcData struct {
 	accum string
 }
 
-func (n *nodeNc) Start(state *State) {
+func (n *nodeNc) Start(input StartInput) error {
 	data := n.nodeNcData
-	state.NodeData = &data
+	input.SetNodeData(&data)
+	return nil
 }
 
 func (n *nodeNc) Run(state *State, input RunInput) (*RunOutput, error) {

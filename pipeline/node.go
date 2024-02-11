@@ -30,13 +30,17 @@ type Starter interface {
 	// One-time notification that the node is starting a run.
 	// Clients that want to use the NodeData pattern can assign
 	// the NodeData field and it will be available during the Run.
-	Start(*State)
+	Start(StartInput) error
 }
 
 // Flusher implements a flush operation.
 type Flusher interface {
 	// Flush any data in the node.
 	Flush(*State) (*RunOutput, error)
+}
+
+type StartInput interface {
+	SetNodeData(any)
 }
 
 func NewInput(pins ...Pin) RunInput {

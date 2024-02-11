@@ -26,9 +26,10 @@ type loadFileData struct {
 	Glob string
 }
 
-func (n *LoadFileNode) Start(state *pipeline.State) {
+func (n *LoadFileNode) Start(input pipeline.StartInput) error {
 	data := n.loadFileData
-	state.NodeData = &data
+	input.SetNodeData(&data)
+	return nil
 }
 
 func (n *LoadFileNode) Run(state *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {

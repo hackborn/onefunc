@@ -137,7 +137,10 @@ func (b *buildRun) buildNode(rn *runningNode, env map[string]any) error {
 	rn.inputCount = 0
 	if rn.cn.starter != nil {
 		startState := &State{}
-		rn.cn.starter.Start(startState)
+		err := rn.cn.starter.Start(startState)
+		if err != nil {
+			return err
+		}
 		rn.nodeData = startState.NodeData
 	}
 	// This is questionable -- the env vars will be applied to

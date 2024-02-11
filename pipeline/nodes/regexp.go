@@ -36,9 +36,10 @@ type regexpData struct {
 	Replace string
 }
 
-func (n *RegexpNode) Start(state *pipeline.State) {
+func (n *RegexpNode) Start(input pipeline.StartInput) error {
 	data := n.regexpData
-	state.NodeData = &data
+	input.SetNodeData(&data)
+	return nil
 }
 
 func (n *RegexpNode) Run(state *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {

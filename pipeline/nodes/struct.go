@@ -22,9 +22,10 @@ type structData struct {
 	Tag string
 }
 
-func (n *StructNode) Start(state *pipeline.State) {
+func (n *StructNode) Start(input pipeline.StartInput) error {
 	data := n.structData
-	state.NodeData = &data
+	input.SetNodeData(&data)
+	return nil
 }
 
 func (n *StructNode) Run(state *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {

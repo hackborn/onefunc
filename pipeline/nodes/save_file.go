@@ -18,9 +18,10 @@ type saveFileData struct {
 	Path string
 }
 
-func (n *SaveFileNode) Start(state *pipeline.State) {
+func (n *SaveFileNode) Start(input pipeline.StartInput) error {
 	data := n.saveFileData
-	state.NodeData = &data
+	input.SetNodeData(&data)
+	return nil
 }
 
 func (n *SaveFileNode) Run(state *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {

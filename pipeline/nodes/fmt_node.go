@@ -15,9 +15,10 @@ type fmtData struct {
 	Verbose bool
 }
 
-func (n *FmtNode) Start(state *pipeline.State) {
+func (n *FmtNode) Start(input pipeline.StartInput) error {
 	data := n.fmtData
-	state.NodeData = &data
+	input.SetNodeData(&data)
+	return nil
 }
 
 func (n *FmtNode) Run(state *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
