@@ -64,6 +64,12 @@ func TestParser(t *testing.T) {
 		{`graph ( na -> nc <- nb)`, `graph (na -> nc nb -> nc)`, nil},
 		{`graph ( na/a -> nb )`, `graph (na/a -> nb)`, nil},
 		{`graph (na(S=f))`, `graph (na) vars (na/S=f)`, nil},
+		{`graph (na(S = f))`, `graph (na) vars (na/S=f)`, nil},
+		{`graph (na(S=!))`, `graph (na) vars (na/S=!)`, nil},
+		{`graph (na(S=!!))`, `graph (na) vars (na/S=!!)`, nil},
+		{`graph (na(S = !! , I = 10))`, `graph (na) vars (na/S=!!, na/I=10)`, nil},
+		{`graph (na(S=!!hi!!))`, `graph (na) vars (na/S=!!hi!!)`, nil},
+		{`graph (na(S=!, I=10))`, `graph (na) vars (na/S=!, na/I=10)`, nil},
 		{`graph (na/a na/b)`, `graph (na/a na/b)`, nil},
 		{`graph (na(S="f"))`, `graph (na) vars (na/S=f)`, nil},
 		{`graph (na(S=$cat))`, `graph (na) vars (na/S=$cat) env ($cat)`, nil},
@@ -129,7 +135,7 @@ func TestRunString(t *testing.T) {
 }
 
 func runAsString(expr, input string, env map[string]any) ([]string, error) {
-	pin := Pin{Payload: &stringData{s: input}}
+	pin := Pin{Payload: &valueData{s: input}}
 	ri := NewRunInput(pin)
 	ro, err := RunExpr(expr, &ri, env)
 	if err != nil {
@@ -141,7 +147,7 @@ func runAsString(expr, input string, env map[string]any) ([]string, error) {
 	var ans []string
 	for _, pin := range ro.Pins {
 		switch pt := pin.Payload.(type) {
-		case *stringData:
+		case *valueData:
 			ans = append(ans, pt.s)
 		}
 	}
@@ -170,7 +176,7 @@ func BenchmarkRunAsString(b *testing.B) {
 // BENCHMARK-PRECOMPILE-AND-RUN
 func BenchmarkPrecompileAndRun(b *testing.B) {
 	const expr string = `graph (na(S=!))`
-	input := NewRunInput(Pin{Payload: &stringData{s: "hi"}})
+	input := NewRunInput(Pin{Payload: &valueData{s: "hi"}})
 	p, err := Compile(expr)
 	if err != nil {
 		b.Fatalf("compile err: %v", err)
@@ -184,7 +190,7 @@ func BenchmarkPrecompileAndRun(b *testing.B) {
 // BENCHMARK-PRECOMPILE-AND-RUN-2
 func BenchmarkPrecompileAndRun2(b *testing.B) {
 	const expr string = `graph (na/a(S=!) -> na/b(S=!) -> na/c(S=!))`
-	input := NewRunInput(Pin{Payload: &stringData{s: "hi"}})
+	input := NewRunInput(Pin{Payload: &valueData{s: "hi"}})
 	p, err := Compile(expr)
 	if err != nil {
 		b.Fatalf("compile err: %v", err)
@@ -237,11 +243,12 @@ func (h *fmtTokenHandler) Pushed() {
 // ---------------------------------------------------------
 // PIN DATA
 
-type stringData struct {
+type valueData struct {
 	s string
+	i int
 }
 
-func (d *stringData) Clone() Cloner {
+func (d *valueData) Clone() Cloner {
 	dst := *d
 	return &dst
 }
@@ -269,8 +276,8 @@ func (n *nodeNa) Run(state *State, input RunInput, output *RunOutput) error {
 	data := state.NodeData.(*nodeNaData)
 	for _, p := range input.Pins {
 		switch pt := p.Payload.(type) {
-		case *stringData:
-			output.Pins = append(output.Pins, Pin{Payload: &stringData{s: pt.s + data.S}})
+		case *valueData:
+			output.Pins = append(output.Pins, Pin{Payload: &valueData{s: pt.s + data.S}})
 		default:
 			output.Pins = append(output.Pins, p)
 		}
@@ -298,8 +305,8 @@ func (n *nodeNb) Run(state *State, input RunInput, output *RunOutput) error {
 	data := state.NodeData.(*nodeNbData)
 	for _, p := range input.Pins {
 		switch pt := p.Payload.(type) {
-		case *stringData:
-			output.Pins = append(output.Pins, Pin{Payload: &stringData{s: pt.s + data.S1 + data.S2}})
+		case *valueData:
+			output.Pins = append(output.Pins, Pin{Payload: &valueData{s: pt.s + data.S1 + data.S2}})
 		}
 	}
 	return nil
@@ -327,7 +334,7 @@ func (n *nodeNc) Run(state *State, input RunInput, output *RunOutput) error {
 	ns := state.NodeData.(*nodeNcData)
 	for _, p := range input.Pins {
 		switch pt := p.Payload.(type) {
-		case *stringData:
+		case *valueData:
 			ns.accum += pt.s
 		}
 	}
@@ -336,7 +343,7 @@ func (n *nodeNc) Run(state *State, input RunInput, output *RunOutput) error {
 
 func (n *nodeNc) Flush(state *State, output *RunOutput) error {
 	ns := state.NodeData.(*nodeNcData)
-	output.Pins = append(output.Pins, Pin{Payload: &stringData{s: ns.accum + ns.S}})
+	output.Pins = append(output.Pins, Pin{Payload: &valueData{s: ns.accum + ns.S}})
 	return nil
 }
 

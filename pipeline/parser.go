@@ -333,10 +333,11 @@ func (h *pinHandler) push(dir pinDirection, currentNode *astNode) {
 type varsHandler struct {
 	base *baseHandler
 
-	current      string
-	needsCurrent bool
-	vars         map[string]any
-	envVars      map[string]string
+	key         string
+	value       string
+	buildingKey bool // Building the key if true, the value if false
+	vars        map[string]any
+	envVars     map[string]string
 }
 
 func (h *varsHandler) HandleToken(t token) {
@@ -345,20 +346,18 @@ func (h *varsHandler) HandleToken(t token) {
 	case "(":
 		return
 	case ")":
-		s := varState{current: h.current, vars: h.vars, envVars: h.envVars}
+		h.flush()
+		s := varState{vars: h.vars, envVars: h.envVars}
 		h.base.pop(func(h tokenHandler) { h.HandleVars(s) })
 	case "=":
-		h.needsCurrent = false
+		h.buildingKey = false
+	case ",":
+		h.flush()
 	default:
-		if h.needsCurrent {
-			h.current = t.text
+		if h.buildingKey {
+			h.key += t.text
 		} else {
-			if strings.HasPrefix(t.text, "$") {
-				h.envVars[h.current] = t.text
-			} else {
-				h.vars[h.current] = t.text
-			}
-			h.needsCurrent = true
+			h.value += t.text
 		}
 	}
 }
@@ -368,10 +367,24 @@ func (h *varsHandler) HandleVars(s varState) {
 }
 
 func (h *varsHandler) Pushed() {
-	h.current = ""
-	h.needsCurrent = true
+	h.key = ""
+	h.value = ""
+	h.buildingKey = true
 	h.vars = make(map[string]any)
 	h.envVars = make(map[string]string)
+}
+
+func (h *varsHandler) flush() {
+	if !h.buildingKey && h.key != "" {
+		if strings.HasPrefix(h.value, "$") {
+			h.envVars[h.key] = h.value
+		} else {
+			h.vars[h.key] = h.value
+		}
+	}
+	h.key = ""
+	h.value = ""
+	h.buildingKey = true
 }
 
 // envHandler
@@ -417,7 +430,6 @@ func (h *envHandler) Pushed() {
 // TOKEN HANDLING TYPES
 
 type varState struct {
-	current string // The current, incomplete token, not-yet added to a map
 	vars    map[string]any
 	envVars map[string]string
 }
