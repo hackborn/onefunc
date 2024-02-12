@@ -1,5 +1,8 @@
 package pipeline
 
+// ---------------------------------------------------------
+// NODE
+
 // Node is a single function in the pipeline graph. It runs an
 // operation on some input, optionally providing some output.
 //
@@ -17,11 +20,39 @@ type Node interface {
 	Runner
 }
 
+// ---------------------------------------------------------
+// RUNNER
+
 // Runner processes input.
 type Runner interface {
-	// Run the supplied pins, producing output pins or an error.
-	Run(*State, RunInput) (*RunOutput, error)
+	// Run the supplied pins, converting the input to output.
+	// There's no reason to reallocate or replace the RunOutput.Pins,
+	// just append to what's there.
+	Run(*State, RunInput, *RunOutput) error
 }
+
+// NewRunInput answers a new RunInput on the given pins.
+func NewRunInput(pins ...Pin) RunInput {
+	return RunInput{Pins: pins}
+}
+
+// RunInput transports pin data into a Run function.
+type RunInput struct {
+	Pins []Pin
+}
+
+// NewRunOutput answers a new RunOutput on the given pins.
+func (r RunInput) NewRunOutput(pins []Pin) *RunOutput {
+	return &RunOutput{Pins: pins}
+}
+
+// RunOutput transports pin data out of a Run function.
+type RunOutput struct {
+	Pins []Pin
+}
+
+// ---------------------------------------------------------
+// STARTER
 
 // Starter is called at the start of a pipeline run. Implementing
 // starter, and placing all run state in a node data object,
@@ -33,30 +64,17 @@ type Starter interface {
 	Start(StartInput) error
 }
 
-// Flusher implements a flush operation.
-type Flusher interface {
-	// Flush any data in the node.
-	Flush(*State) (*RunOutput, error)
-}
-
 type StartInput interface {
 	SetNodeData(any)
 }
 
-func NewInput(pins ...Pin) RunInput {
-	return RunInput{Pins: pins}
-}
+// ---------------------------------------------------------
+// FLUSHER
 
-// RunInput trapnsports pin data into a Run function.
-type RunInput struct {
-	Pins []Pin
-}
-
-func (r RunInput) NewOutput(pins []Pin) *RunOutput {
-	return &RunOutput{Pins: pins}
-}
-
-// RunOutput transports pin data out of a Run function.
-type RunOutput struct {
-	Pins []Pin
+// Flusher implements a flush operation.
+type Flusher interface {
+	// Flush any data in the node.
+	// There's no reason to reallocate or replace the RunOutput.Pins,
+	// just append to what's there.
+	Flush(*State, *RunOutput) error
 }

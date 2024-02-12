@@ -23,27 +23,29 @@ func Run(p *Pipeline, input *RunInput, env map[string]any) (*RunOutput, error) {
 	}
 	//	fmt.Println("pipeline running, roots", len(p.roots), "active", len(active))
 	state := &State{}
+	runOutput := &RunOutput{}
+	outputPins := make([]Pin, 0, 8)
 	finalOutput := RunOutput{}
 	for len(running) > 0 {
 		var nextNodesMap map[*runningNode]struct{}
 		for _, rn := range running {
 			state.NodeData = rn.nodeData
-			output, err := rn.cn.node.Run(state, rn.input)
+			runOutput.Pins = outputPins[:0]
+			err := rn.cn.node.Run(state, rn.input, runOutput)
 			if err != nil {
 				return nil, err
 			}
 			// This node is done processing, flush it.
-			output, err = flush(state, rn.cn.flusher, output)
+			err = flush(state, rn.cn.flusher, runOutput)
 			if err != nil {
 				return nil, err
 			}
 
 			if len(rn.output) > 0 {
+				fanout := runFanOut{}
 				for _, topin := range rn.output {
 					topin.toNode.inputCount++
-					if output != nil && len(output.Pins) > 0 {
-						topin.toNode.input.Pins = append(topin.toNode.input.Pins, output.Pins...)
-					}
+					fanout.on(topin, runOutput)
 					if topin.toNode.ready() {
 						if nextNodesMap == nil {
 							nextNodesMap = make(map[*runningNode]struct{})
@@ -51,8 +53,8 @@ func Run(p *Pipeline, input *RunInput, env map[string]any) (*RunOutput, error) {
 						nextNodesMap[topin.toNode] = struct{}{}
 					}
 				}
-			} else if output != nil && len(output.Pins) > 0 {
-				finalOutput.Pins = append(finalOutput.Pins, output.Pins...)
+			} else if len(runOutput.Pins) > 0 {
+				finalOutput.Pins = append(finalOutput.Pins, runOutput.Pins...)
 			}
 		}
 		running = make([]*runningNode, 0, len(nextNodesMap))
@@ -63,22 +65,68 @@ func Run(p *Pipeline, input *RunInput, env map[string]any) (*RunOutput, error) {
 	return &finalOutput, nil
 }
 
-func flush(state *State, flusher Flusher, output *RunOutput) (*RunOutput, error) {
+func flush(state *State, flusher Flusher, output *RunOutput) error {
 	if flusher == nil {
-		return output, nil
+		return nil
 	}
-	flushOutput, err := flusher.Flush(state)
-	if err != nil {
-		return output, err
+	return flusher.Flush(state, output)
+}
+
+// runFanOut is responsible for adding runOutput to the input of
+// destination nodes, cloning according to policy.
+type runFanOut struct {
+}
+
+func (f *runFanOut) on(topin *runningPin, runOutput *RunOutput) {
+	if len(runOutput.Pins) < 1 {
+		return
 	}
-	if flushOutput != nil && len(flushOutput.Pins) > 0 {
-		if output == nil || len(output.Pins) < 1 {
-			output = flushOutput
-		} else {
-			output.Pins = append(output.Pins, flushOutput.Pins...)
+	tonode := topin.toNode
+	first := -1
+	for _, pin := range runOutput.Pins {
+		first++
+		if pin.Payload == nil {
+			tonode.input.Pins = append(tonode.input.Pins, pin)
+			continue
 		}
+		newpin := pin
+		switch pin.Policy {
+		case AlwaysClonePolicy:
+			newpin.Payload = pin.Payload.Clone()
+		case NeverClonePolicy:
+		default:
+			if first > 0 {
+				newpin.Payload = pin.Payload.Clone()
+			}
+		}
+		tonode.input.Pins = append(tonode.input.Pins, newpin)
 	}
-	return output, nil
+}
+
+// initFanOut is responsible for adding runoutput to the input of
+// destination nodes, cloning according to policy.
+type initFanOut struct {
+}
+
+func (f *initFanOut) on(index int, src []Pin, dst []Pin) []Pin {
+	for _, srcpin := range src {
+		if srcpin.Payload == nil {
+			dst = append(dst, srcpin)
+			continue
+		}
+		dstpin := srcpin
+		switch srcpin.Policy {
+		case AlwaysClonePolicy:
+			dstpin.Payload = srcpin.Payload.Clone()
+		case NeverClonePolicy:
+		default:
+			if index > 0 {
+				dstpin.Payload = srcpin.Payload.Clone()
+			}
+		}
+		dst = append(dst, dstpin)
+	}
+	return dst
 }
 
 // buildRun takes the compiled nodes and wraps them in
@@ -123,11 +171,13 @@ func (b *buildRun) buildPipeline(p *Pipeline, input *RunInput, env map[string]an
 		}
 	}
 	if input != nil && len(input.Pins) > 0 {
-		for _, n := range running {
+		fanout := initFanOut{}
+		for i, n := range running {
 			if n.input.Pins == nil {
 				n.input.Pins = make([]Pin, 0, len(input.Pins))
 			}
-			n.input.Pins = append(n.input.Pins, input.Pins...)
+			//			n.input.Pins = append(n.input.Pins, input.Pins...)
+			n.input.Pins = fanout.on(i, input.Pins, n.input.Pins)
 		}
 	}
 	return running, nil

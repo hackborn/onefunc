@@ -130,7 +130,7 @@ func TestRunString(t *testing.T) {
 
 func runAsString(expr, input string, env map[string]any) ([]string, error) {
 	pin := Pin{Payload: &stringData{s: input}}
-	ri := NewInput(pin)
+	ri := NewRunInput(pin)
 	ro, err := RunExpr(expr, &ri, env)
 	if err != nil {
 		return nil, err
@@ -170,7 +170,7 @@ func __BenchmarkRunAsString(b *testing.B) {
 // BENCHMARK-PRECOMPILE-AND-RUN
 func _BenchmarkPrecompileAndRun(b *testing.B) {
 	const expr string = `graph (na(S=!))`
-	input := NewInput(Pin{Payload: &stringData{s: "hi"}})
+	input := NewRunInput(Pin{Payload: &stringData{s: "hi"}})
 	p, err := Compile(expr)
 	if err != nil {
 		b.Fatalf("compile err: %v", err)
@@ -184,7 +184,7 @@ func _BenchmarkPrecompileAndRun(b *testing.B) {
 // BENCHMARK-PRECOMPILE-AND-RUN-2
 func BenchmarkPrecompileAndRun2(b *testing.B) {
 	const expr string = `graph (na/a(S=!) -> na/b(S=!) -> na/c(S=!))`
-	input := NewInput(Pin{Payload: &stringData{s: "hi"}})
+	input := NewRunInput(Pin{Payload: &stringData{s: "hi"}})
 	p, err := Compile(expr)
 	if err != nil {
 		b.Fatalf("compile err: %v", err)
@@ -241,6 +241,11 @@ type stringData struct {
 	s string
 }
 
+func (d *stringData) Clone() Cloner {
+	dst := *d
+	return &dst
+}
+
 // ---------------------------------------------------------
 // NODES
 
@@ -259,20 +264,18 @@ func (n *nodeNa) Start(input StartInput) error {
 	return nil
 }
 
-func (n *nodeNa) Run(state *State, input RunInput) (*RunOutput, error) {
+func (n *nodeNa) Run(state *State, input RunInput, output *RunOutput) error {
 	// Process all items, passing through any types I don't handle.
 	data := state.NodeData.(*nodeNaData)
-	out := RunOutput{}
-	out.Pins = make([]Pin, 0, len(input.Pins))
 	for _, p := range input.Pins {
 		switch pt := p.Payload.(type) {
 		case *stringData:
-			out.Pins = append(out.Pins, Pin{Payload: &stringData{s: pt.s + data.S}})
+			output.Pins = append(output.Pins, Pin{Payload: &stringData{s: pt.s + data.S}})
 		default:
-			out.Pins = append(out.Pins, p)
+			output.Pins = append(output.Pins, p)
 		}
 	}
-	return &out, nil
+	return nil
 }
 
 // nodeNb has multiple string values that are appended to incoming stringData.
@@ -291,16 +294,15 @@ func (n *nodeNb) Start(input StartInput) error {
 	return nil
 }
 
-func (n *nodeNb) Run(state *State, input RunInput) (*RunOutput, error) {
+func (n *nodeNb) Run(state *State, input RunInput, output *RunOutput) error {
 	data := state.NodeData.(*nodeNbData)
-	out := RunOutput{}
 	for _, p := range input.Pins {
 		switch pt := p.Payload.(type) {
 		case *stringData:
-			out.Pins = append(out.Pins, Pin{Payload: &stringData{s: pt.s + data.S1 + data.S2}})
+			output.Pins = append(output.Pins, Pin{Payload: &stringData{s: pt.s + data.S1 + data.S2}})
 		}
 	}
-	return &out, nil
+	return nil
 }
 
 // nodeNc accumulates string values without producing output.
@@ -321,7 +323,7 @@ func (n *nodeNc) Start(input StartInput) error {
 	return nil
 }
 
-func (n *nodeNc) Run(state *State, input RunInput) (*RunOutput, error) {
+func (n *nodeNc) Run(state *State, input RunInput, output *RunOutput) error {
 	ns := state.NodeData.(*nodeNcData)
 	for _, p := range input.Pins {
 		switch pt := p.Payload.(type) {
@@ -329,14 +331,13 @@ func (n *nodeNc) Run(state *State, input RunInput) (*RunOutput, error) {
 			ns.accum += pt.s
 		}
 	}
-	return nil, nil
+	return nil
 }
 
-func (n *nodeNc) Flush(state *State) (*RunOutput, error) {
+func (n *nodeNc) Flush(state *State, output *RunOutput) error {
 	ns := state.NodeData.(*nodeNcData)
-	out := RunOutput{}
-	out.Pins = append(out.Pins, Pin{Payload: &stringData{s: ns.accum + ns.S}})
-	return &out, nil
+	output.Pins = append(output.Pins, Pin{Payload: &stringData{s: ns.accum + ns.S}})
+	return nil
 }
 
 // ---------------------------------------------------------

@@ -19,6 +19,11 @@ type StructData struct {
 	UnexportedFields []StructField
 }
 
+func (d *StructData) Clone() Cloner {
+	dst := *d
+	return &dst
+}
+
 type StructField struct {
 	// The name of the field in the original source.
 	Name string
@@ -33,4 +38,9 @@ type ContentData struct {
 	Name   string
 	Data   string
 	Format string
+}
+
+func (d *ContentData) Clone() Cloner {
+	dst := *d
+	return &dst
 }
