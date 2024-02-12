@@ -150,7 +150,7 @@ func runAsString(expr, input string, env map[string]any) ([]string, error) {
 
 // ---------------------------------------------------------
 // BENCHMARK-PARSER
-func __BenchmarkParser(b *testing.B) {
+func BenchmarkParser(b *testing.B) {
 	const input string = `graph (na -> nb)`
 	for n := 0; n < b.N; n++ {
 		parse(input)
@@ -159,7 +159,7 @@ func __BenchmarkParser(b *testing.B) {
 
 // ---------------------------------------------------------
 // BENCHMARK-RUN-AS-STRING
-func __BenchmarkRunAsString(b *testing.B) {
+func BenchmarkRunAsString(b *testing.B) {
 	const expr string = `graph (na(S=!))`
 	for n := 0; n < b.N; n++ {
 		runAsString(expr, "hi", nil)
@@ -168,7 +168,7 @@ func __BenchmarkRunAsString(b *testing.B) {
 
 // ---------------------------------------------------------
 // BENCHMARK-PRECOMPILE-AND-RUN
-func _BenchmarkPrecompileAndRun(b *testing.B) {
+func BenchmarkPrecompileAndRun(b *testing.B) {
 	const expr string = `graph (na(S=!))`
 	input := NewRunInput(Pin{Payload: &stringData{s: "hi"}})
 	p, err := Compile(expr)

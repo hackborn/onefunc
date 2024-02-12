@@ -17,17 +17,16 @@ func RunExpr(expr string, input *RunInput, env map[string]any) (*RunOutput, erro
 func Run(p *Pipeline, input *RunInput, env map[string]any) (*RunOutput, error) {
 	build := newBuildRun(p.nodes)
 	running, err := build.buildPipeline(p, input, env)
-	build = nil
 	if err != nil {
 		return nil, err
 	}
+
 	//	fmt.Println("pipeline running, roots", len(p.roots), "active", len(active))
 	state := &State{}
 	runOutput := &RunOutput{}
 	outputPins := make([]Pin, 0, 8)
 	finalOutput := RunOutput{}
 	for len(running) > 0 {
-		var nextNodesMap map[*runningNode]struct{}
 		for _, rn := range running {
 			state.NodeData = rn.nodeData
 			runOutput.Pins = outputPins[:0]
@@ -47,19 +46,19 @@ func Run(p *Pipeline, input *RunInput, env map[string]any) (*RunOutput, error) {
 					topin.toNode.inputCount++
 					fanout.on(topin, runOutput)
 					if topin.toNode.ready() {
-						if nextNodesMap == nil {
-							nextNodesMap = make(map[*runningNode]struct{})
-						}
-						nextNodesMap[topin.toNode] = struct{}{}
+						topin.toNode.isReady = true
 					}
 				}
 			} else if len(runOutput.Pins) > 0 {
 				finalOutput.Pins = append(finalOutput.Pins, runOutput.Pins...)
 			}
 		}
-		running = make([]*runningNode, 0, len(nextNodesMap))
-		for k, _ := range nextNodesMap {
-			running = append(running, k)
+		running = running[:0]
+		for _, nextrn := range build.running {
+			if nextrn.isReady {
+				nextrn.isReady = false
+				running = append(running, nextrn)
+			}
 		}
 	}
 	return &finalOutput, nil

@@ -47,6 +47,7 @@ type runningNode struct {
 	cn         *compiledNode
 	nodeData   any
 	inputCount int
+	isReady    bool
 	input      RunInput
 	output     []*runningPin
 }
