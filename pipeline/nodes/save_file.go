@@ -24,24 +24,25 @@ func (n *SaveFileNode) Start(input pipeline.StartInput) error {
 	return nil
 }
 
-func (n *SaveFileNode) Run(state *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
+func (n *SaveFileNode) Run(state *pipeline.State, input pipeline.RunInput, output *pipeline.RunOutput) error {
 	data := state.NodeData.(*saveFileData)
 	path := filepath.FromSlash(data.Path)
 	// fmt.Println("save", path, "inputs", len(input.Pins), "flush", state.Flush)
 	err := n.verify(path)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	for _, pin := range input.Pins {
 		switch p := pin.Payload.(type) {
 		case *pipeline.ContentData:
 			err = n.runContentPin(state, p, path)
 			if err != nil {
-				return nil, err
+				return err
 			}
 		}
+		output.Pins = append(output.Pins, pin)
 	}
-	return nil, nil
+	return nil
 }
 
 func (n *SaveFileNode) verify(path string) error {

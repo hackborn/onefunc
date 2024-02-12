@@ -28,19 +28,18 @@ func (n *StructNode) Start(input pipeline.StartInput) error {
 	return nil
 }
 
-func (n *StructNode) Run(state *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
+func (n *StructNode) Run(state *pipeline.State, input pipeline.RunInput, output *pipeline.RunOutput) error {
 	data := state.NodeData.(*structData)
-	output := pipeline.RunOutput{}
 	for _, pin := range input.Pins {
 		switch t := pin.Payload.(type) {
 		case *pipeline.ContentData:
-			err := n.runContent(data, t, &output)
+			err := n.runContent(data, t, output)
 			if err != nil {
-				return nil, err
+				return err
 			}
 		}
 	}
-	return &output, nil
+	return nil
 }
 
 func (n *StructNode) runContent(data *structData, pin *pipeline.ContentData, output *pipeline.RunOutput) error {

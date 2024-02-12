@@ -32,24 +32,23 @@ func (n *LoadFileNode) Start(input pipeline.StartInput) error {
 	return nil
 }
 
-func (n *LoadFileNode) Run(state *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
+func (n *LoadFileNode) Run(state *pipeline.State, input pipeline.RunInput, output *pipeline.RunOutput) error {
 	data := state.NodeData.(*loadFileData)
 	if data.Fs == "" {
-		return n.runLocal(data, input)
+		return n.runLocal(data, input, output)
 	}
-	return n.runFs(data, input)
+	return n.runFs(data, input, output)
 }
 
-func (n *LoadFileNode) runFs(data *loadFileData, input pipeline.RunInput) (*pipeline.RunOutput, error) {
+func (n *LoadFileNode) runFs(data *loadFileData, input pipeline.RunInput, output *pipeline.RunOutput) error {
 	fsys, ok := pipeline.FindFs(data.Fs)
 	if !ok {
-		return nil, fmt.Errorf("LoadFileNode: no registered filesystem named \"%v\"", data.Fs)
+		return fmt.Errorf("LoadFileNode: no registered filesystem named \"%v\"", data.Fs)
 	}
 	eb := &oferrors.FirstBlock{}
 	matches, err := fs.Glob(fsys, data.Glob)
 	eb.AddError(err)
 
-	output := pipeline.RunOutput{}
 	for _, fn := range matches {
 		dat, err := fs.ReadFile(fsys, fn)
 		eb.AddError(err)
@@ -57,15 +56,14 @@ func (n *LoadFileNode) runFs(data *loadFileData, input pipeline.RunInput) (*pipe
 		base := path.Base(fn)
 		output.Pins = append(output.Pins, pipeline.Pin{Payload: &pipeline.ContentData{Name: base, Data: string(dat)}})
 	}
-	return &output, eb.Err
+	return eb.Err
 }
 
-func (n *LoadFileNode) runLocal(data *loadFileData, input pipeline.RunInput) (*pipeline.RunOutput, error) {
+func (n *LoadFileNode) runLocal(data *loadFileData, input pipeline.RunInput, output *pipeline.RunOutput) error {
 	eb := &oferrors.FirstBlock{}
 	matches, err := filepath.Glob(filepath.FromSlash(data.Glob))
 	eb.AddError(err)
 
-	output := pipeline.RunOutput{}
 	for _, fn := range matches {
 		dat, err := os.ReadFile(fn)
 		eb.AddError(err)
@@ -73,7 +71,7 @@ func (n *LoadFileNode) runLocal(data *loadFileData, input pipeline.RunInput) (*p
 		base := filepath.Base(fn)
 		output.Pins = append(output.Pins, pipeline.Pin{Payload: &pipeline.ContentData{Name: base, Data: string(dat)}})
 	}
-	return &output, eb.Err
+	return eb.Err
 }
 
 func (n *LoadFileNode) getFilenames(fsname string, glob string) ([]string, error) {

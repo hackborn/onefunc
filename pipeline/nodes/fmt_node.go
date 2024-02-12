@@ -21,7 +21,7 @@ func (n *FmtNode) Start(input pipeline.StartInput) error {
 	return nil
 }
 
-func (n *FmtNode) Run(state *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
+func (n *FmtNode) Run(state *pipeline.State, input pipeline.RunInput, output *pipeline.RunOutput) error {
 	fmt.Println("fmt run input pins:", len(input.Pins))
 	data := state.NodeData.(*fmtData)
 	for _, pin := range input.Pins {
@@ -33,8 +33,9 @@ func (n *FmtNode) Run(state *pipeline.State, input pipeline.RunInput) (*pipeline
 		default:
 			fmt.Printf("unknown pin type: %T\n", p)
 		}
+		output.Pins = append(output.Pins, pin)
 	}
-	return &pipeline.RunOutput{Pins: input.Pins}, nil
+	return nil
 }
 
 func (n *FmtNode) runContentPin(data *fmtData, pin *pipeline.ContentData) {

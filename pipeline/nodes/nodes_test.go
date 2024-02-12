@@ -119,12 +119,11 @@ type contentSrcNode struct {
 	data []*pipeline.ContentData
 }
 
-func (n *contentSrcNode) Run(s *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
-	output := pipeline.RunOutput{}
+func (n *contentSrcNode) Run(s *pipeline.State, input pipeline.RunInput, output *pipeline.RunOutput) error {
 	for _, cd := range n.data {
 		output.Pins = append(output.Pins, pipeline.Pin{Payload: cd})
 	}
-	return &output, nil
+	return nil
 }
 
 // ---------------------------------------------------------

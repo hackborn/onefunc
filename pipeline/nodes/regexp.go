@@ -42,20 +42,19 @@ func (n *RegexpNode) Start(input pipeline.StartInput) error {
 	return nil
 }
 
-func (n *RegexpNode) Run(state *pipeline.State, input pipeline.RunInput) (*pipeline.RunOutput, error) {
+func (n *RegexpNode) Run(state *pipeline.State, input pipeline.RunInput, output *pipeline.RunOutput) error {
 	data := state.NodeData.(*regexpData)
 	re, runFn, setFn, err := n.prepare(data)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	output := pipeline.RunOutput{}
 	output.Pins = make([]pipeline.Pin, 0, len(input.Pins))
 	eb := &oferrors.FirstBlock{}
 	for _, pin := range input.Pins {
 		eb.AddError(setFn(pin.Payload, runFn, re, data))
 		output.Pins = append(output.Pins, pin)
 	}
-	return &output, eb.Err
+	return eb.Err
 }
 
 func (n *RegexpNode) prepare(data *regexpData) (*regexp.Regexp, regexpOperationFn, regexpTargetFn, error) {
