@@ -246,3 +246,16 @@ func mapAt(key string, m map[string]any) (any, bool) {
 	v, ok := m[key]
 	return v, ok
 }
+
+// RunNode is a convenience to run a single node.
+func RunNode(node Node, input RunInput, output *RunOutput) error {
+	state := &State{}
+	if starter, ok := node.(Starter); ok {
+		si := _startInput{}
+		if err := starter.Start(&si); err != nil {
+			return err
+		}
+		state.NodeData = si.nodeData
+	}
+	return node.Run(state, input, output)
+}
