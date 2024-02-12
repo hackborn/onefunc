@@ -14,7 +14,7 @@ type Cloner interface {
 type ClonePolicy int
 
 const (
-	SmartClonePolicy  ClonePolicy = iota // A clone is made when one payload is going to two ore more RunInputs, othwerwise no clone.
-	AlwaysClonePolicy                    // A clone is always made.
-	NeverClonePolicy                     // A clone is never made.
+	SmartClone  ClonePolicy = iota // A clone is made when one payload is going to two ore more RunInputs, othwerwise no clone.
+	AlwaysClone                    // A clone is always made.
+	NeverClone                     // A clone is never made.
 )

@@ -90,9 +90,9 @@ func (f *runFanOut) on(topin *runningPin, runOutput *RunOutput) {
 		}
 		newpin := pin
 		switch pin.Policy {
-		case AlwaysClonePolicy:
+		case AlwaysClone:
 			newpin.Payload = pin.Payload.Clone()
-		case NeverClonePolicy:
+		case NeverClone:
 		default:
 			if first > 0 {
 				newpin.Payload = pin.Payload.Clone()
@@ -115,9 +115,9 @@ func (f *initFanOut) on(index int, src []Pin, dst []Pin) []Pin {
 		}
 		dstpin := srcpin
 		switch srcpin.Policy {
-		case AlwaysClonePolicy:
+		case AlwaysClone:
 			dstpin.Payload = srcpin.Payload.Clone()
-		case NeverClonePolicy:
+		case NeverClone:
 		default:
 			if index > 0 {
 				dstpin.Payload = srcpin.Payload.Clone()
