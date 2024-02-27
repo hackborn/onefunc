@@ -29,7 +29,7 @@ func TestRun(t *testing.T) {
 		if v.wantErr == nil && haveErr != nil {
 			t.Fatalf("TestRun %v expected no error but has %v", i, haveErr)
 		} else if v.wantErr != nil && haveErr == nil {
-			t.Fatalf("TestRun %v has no error but exptected %v", i, v.wantErr)
+			t.Fatalf("TestRun %v has no error but expected %v", i, v.wantErr)
 		}
 	}
 }
@@ -60,7 +60,7 @@ func TestRunOpts(t *testing.T) {
 		if v.wantErr == nil && haveErr != nil {
 			t.Fatalf("TestRunOpts %v expected no error but has %v", i, haveErr)
 		} else if v.wantErr != nil && haveErr == nil {
-			t.Fatalf("TestRunOpts %v has no error but exptected %v", i, v.wantErr)
+			t.Fatalf("TestRunOpts %v has no error but expected %v", i, v.wantErr)
 		}
 	}
 }
