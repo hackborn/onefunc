@@ -46,6 +46,42 @@ func TestString(t *testing.T) {
 }
 
 // ---------------------------------------------------------
+// TEST-BOOL
+func TestSBool(t *testing.T) {
+	optC := []Option{WithFS(dataFs, "test_data/settings_c.json")}
+
+	table := []struct {
+		opts    []Option
+		subset  []string
+		path    string
+		want    bool
+		wantOk  bool
+		wantErr error
+	}{
+		{nil, nil, "", false, false, nil},
+		{optC, nil, "good", true, true, nil},
+		{optC, nil, "bad", false, true, nil},
+		{optC, nil, "goodstr1", true, true, nil},
+		{optC, nil, "goodstr2", true, true, nil},
+		{optC, nil, "list/a", true, true, nil},
+	}
+	for i, v := range table {
+		s, haveErr := NewSettings(v.opts...)
+		for _, path := range v.subset {
+			s = s.Subset(path)
+		}
+		have, haveOk := s.Bool(v.path)
+		if err := jacl.RunErr(haveErr, v.wantErr); err != nil {
+			t.Fatalf("TestBool %v %v", i, err.Error())
+		} else if haveOk != v.wantOk {
+			t.Fatalf("TestBool %v has ok \"%v\" but wants ok \"%v\"", i, haveOk, v.wantOk)
+		} else if have != v.want {
+			t.Fatalf("TestBool %v has \"%v\" but wants \"%v\"", i, have, v.want)
+		}
+	}
+}
+
+// ---------------------------------------------------------
 // LIFECYCLE
 
 func setupTests() {

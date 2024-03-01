@@ -1,0 +1,7 @@
+{
+  "good": true,
+  "bad": false,
+  "goodstr1": "true",
+  "goodstr2": "t",
+  "list": ["a", "b", "d"]
+}

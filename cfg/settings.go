@@ -16,6 +16,10 @@ type tree = map[string]any
 type Settings struct {
 	rw *sync.RWMutex
 	t  tree
+	// key is a special case where we make a subset to a
+	// slice. For the client, the key that got us to the slice
+	// has disappeared, but we are a map and need a key, so it gets saved here.
+	key string
 }
 
 func NewSettings(opts ...Option) (Settings, error) {
@@ -73,6 +77,7 @@ func (s Settings) Bool(path string) (bool, bool) {
 		return s.flatBool(p[0])
 	default:
 		newPath := strings.Join(p[0:len(p)-1], pathSeparator)
+		fmt.Println("sliding into subset on", p, "newPath", newPath)
 		return s.lockedSubset(newPath).flatBool(p[len(p)-1])
 	}
 }
@@ -90,14 +95,41 @@ func (s Settings) MustBool(path string, fallback bool) bool {
 // assumes it is an index in this map and not a subset,
 // and returns the value.
 func (s Settings) flatBool(p string) (bool, bool) {
+	fmt.Println("flatbool p", p, "key", s.key)
+	s.Print()
+	// Lists are a special case
+	if s.key != "" {
+		return s.flatBoolList(p)
+	}
 	if v1, ok := s.t[p]; ok {
 		switch v2 := v1.(type) {
 		//		case int:
 		//			fmt.Printf("Twice %v is %v\n", v, v*2)
 		case bool:
 			return v2, true
+		case string:
+			lc := strings.ToLower(v2)
+			if lc == "true" || lc == "t" {
+				return true, true
+			}
+			return false, false
 		default:
 			return false, false
+		}
+	}
+	return false, false
+}
+
+func (s Settings) flatBoolList(p string) (bool, bool) {
+	fmt.Println("flatGoolList", p)
+	if list, ok := s.t[s.key].([]any); ok {
+		for _, _item := range list {
+			switch item := _item.(type) {
+			case string:
+				if item == p {
+					return true, true
+				}
+			}
 		}
 	}
 	return false, false
@@ -141,6 +173,9 @@ func (s Settings) lockedSubset(path string) Settings {
 		if sub, ok := t[n]; ok {
 			if subv, ok2 := sub.(map[string]any); ok2 {
 				t = subv
+			} else if _, ok3 := sub.([]any); ok3 {
+				insert := map[string]any{n: sub}
+				return Settings{rw: s.rw, t: insert, key: n}
 			} else {
 				// It would be nice to handle this case: Essentially,
 				// a single value is being requested, with no children.
