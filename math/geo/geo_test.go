@@ -49,11 +49,11 @@ func TestLine(t *testing.T) {
 		{PointI{X: 0, Y: 0}, PointI{X: 2, Y: 0}, newLineOut(0, 0, 1, 0, 2, 0)},
 		{PointI{X: 0, Y: 0}, PointI{X: -2, Y: 0}, newLineOut(0, 0, -1, 0, -2, 0)},
 		{PointI{X: 0, Y: 0}, PointI{X: -2, Y: -2}, newLineOut(0, 0, -1, -1, -2, -2)},
+		//		{PointI{X: 0, Y: 0}, PointI{X: 20, Y: 10}, newLineOut(0, 0, -1, -1, -2, -2)},
 	}
 	for i, v := range table {
 		have := &LineOut{}
 		DrawLine(v.a.X, v.a.Y, v.b.X, v.b.Y, have.Draw)
-
 		if err := have.Cmp(v.want); err != nil {
 			have.Print()
 			t.Fatalf("TestLine %v %v", i, err)
