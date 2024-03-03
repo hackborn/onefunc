@@ -19,7 +19,6 @@ func WithFS(fsys fs.FS, pattern string) Option {
 	return func(s Settings, eb oferrors.Block) {
 		matches, err := fs.Glob(fsys, pattern)
 		eb.AddError(err)
-
 		for _, match := range matches {
 			dat, err := fs.ReadFile(fsys, match)
 			eb.AddError(err)

@@ -13,13 +13,15 @@ import (
 
 type tree = map[string]any
 
+// Settings stores a tree of settings values, accessed
+// via a path syntax ("path/to/value").
 type Settings struct {
 	rw *sync.RWMutex
 	t  tree
-	// key is a special case where we make a subset to a
+	// sliceKey is a special case where we make a subset to a
 	// slice. For the client, the key that got us to the slice
 	// has disappeared, but we are a map and need a key, so it gets saved here.
-	key string
+	sliceKey string
 }
 
 func NewSettings(opts ...Option) (Settings, error) {
@@ -66,7 +68,41 @@ func (s Settings) MustString(path, fallback string) string {
 	return fallback
 }
 
-// Bool answers the bool value at the given path.
+// Strings answers the string slice at the given path.
+func (s Settings) Strings(path string) []string {
+	defer lock.Read(s.rw).Unlock()
+	p := strings.Split(path, pathSeparator)
+	sub := Settings{}
+	switch len(p) {
+	case 0:
+		return nil
+	case 1:
+		sub = s.lockedSubset(p[0])
+	default:
+		newPath := strings.Join(p[0:len(p)-1], pathSeparator)
+		sub = s.lockedSubset(newPath)
+		//		return s.lockedSubset(newPath).flatString(p[len(p)-1])
+	}
+	if list, ok := sub.t[sub.sliceKey].([]any); ok {
+		sl := make([]string, 0, len(list))
+		for _, _item := range list {
+			switch item := _item.(type) {
+			case string:
+				sl = append(sl, item)
+			default:
+				sl = append(sl, fmt.Sprintf("%s", item))
+			}
+		}
+		return sl
+	}
+	return nil
+}
+
+// Bool answers the bool value at the given path. The value
+// must be a bool, a string (with value "true" or "t") or an
+// element of a slice (for example, if the Settings contains
+// "fruits": ["apple", "orange"], then Bool("fruits/apple")
+// will return true).
 func (s Settings) Bool(path string) (bool, bool) {
 	defer lock.Read(s.rw).Unlock()
 	p := strings.Split(path, pathSeparator)
@@ -77,7 +113,6 @@ func (s Settings) Bool(path string) (bool, bool) {
 		return s.flatBool(p[0])
 	default:
 		newPath := strings.Join(p[0:len(p)-1], pathSeparator)
-		fmt.Println("sliding into subset on", p, "newPath", newPath)
 		return s.lockedSubset(newPath).flatBool(p[len(p)-1])
 	}
 }
@@ -95,10 +130,8 @@ func (s Settings) MustBool(path string, fallback bool) bool {
 // assumes it is an index in this map and not a subset,
 // and returns the value.
 func (s Settings) flatBool(p string) (bool, bool) {
-	fmt.Println("flatbool p", p, "key", s.key)
-	s.Print()
 	// Lists are a special case
-	if s.key != "" {
+	if s.sliceKey != "" {
 		return s.flatBoolList(p)
 	}
 	if v1, ok := s.t[p]; ok {
@@ -121,8 +154,7 @@ func (s Settings) flatBool(p string) (bool, bool) {
 }
 
 func (s Settings) flatBoolList(p string) (bool, bool) {
-	fmt.Println("flatGoolList", p)
-	if list, ok := s.t[s.key].([]any); ok {
+	if list, ok := s.t[s.sliceKey].([]any); ok {
 		for _, _item := range list {
 			switch item := _item.(type) {
 			case string:
@@ -135,7 +167,7 @@ func (s Settings) flatBoolList(p string) (bool, bool) {
 	return false, false
 }
 
-// latString takes a path with no seperator, i.e.
+// flatString takes a path with no seperator, i.e.
 // assumes it is an index in this map and not a subset,
 // and returns the value.
 func (s Settings) flatString(p string) (string, bool) {
@@ -172,10 +204,16 @@ func (s Settings) lockedSubset(path string) Settings {
 	for _, n := range p {
 		if sub, ok := t[n]; ok {
 			if subv, ok2 := sub.(map[string]any); ok2 {
+				// Recurse down the map.
 				t = subv
 			} else if _, ok3 := sub.([]any); ok3 {
+				// Slices are handled specially: The parent key
+				// is maintained, and a new map with just the key
+				// and the slice value is returned. The key is then
+				// annotated in "key" so subsequent callers know
+				// how to access the slice value.
 				insert := map[string]any{n: sub}
-				return Settings{rw: s.rw, t: insert, key: n}
+				return Settings{rw: s.rw, t: insert, sliceKey: n}
 			} else {
 				// It would be nice to handle this case: Essentially,
 				// a single value is being requested, with no children.
