@@ -2,6 +2,7 @@ package cfg
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"os"
 	"path"
@@ -21,11 +22,17 @@ func WithFS(fsys fs.FS, pattern string) Option {
 		eb.AddError(err)
 		for _, match := range matches {
 			dat, err := fs.ReadFile(fsys, match)
-			eb.AddError(err)
+			if err != nil {
+				err = fmt.Errorf("%v: %w", match, err)
+				eb.AddError(err)
+			}
 
 			s2 := emptySettings(s.rw)
 			err = json.Unmarshal(dat, &s2.t)
-			eb.AddError(err)
+			if err != nil {
+				err = fmt.Errorf("%v: %w", match, err)
+				eb.AddError(err)
+			}
 
 			mergeKeys(s.t, s2.t)
 		}
