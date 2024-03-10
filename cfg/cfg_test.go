@@ -17,7 +17,7 @@ func TestMain(m *testing.M) {
 
 // ---------------------------------------------------------
 // TEST-BOOL
-func TestSBool(t *testing.T) {
+func TestBool(t *testing.T) {
 	optC := []Option{WithFS(dataFs, "test_data/c.json")}
 
 	table := []struct {
@@ -47,6 +47,40 @@ func TestSBool(t *testing.T) {
 			t.Fatalf("TestBool %v has ok \"%v\" but wants ok \"%v\"", i, haveOk, v.wantOk)
 		} else if have != v.want {
 			t.Fatalf("TestBool %v has \"%v\" but wants \"%v\"", i, have, v.want)
+		}
+	}
+}
+
+// ---------------------------------------------------------
+// TEST-INT64
+func TestInt64(t *testing.T) {
+	optA := []Option{WithFS(dataFs, "test_data/a.json")}
+
+	table := []struct {
+		opts    []Option
+		subset  []string
+		path    string
+		want    int64
+		wantOk  bool
+		wantErr error
+	}{
+		{nil, nil, "", 0, false, nil},
+		{optA, nil, "age", 32, true, nil},
+		{optA, nil, "run/count", 10, true, nil},
+		{optA, []string{"run"}, "count", 10, true, nil},
+	}
+	for i, v := range table {
+		s, haveErr := NewSettings(v.opts...)
+		for _, path := range v.subset {
+			s = s.Subset(path)
+		}
+		have, haveOk := s.Int64(v.path)
+		if err := jacl.RunErr(haveErr, v.wantErr); err != nil {
+			t.Fatalf("TestInt64 %v %v", i, err.Error())
+		} else if haveOk != v.wantOk {
+			t.Fatalf("TestInt64 %v has ok \"%v\" but wants ok \"%v\"", i, haveOk, v.wantOk)
+		} else if have != v.want {
+			t.Fatalf("TestInt64 %v has \"%v\" but wants \"%v\"", i, have, v.want)
 		}
 	}
 }

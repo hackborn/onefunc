@@ -126,6 +126,30 @@ func (s Settings) MustBool(path string, fallback bool) bool {
 	return fallback
 }
 
+// Int64 answers the int64 value at the given path.
+func (s Settings) Int64(path string) (int64, bool) {
+	defer lock.Read(s.rw).Unlock()
+	p := strings.Split(path, pathSeparator)
+	switch len(p) {
+	case 0:
+		return 0, false
+	case 1:
+		return s.flatInt64(p[0])
+	default:
+		newPath := strings.Join(p[0:len(p)-1], pathSeparator)
+		return s.lockedSubset(newPath).flatInt64(p[len(p)-1])
+	}
+}
+
+// MustInt64 answers the bool value at the given path or
+// fallback if path is absent.
+func (s Settings) MustInt64(path string, fallback int64) int64 {
+	if b, ok := s.Int64(path); ok {
+		return b
+	}
+	return fallback
+}
+
 // flatBool takes a path with no seperator, i.e.
 // assumes it is an index in this map and not a subset,
 // and returns the value.
@@ -151,6 +175,32 @@ func (s Settings) flatBool(p string) (bool, bool) {
 		}
 	}
 	return false, false
+}
+
+// flatInt64 takes a path with no seperator, i.e.
+// assumes it is an index in this map and not a subset,
+// and returns the value.
+func (s Settings) flatInt64(p string) (int64, bool) {
+	// Lists are a special case
+	if s.sliceKey != "" {
+		// Ints don't have slice support
+		return 0, false
+	}
+	if v1, ok := s.t[p]; ok {
+		switch v2 := v1.(type) {
+		case int:
+			return int64(v2), true
+		case int64:
+			return v2, true
+		case float32:
+			return int64(v2), true
+		case float64:
+			return int64(v2), true
+		default:
+			return 0, false
+		}
+	}
+	return 0, false
 }
 
 func (s Settings) flatBoolList(p string) (bool, bool) {
