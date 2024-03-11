@@ -46,17 +46,7 @@ func SaveSettings(path string, s Settings) error {
 
 // String answers the string value at the given path.
 func (s Settings) String(path string) (string, bool) {
-	defer lock.Read(s.rw).Unlock()
-	p := strings.Split(path, pathSeparator)
-	switch len(p) {
-	case 0:
-		return "", false
-	case 1:
-		return s.flatString(p[0])
-	default:
-		newPath := strings.Join(p[0:len(p)-1], pathSeparator)
-		return s.lockedSubset(newPath).flatString(p[len(p)-1])
-	}
+	return getType(s, path, leafString)
 }
 
 // MustString answers the string value at the given path or
@@ -104,17 +94,7 @@ func (s Settings) Strings(path string) []string {
 // "fruits": ["apple", "orange"], then Bool("fruits/apple")
 // will return true).
 func (s Settings) Bool(path string) (bool, bool) {
-	defer lock.Read(s.rw).Unlock()
-	p := strings.Split(path, pathSeparator)
-	switch len(p) {
-	case 0:
-		return false, false
-	case 1:
-		return s.flatBool(p[0])
-	default:
-		newPath := strings.Join(p[0:len(p)-1], pathSeparator)
-		return s.lockedSubset(newPath).flatBool(p[len(p)-1])
-	}
+	return getType(s, path, leafBool)
 }
 
 // MustBool answers the bool value at the given path or
@@ -126,19 +106,23 @@ func (s Settings) MustBool(path string, fallback bool) bool {
 	return fallback
 }
 
+// Float64 answers the float64 value at the given path.
+func (s Settings) Float64(path string) (float64, bool) {
+	return getType(s, path, leafFloat64)
+}
+
+// MustFloat64 answers the bool value at the given path or
+// fallback if path is absent.
+func (s Settings) MustFloat64(path string, fallback float64) float64 {
+	if b, ok := s.Float64(path); ok {
+		return b
+	}
+	return fallback
+}
+
 // Int64 answers the int64 value at the given path.
 func (s Settings) Int64(path string) (int64, bool) {
-	defer lock.Read(s.rw).Unlock()
-	p := strings.Split(path, pathSeparator)
-	switch len(p) {
-	case 0:
-		return 0, false
-	case 1:
-		return s.flatInt64(p[0])
-	default:
-		newPath := strings.Join(p[0:len(p)-1], pathSeparator)
-		return s.lockedSubset(newPath).flatInt64(p[len(p)-1])
-	}
+	return getType(s, path, leafInt64)
 }
 
 // MustInt64 answers the bool value at the given path or
@@ -148,59 +132,6 @@ func (s Settings) MustInt64(path string, fallback int64) int64 {
 		return b
 	}
 	return fallback
-}
-
-// flatBool takes a path with no seperator, i.e.
-// assumes it is an index in this map and not a subset,
-// and returns the value.
-func (s Settings) flatBool(p string) (bool, bool) {
-	// Lists are a special case
-	if s.sliceKey != "" {
-		return s.flatBoolList(p)
-	}
-	if v1, ok := s.t[p]; ok {
-		switch v2 := v1.(type) {
-		//		case int:
-		//			fmt.Printf("Twice %v is %v\n", v, v*2)
-		case bool:
-			return v2, true
-		case string:
-			lc := strings.ToLower(v2)
-			if lc == "true" || lc == "t" {
-				return true, true
-			}
-			return false, false
-		default:
-			return false, false
-		}
-	}
-	return false, false
-}
-
-// flatInt64 takes a path with no seperator, i.e.
-// assumes it is an index in this map and not a subset,
-// and returns the value.
-func (s Settings) flatInt64(p string) (int64, bool) {
-	// Lists are a special case
-	if s.sliceKey != "" {
-		// Ints don't have slice support
-		return 0, false
-	}
-	if v1, ok := s.t[p]; ok {
-		switch v2 := v1.(type) {
-		case int:
-			return int64(v2), true
-		case int64:
-			return v2, true
-		case float32:
-			return int64(v2), true
-		case float64:
-			return int64(v2), true
-		default:
-			return 0, false
-		}
-	}
-	return 0, false
 }
 
 func (s Settings) flatBoolList(p string) (bool, bool) {
@@ -215,23 +146,6 @@ func (s Settings) flatBoolList(p string) (bool, bool) {
 		}
 	}
 	return false, false
-}
-
-// flatString takes a path with no seperator, i.e.
-// assumes it is an index in this map and not a subset,
-// and returns the value.
-func (s Settings) flatString(p string) (string, bool) {
-	if v1, ok := s.t[p]; ok {
-		switch v2 := v1.(type) {
-		//		case int:
-		//			fmt.Printf("Twice %v is %v\n", v, v*2)
-		case string:
-			return v2, true
-		default:
-			return "", false
-		}
-	}
-	return "", false
 }
 
 // Subset answers a subset of the settings tree based on
@@ -332,6 +246,117 @@ func (s Settings) lockedRemotePrivateKeys() {
 
 func (s Settings) Print() {
 	fmt.Println(s.t)
+}
+
+type getFlatTypeFunc[T any] func(s Settings, path string) (T, bool)
+
+func getType[T any](s Settings, path string, getFn getFlatTypeFunc[T]) (T, bool) {
+	defer lock.Read(s.rw).Unlock()
+	p := strings.Split(path, pathSeparator)
+	switch len(p) {
+	case 0:
+		var t T
+		return t, false
+	case 1:
+		return getFn(s, p[0])
+	default:
+		newPath := strings.Join(p[0:len(p)-1], pathSeparator)
+		return getFn(s.lockedSubset(newPath), p[len(p)-1])
+	}
+}
+
+// leafBool takes a path with no seperator, i.e.
+// assumes it is an index in this map and not a subset,
+// and returns the value.
+func leafBool(s Settings, p string) (bool, bool) {
+	// Lists are a special case
+	if s.sliceKey != "" {
+		return s.flatBoolList(p)
+	}
+	if v1, ok := s.t[p]; ok {
+		switch v2 := v1.(type) {
+		//		case int:
+		//			fmt.Printf("Twice %v is %v\n", v, v*2)
+		case bool:
+			return v2, true
+		case string:
+			lc := strings.ToLower(v2)
+			if lc == "true" || lc == "t" {
+				return true, true
+			}
+			return false, false
+		default:
+			return false, false
+		}
+	}
+	return false, false
+}
+
+// leafFloat64 takes a path with no seperator, i.e.
+// assumes it is an index in this map and not a subset,
+// and returns the value.
+func leafFloat64(s Settings, p string) (float64, bool) {
+	// Lists are a special case
+	if s.sliceKey != "" {
+		// Floats don't have slice support
+		return 0.0, false
+	}
+	if v1, ok := s.t[p]; ok {
+		switch v2 := v1.(type) {
+		case int:
+			return float64(v2), true
+		case int64:
+			return float64(v2), true
+		case float32:
+			return float64(v2), true
+		case float64:
+			return v2, true
+		default:
+			return 0.0, false
+		}
+	}
+	return 0.0, false
+}
+
+// leafInt64 takes a path with no seperator, i.e.
+// assumes it is an index in this map and not a subset,
+// and returns the value.
+func leafInt64(s Settings, p string) (int64, bool) {
+	// Lists are a special case
+	if s.sliceKey != "" {
+		// Ints don't have slice support
+		return 0, false
+	}
+	if v1, ok := s.t[p]; ok {
+		switch v2 := v1.(type) {
+		case int:
+			return int64(v2), true
+		case int64:
+			return v2, true
+		case float32:
+			return int64(v2), true
+		case float64:
+			return int64(v2), true
+		default:
+			return 0, false
+		}
+	}
+	return 0, false
+}
+
+// leafString takes a path with no seperator, i.e.
+// assumes it is an index in this map and not a subset,
+// and returns the value.
+func leafString(s Settings, p string) (string, bool) {
+	if v1, ok := s.t[p]; ok {
+		switch v2 := v1.(type) {
+		case string:
+			return v2, true
+		default:
+			return "", false
+		}
+	}
+	return "", false
 }
 
 type WalkKeysFunc func(key string) error
