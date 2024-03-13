@@ -9,6 +9,37 @@ import (
 )
 
 // ---------------------------------------------------------
+// TEST-PROJECT
+func TestProject(t *testing.T) {
+	table := []struct {
+		seg   SegmentF64
+		dist  float64
+		check bool // Set to true to fail the test and see the values
+	}{
+		{SegmentF64{A: ptf(0, 0), B: ptf(10, 10)}, 1, false},
+		{SegmentF64{A: ptf(0, 0), B: ptf(20, 10)}, 1, false},
+		{SegmentF64{A: ptf(0, 0), B: ptf(20, 10)}, 10, false},
+		{SegmentF64{A: ptf(0, 0), B: ptf(1, 100)}, 1, false},
+		{SegmentF64{A: ptf(0, 0), B: ptf(0, 10)}, 1, false},
+		{SegmentF64{A: ptf(0, 0), B: ptf(10, 0)}, 1, false},
+	}
+	for i, v := range table {
+		//		m := v.seg.Slope()
+		m := v.seg.PerpendicularSlope()
+		haveA, haveB := v.seg.A.Project(m, v.dist)
+		distA := v.seg.A.Dist(haveA)
+		distB := v.seg.A.Dist(haveB)
+		if !floatsEqual(v.dist, distA) {
+			t.Fatalf("TestProject %v has distance a %v but expected %v (pt %v)", i, distA, v.dist, haveA)
+		} else if !floatsEqual(v.dist, distB) {
+			t.Fatalf("TestProject %v has distance b %v but expected %v (pt %v)", i, distB, v.dist, haveB)
+		} else if v.check {
+			t.Fatalf("TestProject %v check: m %v dist %v pt %v haveA %v haveB %v distA %v distB %v", i, m, v.dist, v.seg.A, haveA, haveB, distA, distB)
+		}
+	}
+}
+
+// ---------------------------------------------------------
 // TEST-XY-TO-INDEX
 func TestXYToIndex(t *testing.T) {
 	table := []struct {
@@ -63,6 +94,11 @@ func TestLine(t *testing.T) {
 
 // ---------------------------------------------------------
 // SUPPORT
+
+// ptf is a convenience for creating a PointF64
+func ptf(x, y float64) PointF64 {
+	return PointF64{X: x, Y: y}
+}
 
 // Create a new line out on the supplied pixel components.
 // Components must always be two ints (the x and y) optionally
@@ -140,7 +176,11 @@ func (a *LineOut) Cmp(b LineOut) error {
 }
 
 func floatsEqual(a, b float64) bool {
-	tolerance := 0.000001
+	const tolerance = 0.0000001
 	diff := math.Abs(a - b)
 	return diff < tolerance
+}
+
+func pointsEqual(a, b PointF64) bool {
+	return floatsEqual(a.X, b.X) && floatsEqual(a.Y, b.Y)
 }

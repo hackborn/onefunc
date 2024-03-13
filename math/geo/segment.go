@@ -10,6 +10,30 @@ type Segment[T Number] struct {
 	B Point[T]
 }
 
+// Slope answers the slope of this line segment. Vertical
+// lines are slope math.MaxFloat64, horizontal lines are slope 0.
+func (s Segment[T]) Slope() float64 {
+	if s.A.X == s.B.X {
+		return math.MaxFloat64
+	} else if s.A.Y == s.B.Y {
+		return 0.0
+	}
+	x1, y1 := float64(s.A.X), float64(s.A.Y)
+	x2, y2 := float64(s.B.X), float64(s.B.Y)
+	return (y2 - y1) / (x2 - x1)
+}
+
+// PerpendicularSlope answers the perpendicular of Slope.
+func (s Segment[T]) PerpendicularSlope() float64 {
+	m := s.Slope()
+	if m == 0.0 {
+		return math.MaxFloat64
+	} else if m == math.MaxFloat64 {
+		return 0.0
+	}
+	return -1.0 / s.Slope()
+}
+
 // IsCollinear checks if three points are collinear
 func IsCollinear[T Number](p1, p2, p3 Point[T]) bool {
 	a := float64(p2.X - p1.X)
@@ -76,7 +100,7 @@ func FindIntersection[T Number](s1, s2 Segment[T]) (Point[T], bool) {
 	return Point[T]{}, false // Lines don't intersect
 }
 
-// DistanceFromPointToLine calculates the distance from a point to a line segment
+// DistanceFromPointToSegment calculates the distance from a point to a line segment
 func DistanceFromPointToSegment[T Number](p Point[T], s Segment[T]) float64 {
 	p1, p2 := s.A, s.B
 
