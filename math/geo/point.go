@@ -57,6 +57,7 @@ func (p Point[T]) ToIndex(xy Point[T]) T {
 	return (xy.Y * p.X) + xy.X
 }
 
+type PointF32 = Point[float32]
 type PointF64 = Point[float64]
 type PointI = Point[int]
 type PointI64 = Point[int64]

@@ -6,6 +6,8 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
+type ProcessPtF64Func func(pt PointF64) PointF64
+
 func DegreesToRadians(degrees float64) float64 {
 	return degrees * (math.Pi / 180.0)
 }

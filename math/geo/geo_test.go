@@ -9,6 +9,34 @@ import (
 )
 
 // ---------------------------------------------------------
+// TEST-SEGMENT-INTERSECTION
+func TestSegmentIntersection(t *testing.T) {
+	table := []struct {
+		s1     SegmentF64
+		s2     SegmentF64
+		want   PointF64
+		wantOk bool
+		check  bool // Set to true to fail the test and see the values
+	}{
+		{segf(5, 0, 5, 10), segf(0, 5, 10, 5), ptf(5, 5), true, false},
+		{segf(0, 0, 10, 10), segf(0, 10, 10, 0), ptf(5, 5), true, false},
+		{segf(0, 0, 10, 10), segf(0, 5, 20, 0), ptf(4, 4), true, false},
+	}
+	for i, v := range table {
+		have, haveOk := FindIntersection(v.s1, v.s2)
+
+		if v.check {
+			have2, haveOk2 := FindIntersectionBAD(v.s1, v.s2)
+			t.Fatalf("TestSegmentIntersection %v segment (%v) to (%v) pt1 %v pt2 %v ok1 %v ok2 %v", i, v.s1, v.s2, have, have2, haveOk, haveOk2)
+		} else if v.wantOk != haveOk {
+			t.Fatalf("TestSegmentIntersection %v has ok %v but expected %v", i, haveOk, v.wantOk)
+		} else if !pointsEqual(v.want, have) {
+			t.Fatalf("TestSegmentIntersection %v has intersection %v but expected %v", i, have, v.want)
+		}
+	}
+}
+
+// ---------------------------------------------------------
 // TEST-PROJECT
 func TestProject(t *testing.T) {
 	table := []struct {
@@ -16,12 +44,12 @@ func TestProject(t *testing.T) {
 		dist  float64
 		check bool // Set to true to fail the test and see the values
 	}{
-		{SegmentF64{A: ptf(0, 0), B: ptf(10, 10)}, 1, false},
-		{SegmentF64{A: ptf(0, 0), B: ptf(20, 10)}, 1, false},
-		{SegmentF64{A: ptf(0, 0), B: ptf(20, 10)}, 10, false},
-		{SegmentF64{A: ptf(0, 0), B: ptf(1, 100)}, 1, false},
-		{SegmentF64{A: ptf(0, 0), B: ptf(0, 10)}, 1, false},
-		{SegmentF64{A: ptf(0, 0), B: ptf(10, 0)}, 1, false},
+		{segf(0, 0, 10, 10), 1, false},
+		{segf(0, 0, 20, 10), 1, false},
+		{segf(0, 0, 20, 10), 10, false},
+		{segf(0, 0, 1, 100), 1, false},
+		{segf(0, 0, 0, 10), 1, false},
+		{segf(0, 0, 10, 0), 1, false},
 	}
 	for i, v := range table {
 		//		m := v.seg.Slope()
@@ -93,11 +121,44 @@ func TestLine(t *testing.T) {
 }
 
 // ---------------------------------------------------------
+// TEST-X-AT-Y
+func TestXAtY(t *testing.T) {
+	table := []struct {
+		seg    SegmentF64
+		y      float64
+		want   float64
+		wantOk bool
+		check  bool // Set to true to fail the test and see the values
+	}{
+		{SegmentF64{A: ptf(0, 0), B: ptf(0, 10)}, 5, 0, true, false},
+		{SegmentF64{A: ptf(5, 0), B: ptf(5, 10)}, 5, 5, true, false},
+		{SegmentF64{A: ptf(0, 0), B: ptf(10, 10)}, 5, 5, true, false},
+		{SegmentF64{A: ptf(0, 0), B: ptf(10, 20)}, 5, 2.5, true, false},
+		{SegmentF64{A: ptf(5, 0), B: ptf(5, 10)}, 11, 0, false, false},
+	}
+	for i, v := range table {
+		have, haveOk := XAtY(v.seg, v.y)
+
+		if !floatsEqual(v.want, have) {
+			t.Fatalf("TestXAtY %v has x %v but expected %v", i, have, v.want)
+		} else if v.wantOk != haveOk {
+			t.Fatalf("TestXAtY %v has ok %v but expected %v", i, haveOk, v.wantOk)
+		} else if v.check {
+			t.Fatalf("TestXAtY %v check: seg %v y %v wants %v has %v", i, v.seg, v.y, v.want, have)
+		}
+	}
+}
+
+// ---------------------------------------------------------
 // SUPPORT
 
 // ptf is a convenience for creating a PointF64
 func ptf(x, y float64) PointF64 {
 	return PointF64{X: x, Y: y}
+}
+
+func segf(x1, y1, x2, y2 float64) SegmentF64 {
+	return SegmentF64{A: ptf(x1, y1), B: ptf(x2, y2)}
 }
 
 // Create a new line out on the supplied pixel components.

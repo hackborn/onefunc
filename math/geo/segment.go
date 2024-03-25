@@ -67,8 +67,55 @@ func Orientation[T Number](p0, p1, p2 Point[T]) int {
 	}
 }
 
-// FindIntersection finds the intersection point of two line segments
+// https://github.com/vlecomte/cp-geo/blob/master/basics/segment.tex
 func FindIntersection[T Number](s1, s2 Segment[T]) (Point[T], bool) {
+	oa := orient(s2.A, s2.B, s1.A)
+	ob := orient(s2.A, s2.B, s1.B)
+	oc := orient(s1.A, s1.B, s2.A)
+	od := orient(s1.A, s1.B, s2.B)
+	// Proper intersection exists if opposite signs
+	if oa*ob < 0 && oc*od < 0 {
+		pt := Point[T]{X: (s1.A.X*ob - s1.B.X*oa) / (ob - oa),
+			Y: (s1.A.Y*ob - s1.B.Y*oa) / (ob - oa)}
+		return pt, true
+	}
+	return Point[T]{}, false
+}
+
+func cross[T Number](a, b Point[T]) T {
+	return a.X*b.Y - a.Y*b.X
+}
+
+func orient[T Number](a, b, c Point[T]) T {
+	return cross(b.Sub(a), c.Sub(a))
+}
+
+/*
+Actually, the answers everyone have given you so far are not optimal. They are imprecise, and so are not guaranteed to work on integer coordinates. Also, they are way too complicated.
+
+Taken from Victor Lecomte's fabulous handbook, and modified for simplicity, this C++ function properInter returns whether there is an intersection between segments AB and CD:
+
+struct pt { int x, int y };
+
+int cross(pt a, pt b) {
+    return a.x*b.y - a.y*b.x;
+}
+
+int orient(pt a, pt b, pt c) {
+    return cross(b-a, c-a);
+}
+
+bool properInter(pt a, pt b, pt c, pt d) {
+    int oa = orient(c,d,a),
+        ob = orient(c,d,b),
+        oc = orient(a,b,c),
+        od = orient(a,b,d);
+    // Proper intersection exists iff opposite signs
+    return (oa*ob < 0 && oc*od < 0);
+}
+*/
+// FindIntersection finds the intersection point of two line segments
+func FindIntersectionBAD[T Number](s1, s2 Segment[T]) (Point[T], bool) {
 	p1, p2 := s1.A, s1.B
 	q1, q2 := s2.A, s2.B
 
@@ -121,6 +168,24 @@ func DistanceFromPointToSegment[T Number](p Point[T], s Segment[T]) float64 {
 
 	// **Use the closer endpoint for distance calculation:**
 	return p.Dist(closerPoint)
+}
+
+// XAtY answers the X value for this segment at the given Y
+// value, or false if the line does not intersect y.
+func XAtY(s SegmentF64, y float64) (float64, bool) {
+	if s.B.Y-s.A.Y == 0 {
+		return 0, false
+	}
+	miny, maxy := s.A.Y, s.B.Y
+	if s.B.Y < s.A.Y {
+		miny, maxy = maxy, miny
+	}
+	if maxy-miny == 0 {
+		return 0, false
+	} else if !(y >= miny && y <= maxy) {
+		return 0, false
+	}
+	return s.A.X + (((y - s.A.Y) * (s.B.X - s.A.X)) / (s.B.Y - s.A.Y)), true
 }
 
 // projectPointOnLine projects a point onto a line

@@ -4,12 +4,12 @@ import (
 	"math"
 )
 
-type LineOutput func(x, y int, amount float64)
+type PixelFunc func(x, y int, amount float64)
 
 // DrawLine draws an antialiased line using Xiaolin Wu’s algorithm.
 // The output of each step is provided to the out func.
 // From https://www.geeksforgeeks.org/anti-aliased-line-xiaolin-wus-algorithm/
-func DrawLine2(x0, y0, x1, y1 int, out LineOutput) {
+func DrawLine2(x0, y0, x1, y1 int, out PixelFunc) {
 	steep := math.Abs(float64(y1-y0)) > math.Abs(float64(x1-x0))
 	// swap the co-ordinates if slope > 1 or we draw backwards
 	if steep {
@@ -95,7 +95,7 @@ func rfpart(x float64) float64 {
 // DrawLine draws an antialiased line using Xiaolin Wu’s algorithm.
 // The output of each step is provided to the out func.
 // From https://www.geeksforgeeks.org/anti-aliased-line-xiaolin-wus-algorithm/
-func DrawLine(x0, y0, x1, y1 int, out LineOutput) {
+func DrawLine(x0, y0, x1, y1 int, out PixelFunc) {
 	steep := math.Abs(float64(y1-y0)) > math.Abs(float64(x1-x0))
 	inc := 1
 	cmp := func(a, b int) bool {
