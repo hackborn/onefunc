@@ -2,7 +2,6 @@ package geo
 
 import (
 	"fmt"
-	"math"
 	"testing"
 
 	"github.com/hackborn/onefunc/jacl"
@@ -57,9 +56,9 @@ func TestProject(t *testing.T) {
 		haveA, haveB := v.seg.A.Project(m, v.dist)
 		distA := v.seg.A.Dist(haveA)
 		distB := v.seg.A.Dist(haveB)
-		if !floatsEqual(v.dist, distA) {
+		if !FloatsEqual(v.dist, distA) {
 			t.Fatalf("TestProject %v has distance a %v but expected %v (pt %v)", i, distA, v.dist, haveA)
-		} else if !floatsEqual(v.dist, distB) {
+		} else if !FloatsEqual(v.dist, distB) {
 			t.Fatalf("TestProject %v has distance b %v but expected %v (pt %v)", i, distB, v.dist, haveB)
 		} else if v.check {
 			t.Fatalf("TestProject %v check: m %v dist %v pt %v haveA %v haveB %v distA %v distB %v", i, m, v.dist, v.seg.A, haveA, haveB, distA, distB)
@@ -96,31 +95,6 @@ func TestXYToIndex(t *testing.T) {
 }
 
 // ---------------------------------------------------------
-// TEST-LINE
-func TestLine(t *testing.T) {
-	table := []struct {
-		a    PointI
-		b    PointI
-		want LineOut
-	}{
-		{PointI{X: 0, Y: 0}, PointI{X: 2, Y: 2}, newLineOut(0, 0, 1, 1, 2, 2)},
-		{PointI{X: 0, Y: 2}, PointI{X: 2, Y: 0}, newLineOut(0, 2, 1, 1, 2, 0)},
-		{PointI{X: 0, Y: 0}, PointI{X: 2, Y: 0}, newLineOut(0, 0, 1, 0, 2, 0)},
-		{PointI{X: 0, Y: 0}, PointI{X: -2, Y: 0}, newLineOut(0, 0, -1, 0, -2, 0)},
-		{PointI{X: 0, Y: 0}, PointI{X: -2, Y: -2}, newLineOut(0, 0, -1, -1, -2, -2)},
-		//		{PointI{X: 0, Y: 0}, PointI{X: 20, Y: 10}, newLineOut(0, 0, -1, -1, -2, -2)},
-	}
-	for i, v := range table {
-		have := &LineOut{}
-		DrawLine(v.a.X, v.a.Y, v.b.X, v.b.Y, have.Draw)
-		if err := have.Cmp(v.want); err != nil {
-			have.Print()
-			t.Fatalf("TestLine %v %v", i, err)
-		}
-	}
-}
-
-// ---------------------------------------------------------
 // TEST-X-AT-Y
 func TestXAtY(t *testing.T) {
 	table := []struct {
@@ -139,7 +113,7 @@ func TestXAtY(t *testing.T) {
 	for i, v := range table {
 		have, haveOk := XAtY(v.seg, v.y)
 
-		if !floatsEqual(v.want, have) {
+		if !FloatsEqual(v.want, have) {
 			t.Fatalf("TestXAtY %v has x %v but expected %v", i, have, v.want)
 		} else if v.wantOk != haveOk {
 			t.Fatalf("TestXAtY %v has ok %v but expected %v", i, haveOk, v.wantOk)
@@ -229,19 +203,13 @@ func (a *LineOut) Cmp(b LineOut) error {
 		if apix.Y != bpix.Y {
 			return fmt.Errorf("pixel %v has y=%v but wants y=%v", i, apix.Y, bpix.Y)
 		}
-		if bpix.Amount >= 0.0 && !floatsEqual(apix.Amount, bpix.Amount) {
+		if bpix.Amount >= 0.0 && !FloatsEqual(apix.Amount, bpix.Amount) {
 			return fmt.Errorf("pixel %v has amount=%v but wants amount=%v", i, apix.Amount, bpix.Amount)
 		}
 	}
 	return nil
 }
 
-func floatsEqual(a, b float64) bool {
-	const tolerance = 0.0000001
-	diff := math.Abs(a - b)
-	return diff < tolerance
-}
-
 func pointsEqual(a, b PointF64) bool {
-	return floatsEqual(a.X, b.X) && floatsEqual(a.Y, b.Y)
+	return FloatsEqual(a.X, b.X) && FloatsEqual(a.Y, b.Y)
 }
