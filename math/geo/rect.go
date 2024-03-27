@@ -1,5 +1,9 @@
 package geo
 
+func NewRect[T Number](left, top, right, bottom T) Rect[T] {
+	return Rect[T]{LT: Point[T]{X: left, Y: top}, RB: Point[T]{X: right, Y: bottom}}
+}
+
 type Rect[T Number] struct {
 	LT Point[T]
 	RB Point[T]

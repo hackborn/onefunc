@@ -33,6 +33,10 @@ func (a Point[T]) Magnitude() float64 {
 	return math.Sqrt(x*x + y*y)
 }
 
+func (a Point[T]) Inside(r Rect[T]) bool {
+	return a.X >= r.LT.X && a.Y >= r.LT.Y && a.X < r.RB.X && a.Y < r.RB.Y
+}
+
 // Given slope m and distance, project the positive and negative points on the line.
 // https://stackoverflow.com/questions/1250419/finding-points-on-a-line-with-a-given-distance
 func (a Point[T]) Project(m, dist float64) (Point[T], Point[T]) {
