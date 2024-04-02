@@ -2,7 +2,24 @@ package cfg
 
 import (
 	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
 )
+
+// InitApp supplies names to any paths that want to use
+// the application name, such as the AppDataPath.
+func InitApp(appName string) error {
+	if appDataPath == "" {
+		return fmt.Errorf("No existing data path")
+	}
+	appDataPath = filepath.Join(appDataPath, appName)
+	err := os.Mkdir(appDataPath, 0750)
+	if err != nil && !os.IsExist(err) {
+		return err
+	}
+	return nil
+}
 
 // func InitErr answers a composition of errors generated
 // during init() funcs, if any.

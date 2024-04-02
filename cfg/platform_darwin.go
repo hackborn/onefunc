@@ -12,7 +12,7 @@ func init() {
 		AddInitErr(fmt.Errorf("cfg init() can't get homedir: %w", err))
 		return
 	}
-	appDataPath = filepath.Join(homeDir, "Library", "Application Support", "Daytrader")
+	appDataPath = filepath.Join(homeDir, "Library", "Application Support")
 	err = os.Mkdir(appDataPath, 0750)
 	if err != nil && !os.IsExist(err) {
 		AddInitErr(err)
