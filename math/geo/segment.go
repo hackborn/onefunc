@@ -4,6 +4,11 @@ import (
 	"math"
 )
 
+// Seg is shorthand for creating a segment from two points.
+func Seg[T Number](a, b Point[T]) Segment[T] {
+	return Segment[T]{A: a, B: b}
+}
+
 // Segment represents a line segment with start and end points
 type Segment[T Number] struct {
 	A Point[T]
