@@ -57,6 +57,7 @@ func (r *Router) unsub(topic string, id int64) {
 
 func (r *Router) visit(topic string, subsFn visitSubscriptionsFunc, fn visitFunc) {
 	defer lock.Locker(&r.mut).Unlock()
+	r.validate()
 	subs := r.validateSubscriptions(topic)
 	if subsFn != nil {
 		subsFn(subs)
