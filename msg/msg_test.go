@@ -28,8 +28,8 @@ func TestPublishInt(t *testing.T) {
 }
 
 // ---------------------------------------------------------
-// TEST-SEQUENCE
-func TestSequence(t *testing.T) {
+// TEST-CHANNEL-INT
+func TestChannelInt(t *testing.T) {
 	table := []struct {
 		topic   string
 		message int
@@ -41,10 +41,11 @@ func TestSequence(t *testing.T) {
 		r := &Router{}
 		sub := &subscription{}
 		Sub(r, v.topic, sub.receiveInt)
-		Pub(r, v.topic, v.message)
+		c := NewChannel[int](r, v.topic)
+		c.Pub(v.message)
 
 		if reflect.DeepEqual(v.want, sub.captured) != true {
-			t.Fatalf("TestPublishInt %v has \"%v\" but wants \"%v\"", i, sub.captured, v.want)
+			t.Fatalf("TestChannelInt %v has \"%v\" but wants \"%v\"", i, sub.captured, v.want)
 		}
 	}
 }

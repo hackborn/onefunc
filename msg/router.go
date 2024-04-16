@@ -22,7 +22,10 @@ func Pub[T any](r *Router, topic string, value T) {
 	if r == nil {
 		return
 	}
-	r.pub(topic, value, func(a any) {
+	subsFn := func(subs *subscriptions) {
+		subs.last = value
+	}
+	r.visit(topic, subsFn, func(a any) {
 		if c, ok := a.(HandlerFunc[T]); ok {
 			c(topic, value)
 		}
@@ -43,19 +46,25 @@ func (r *Router) sub(topic string, value any) (Subscription, any) {
 
 func (r *Router) unsub(topic string, id int64) {
 	defer lock.Locker(&r.mut).Unlock()
-	if r.all != nil {
-		if subs := r.all[topic]; subs != nil {
-			delete(subs.subs, id)
-		}
+	if r.all == nil {
+		return
+	}
+	if subs := r.all[topic]; subs != nil {
+		delete(subs.subs, id)
+		subs.changeId.Add(1)
 	}
 }
 
-func (r *Router) pub(topic string, value any, fn visitFunc) {
+func (r *Router) visit(topic string, subsFn visitSubscriptionsFunc, fn visitFunc) {
 	defer lock.Locker(&r.mut).Unlock()
 	subs := r.validateSubscriptions(topic)
-	subs.last = value
-	for _, s := range subs.subs {
-		fn(s)
+	if subsFn != nil {
+		subsFn(subs)
+	}
+	if fn != nil {
+		for _, s := range subs.subs {
+			fn(s)
+		}
 	}
 }
 

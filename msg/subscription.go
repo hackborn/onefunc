@@ -1,5 +1,9 @@
 package msg
 
+import (
+	"sync/atomic"
+)
+
 type Subscription interface {
 	Unsub()
 }
@@ -15,14 +19,13 @@ func (s *_subscription) Unsub() {
 }
 
 type subscriptions struct {
-	counter int64
-	subs    map[int64]any
-	last    any // The last published value
+	changeId atomic.Int64
+	subs     map[int64]any
+	last     any // The last published value
 }
 
 func (s *subscriptions) add(r *Router, topic string, fn any) Subscription {
-	id := s.counter
-	s.counter++
+	id := s.changeId.Add(1)
 	s.subs[id] = fn
 	return &_subscription{r: r, topic: topic, id: id}
 }
