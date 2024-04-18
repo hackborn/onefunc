@@ -39,6 +39,19 @@ func (s Segment[T]) PerpendicularSlope() float64 {
 	return -1.0 / s.Slope()
 }
 
+// Dir answers the direction vector of this segment.
+func (s Segment[T]) Dir() Point[T] {
+	return s.B.Sub(s.A)
+}
+
+// Degrees is a convenience that finds the radians of the segment,
+// with A a the origin.
+func (s Segment[T]) Degrees() float64 {
+	pt := s.B.Sub(s.A)
+	rad := pt.Radians()
+	return RadiansToDegrees(rad)
+}
+
 // IsCollinear checks if three points are collinear
 func IsCollinear[T Number](p1, p2, p3 Point[T]) bool {
 	a := float64(p2.X - p1.X)

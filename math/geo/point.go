@@ -28,9 +28,24 @@ func (a Point[T]) Sub(b Point[T]) Point[T] {
 	return Point[T]{X: a.X - b.X, Y: a.Y - b.Y}
 }
 
+func (a Point[T]) Normalize() Point[T] {
+	if a.X == 0 && a.Y == 0 {
+		return a
+	}
+	max := a.X
+	if a.Y > max {
+		max = a.Y
+	}
+	return Point[T]{X: a.X / max, Y: a.Y / max}
+}
+
 func (a Point[T]) Magnitude() float64 {
 	x, y := float64(a.X), float64(a.Y)
 	return math.Sqrt(x*x + y*y)
+}
+
+func (a Point[T]) Radians() float64 {
+	return math.Atan2(float64(a.Y), float64(a.X))
 }
 
 func (a Point[T]) Inside(r Rect[T]) bool {
@@ -59,6 +74,10 @@ func (a Point[T]) Project(m, dist float64) (Point[T], Point[T]) {
 // array as represented by this point.
 func (p Point[T]) ToIndex(xy Point[T]) T {
 	return (xy.Y * p.X) + xy.X
+}
+
+func ConvertPoint[A Number, B Number](a Point[A]) Point[B] {
+	return Point[B]{X: B(a.X), Y: B(a.Y)}
 }
 
 type PointF32 = Point[float32]

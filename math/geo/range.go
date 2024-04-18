@@ -7,12 +7,33 @@ type Range[T Number] struct {
 
 // Clip returns the value clipped to my range.
 func (p Range[T]) Clip(value T) T {
-	if value <= p.Min {
-		return p.Min
-	} else if value >= p.Max {
-		return p.Max
+	min, max := p.Min, p.Max
+	if p.Max < p.Min {
+		min, max = p.Max, p.Min
+	}
+
+	if value <= min {
+		return min
+	} else if value >= max {
+		return max
 	} else {
 		return value
+	}
+}
+
+// Map returns the vnormalValue mapped to my range.
+func (p Range[T]) Map(value T) T {
+	min, max := p.Min, p.Max
+	if p.Max < p.Min {
+		min, max = p.Max, p.Min
+	}
+
+	if value <= 0 {
+		return min
+	} else if value >= 1 {
+		return max
+	} else {
+		return min + ((max - min) * value)
 	}
 }
 
