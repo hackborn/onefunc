@@ -1,8 +1,16 @@
 package msg
 
 import (
+	"fmt"
+	"io/fs"
+	"os"
+	"path"
 	"reflect"
+	"strings"
 	"testing"
+	"text/scanner"
+
+	oferrors "github.com/hackborn/onefunc/errors"
 )
 
 // ---------------------------------------------------------
@@ -54,25 +62,31 @@ func TestChannelInt(t *testing.T) {
 // TEST-SEQUENCE
 func TestSequence(t *testing.T) {
 	table := []struct {
-		steps []seqStep
-		want  []any
+		test string
 	}{
-		{steps(sub("", "a"), channel("ca", "a"), pubChannel("ca", 10)), []any{capture{"a", 10}}},
-		// Channels are updated after modifications to the topic tree.
-		{steps(sub("s", "a"), channel("ca", "a"), unsub("s"), pubChannel("ca", 10)), nil},
+		{"sequences_1.txt"},
 	}
 	for i, v := range table {
-		state := newState()
-		for _, step := range v.steps {
-			step.Step(state)
-		}
-		if reflect.DeepEqual(v.want, state.captured) != true {
-			t.Fatalf("TestSequence %v has \"%v\" but wants \"%v\"", i, state.captured, v.want)
+		tests := loadSeqTests(v.test)
+		for _, test := range tests {
+			state := newState()
+			for _, step := range test.Steps {
+				step.Step(state)
+			}
+			if reflect.DeepEqual(state.want, state.captured) != true {
+				t.Fatalf("TestSequence %v test %v has \"%v\" but wants \"%v\"", i, state.name, state.captured, state.want)
+			}
 		}
 	}
 }
 
+// ---------------------------------------------------------
+// SEQUENCE SUPPORT
 // A whole bunch of cruft to handle creating test sequences
+
+type seqTest struct {
+	Steps []seqStep
+}
 
 func newState() *seqState {
 	r := &Router{}
@@ -80,28 +94,10 @@ func newState() *seqState {
 	return &seqState{r: r, data: data}
 }
 
-func steps(steps ...seqStep) []seqStep {
-	return steps
-}
-
-func sub(name, topic string) seqStep {
-	return &_seqSub{name: name, topic: topic}
-}
-
-func unsub(name string) seqStep {
-	return &_seqUnsub{name: name}
-}
-
-func channel(name, topic string) seqStep {
-	return &_seqChannel{name: name, topic: topic}
-}
-
-func pubChannel(name string, value int) seqStep {
-	return &_seqPubChannel{name: name, value: value}
-}
-
 type seqState struct {
 	r        *Router
+	name     string
+	want     []any
 	data     map[string]any
 	captured []any
 }
@@ -125,66 +121,228 @@ func getData[T any](s *seqState, name string) (T, bool) {
 	return t, false
 }
 
-func (s *seqState) handleInt(topic string, value int) {
-	s.captured = append(s.captured, capture{topic: topic, value: value})
+func (s *seqState) handleString(topic string, value string) {
+	s.captured = append(s.captured, capture{Topic: topic, Value: value})
 }
 
 type capture struct {
-	topic string
-	value int
+	Topic string
+	Value string
 }
 
 type seqStep interface {
 	Step(*seqState)
+	SetParam(name string, value any)
+}
+
+func getStringParam(nameA, nameB string, value any) (string, bool) {
+	if nameA != nameB {
+		return "", false
+	}
+	v, ok := value.(string)
+	return v, ok
+}
+
+type _seqName struct {
+	Id string
+}
+
+func (s *_seqName) Step(state *seqState) {
+	state.name = s.Id
+}
+
+func (s *_seqName) SetParam(name string, value any) {
+	if v, ok := getStringParam("id", name, value); ok {
+		s.Id = v
+	}
 }
 
 type _seqSub struct {
 	state *seqState
-	name  string
-	topic string
+	Id    string
+	Topic string
 }
 
 func (s *_seqSub) Step(state *seqState) {
 	s.state = state
-	sub := Sub(state.r, s.topic, s.handleInt)
-	if s.name != "" {
-		state.addData(s.name, sub)
+	sub := Sub(state.r, s.Topic, s.handleString)
+	if s.Id != "" {
+		state.addData(s.Id, sub)
 	}
 }
 
-func (s *_seqSub) handleInt(topic string, value int) {
-	s.state.handleInt(topic, value)
+func (s *_seqSub) SetParam(name string, value any) {
+	if v, ok := getStringParam("id", name, value); ok {
+		s.Id = v
+	} else if v, ok := getStringParam("topic", name, value); ok {
+		s.Topic = v
+	}
+}
+
+func (s *_seqSub) handleString(topic string, value string) {
+	s.state.handleString(topic, value)
 }
 
 type _seqUnsub struct {
-	name string
+	Id string
 }
 
 func (s *_seqUnsub) Step(state *seqState) {
-	if sub, ok := getData[Subscription](state, s.name); ok {
+	if sub, ok := getData[Subscription](state, s.Id); ok {
 		sub.Unsub()
 	}
 }
 
+func (s *_seqUnsub) SetParam(name string, value any) {
+	if v, ok := getStringParam("id", name, value); ok {
+		s.Id = v
+	}
+}
+
 type _seqChannel struct {
-	name  string
-	topic string
+	Id    string
+	Topic string
 }
 
 func (s *_seqChannel) Step(state *seqState) {
-	c := NewChannel[int](state.r, s.topic)
-	state.addData(s.name, c)
+	c := NewChannel[string](state.r, s.Topic)
+	state.addData(s.Id, c)
+}
+
+func (s *_seqChannel) SetParam(name string, value any) {
+	if v, ok := getStringParam("id", name, value); ok {
+		s.Id = v
+	} else if v, ok := getStringParam("topic", name, value); ok {
+		s.Topic = v
+	}
 }
 
 type _seqPubChannel struct {
-	name  string
-	value int
+	Id    string
+	Value string
 }
 
 func (s *_seqPubChannel) Step(state *seqState) {
-	if c, ok := getData[Channel[int]](state, s.name); ok {
-		c.Pub(s.value)
+	if c, ok := getData[Channel[string]](state, s.Id); ok {
+		c.Pub(s.Value)
 	}
+}
+
+func (s *_seqPubChannel) SetParam(name string, value any) {
+	if v, ok := getStringParam("id", name, value); ok {
+		s.Id = v
+	} else if v, ok := getStringParam("value", name, value); ok {
+		s.Value = v
+	}
+}
+
+type _seqWant struct {
+	Want []any
+}
+
+func (s *_seqWant) Step(state *seqState) {
+	state.want = s.Want
+}
+
+func (s *_seqWant) SetParam(name string, value any) {
+	if v, ok := value.(string); ok {
+		s.Want = append(s.Want, capture{Topic: name, Value: v})
+	}
+}
+
+// ---------------------------------------------------------
+// LOADING
+
+func loadSeqTests(name string) []seqTest {
+	var lexer scanner.Scanner
+	lexer.Init(strings.NewReader(load(name)))
+	lexer.Whitespace ^= 1 << '\n'
+	lexer.Mode = scanner.ScanChars | scanner.ScanComments | scanner.ScanFloats | scanner.ScanIdents | scanner.ScanInts | scanner.ScanRawStrings | scanner.ScanStrings
+	lexer.Error = func(s *scanner.Scanner, msg string) {
+		oferrors.LogFatal(fmt.Errorf("loadSeqTests error: %v", msg))
+	}
+	b := &seqTestBuilder{}
+	for tok := lexer.Scan(); tok != scanner.EOF; tok = lexer.Scan() {
+		switch tok {
+		case '\n':
+			b.flush()
+		default:
+			b.handle(lexer.TokenText())
+		}
+	}
+	return b.make()
+}
+
+func load(name string) string {
+	return loadDataFile(os.DirFS("."), name)
+}
+
+func loadDataFile(fsys fs.FS, name string) string {
+	dat, err := fs.ReadFile(fsys, path.Join("test_data", name))
+	oferrors.LogFatal(err)
+	return string(dat)
+}
+
+type seqTestBuilder struct {
+	curTest     *seqTest
+	curStep     seqStep
+	curKey      string
+	needsAssign bool
+
+	built []seqTest
+}
+
+func (b *seqTestBuilder) handle(t string) {
+	if b.curTest == nil {
+		b.curTest = &seqTest{}
+	}
+	if b.curStep == nil {
+		b.handleNewStep(t)
+	} else {
+		switch t {
+		case "=":
+			b.needsAssign = true
+		default:
+			if b.needsAssign {
+				if b.curKey == "" {
+					oferrors.LogFatal(fmt.Errorf("assign with no LHS"))
+				}
+				b.curStep.SetParam(b.curKey, strings.Trim(t, "\""))
+				b.curKey = ""
+				b.needsAssign = false
+			} else {
+				b.curKey = strings.ToLower(t)
+			}
+		}
+	}
+}
+
+func (b *seqTestBuilder) handleNewStep(t string) {
+	if fn, ok := newSeqStepMap[strings.ToLower(t)]; ok {
+		b.curStep = fn()
+	} else {
+		oferrors.LogFatal(fmt.Errorf("No seq step named %v", t))
+	}
+	b.curKey = "id"
+}
+
+func (b *seqTestBuilder) flush() {
+	// Double new lines start a new test, so flush the current
+	// step on one new line, and the current test on two.
+	if b.curStep != nil {
+		b.curTest.Steps = append(b.curTest.Steps, b.curStep)
+		b.curStep = nil
+	} else if b.curTest != nil {
+		b.built = append(b.built, *b.curTest)
+		b.curTest = nil
+	}
+	b.needsAssign = false
+}
+
+func (b *seqTestBuilder) make() []seqTest {
+	b.flush()
+	b.flush()
+	return b.built
 }
 
 // ---------------------------------------------------------
@@ -199,4 +357,18 @@ func (s *subscription) receiveInt(topic string, value int) {
 }
 
 // ---------------------------------------------------------
+// FUNC
+
+type newSeqStepFunc func() seqStep
+
+// ---------------------------------------------------------
 // CONST and VAR
+
+var newSeqStepMap = map[string]newSeqStepFunc{
+	"name":       func() seqStep { return &_seqName{} },
+	"sub":        func() seqStep { return &_seqSub{} },
+	"unsub":      func() seqStep { return &_seqUnsub{} },
+	"channel":    func() seqStep { return &_seqChannel{} },
+	"pubchannel": func() seqStep { return &_seqPubChannel{} },
+	"want":       func() seqStep { return &_seqWant{} },
+}

@@ -1,0 +1,12 @@
+name = "Simple publish"
+sub topic=a
+channel=ca topic=a
+pubChannel=ca value="10"
+want a="10"
+
+name = "Channels are updated after modifications to the topic tree."
+sub=s topic=a
+channel=ca topic=a
+unsub=s
+pubChannel=ca value="10"
+want
