@@ -61,10 +61,12 @@ func (r *rasterizer) Rasterize(shape any, fn rasterizing.PixelFunc) {
 			// pixel coverage is determined by fractional
 			// part of y co-ordinate
 			if amount := rfPartOfNumberClamped(intersectY); amount > 0.0 {
-				fn(iPartOfNumber(intersectY), x, amount)
+				args := rasterizing.PixelArgs{X: iPartOfNumber(intersectY), Y: x, Amount: amount}
+				fn(args)
 			}
 			if amount := fPartOfNumberClamped(intersectY); amount > 0.0 {
-				fn(iPartOfNumber(intersectY)+1, x, amount)
+				args := rasterizing.PixelArgs{X: iPartOfNumber(intersectY) + 1, Y: x, Amount: amount}
+				fn(args)
 			}
 			intersectY += gradient
 		}
@@ -73,10 +75,12 @@ func (r *rasterizer) Rasterize(shape any, fn rasterizing.PixelFunc) {
 			// pixel coverage is determined by fractional
 			// part of y co-ordinate
 			if amount := rfPartOfNumberClamped(intersectY); amount > 0.0 {
-				fn(x, iPartOfNumber(intersectY), amount)
+				args := rasterizing.PixelArgs{X: x, Y: iPartOfNumber(intersectY), Amount: amount}
+				fn(args)
 			}
 			if amount := fPartOfNumberClamped(intersectY); amount > 0.0 {
-				fn(x, iPartOfNumber(intersectY)+1, amount)
+				args := rasterizing.PixelArgs{X: x, Y: iPartOfNumber(intersectY) + 1, Amount: amount}
+				fn(args)
 			}
 			intersectY += gradient
 		}
@@ -136,10 +140,12 @@ func DrawLine(x0, y0, x1, y1 int, out rasterizing.PixelFunc) {
 			// pixel coverage is determined by fractional
 			// part of y co-ordinate
 			if amount := rfPartOfNumberClamped(intersectY); amount > 0.0 {
-				out(iPartOfNumber(intersectY), x, amount)
+				args := rasterizing.PixelArgs{X: iPartOfNumber(intersectY), Y: x, Amount: amount}
+				out(args)
 			}
 			if amount := fPartOfNumberClamped(intersectY); amount > 0.0 {
-				out(iPartOfNumber(intersectY)+1, x, amount)
+				args := rasterizing.PixelArgs{X: iPartOfNumber(intersectY) + 1, Y: x, Amount: amount}
+				out(args)
 			}
 			intersectY += gradient
 		}
@@ -148,10 +154,12 @@ func DrawLine(x0, y0, x1, y1 int, out rasterizing.PixelFunc) {
 			// pixel coverage is determined by fractional
 			// part of y co-ordinate
 			if amount := rfPartOfNumberClamped(intersectY); amount > 0.0 {
-				out(x, iPartOfNumber(intersectY), amount)
+				args := rasterizing.PixelArgs{X: x, Y: iPartOfNumber(intersectY), Amount: amount}
+				out(args)
 			}
 			if amount := fPartOfNumberClamped(intersectY); amount > 0.0 {
-				out(x, iPartOfNumber(intersectY)+1, amount)
+				args := rasterizing.PixelArgs{X: x, Y: iPartOfNumber(intersectY) + 1, Amount: amount}
+				out(args)
 			}
 			intersectY += gradient
 		}

@@ -1,4 +1,9 @@
 package rasterizing
 
 // PixelFunc handles a single pixel in a rasterization.
-type PixelFunc func(x, y int, amount float64)
+type PixelFunc func(PixelArgs)
+
+type PixelArgs struct {
+	X, Y   int
+	Amount float64
+}
