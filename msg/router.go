@@ -5,12 +5,17 @@ import (
 	"sync/atomic"
 
 	"github.com/hackborn/onefunc/lock"
+	ofstrings "github.com/hackborn/onefunc/strings"
 )
 
 // Subscribe to the topic with the given function. Answer
 // the subscription. Use the subscription to unsubscribe.
 // The last message publshed to the topic will be immediately
 // sent to the function.
+// Topic subscriptions use MQTT rules:
+// Pattern is a hierarchy with / separators.
+// Wildcard "+" matches a single level in the hierarchy.
+// Wildcard "#" matches all remaining levels in the hierarchy.
 func Sub[T any](r *Router, pattern string, fn HandlerFunc[T]) Subscription {
 	subs, last := r.sub(pattern, fn)
 	if lastT, ok := last.(T); ok {
@@ -50,7 +55,7 @@ func (r *Router) sub(pattern string, value any) (Subscription, any) {
 	// Current design lets clients create the router without
 	// going through an init func, but I still want initialization.
 	r.r.Init = r.subsInit
-	r.r.Match = globMatch
+	r.r.Match = mqttMatch
 
 	var sub Subscription
 	fn := func(n int64, subs *_subscriptions) {
@@ -65,7 +70,7 @@ func (r *Router) sub(pattern string, value any) (Subscription, any) {
 func (r *Router) unsub(pattern string, id int64) {
 	// Current design lets clients create the router without
 	// going through an init func, but I still want initialization.
-	r.r.Match = globMatch
+	r.r.Match = mqttMatch
 
 	fn := func(n int64, subs *_subscriptions) {
 		subs.remove(id)
@@ -80,7 +85,7 @@ func (r *Router) unsub(pattern string, id int64) {
 func (r *Router) readVisit(topic string, fn visitFunc[_subscriptions]) {
 	// Current design lets clients create the router without
 	// going through an init func, but I still want initialization.
-	r.r.Match = globMatch
+	r.r.Match = mqttMatch
 
 	defer lock.Read(&r.mut).Unlock()
 	r.r.Visit(topic, fn)
@@ -89,4 +94,8 @@ func (r *Router) readVisit(topic string, fn visitFunc[_subscriptions]) {
 func (r *Router) subsInit(pattern string, subs *_subscriptions) {
 	subs.r = r
 	subs.pattern = pattern
+}
+
+func mqttMatch(pattern, topic string) bool {
+	return ofstrings.MqttMatch(pattern, topic)
 }

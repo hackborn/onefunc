@@ -10,6 +10,35 @@ import (
 )
 
 // ---------------------------------------------------------
+// TEST-MQTT-MATCH
+func TestMqttMatch(t *testing.T) {
+	table := []struct {
+		pattern string
+		topic   string
+		want    bool
+	}{
+		{"a", "a", true},
+		{"a/b", "a/b", true},
+		{"a/#", "a/b", true},
+		{"a/#", "a/b/c", true},
+		{"a", "b", false},
+		{"a/b", "a/c", false},
+		{"a/+/c", "a", false},
+		{"a/+/c", "a/c", false},
+		{"a/+/c", "a/b/c", true},
+		{"a/+/c", "a/c/c", true},
+		{"a/+/c", "a/c/c/c", false},
+	}
+	for i, v := range table {
+		have := MqttMatch(v.pattern, v.topic)
+
+		if v.want != have {
+			t.Fatalf("TestMqttMatch %v has %v but wanted %v", i, have, v.want)
+		}
+	}
+}
+
+// ---------------------------------------------------------
 // TEST-STRING-WRITER-POOL
 func TestStringWriterPool(t *testing.T) {
 	type State struct {
