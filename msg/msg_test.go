@@ -46,10 +46,10 @@ func TestChannelInt(t *testing.T) {
 		{"a", 1, []any{1}},
 	}
 	for i, v := range table {
-		r := &Router{}
 		sub := &subscription{}
-		Sub(r, v.topic, sub.receiveInt)
-		c := NewChannel[int](r, v.topic)
+		r := Router{}
+		Sub(&r, v.topic, sub.receiveInt)
+		c := NewChannel[int](&r, v.topic)
 		c.Pub(v.message)
 
 		if reflect.DeepEqual(v.want, sub.captured) != true {
@@ -307,7 +307,9 @@ func (b *seqTestBuilder) handle(t string) {
 				if b.curKey == "" {
 					oferrors.LogFatal(fmt.Errorf("assign with no LHS"))
 				}
-				b.curStep.SetParam(b.curKey, strings.Trim(t, "\""))
+				key := strings.Trim(b.curKey, "\"")
+				value := strings.Trim(t, "\"")
+				b.curStep.SetParam(key, value)
 				b.curKey = ""
 				b.needsAssign = false
 			} else {

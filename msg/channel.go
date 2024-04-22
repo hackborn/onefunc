@@ -1,11 +1,5 @@
 package msg
 
-import (
-	"sync/atomic"
-
-	"github.com/hackborn/onefunc/lock"
-)
-
 type Channel[T any] interface {
 	Pub(value T)
 }
@@ -15,43 +9,48 @@ type Channel[T any] interface {
 // multiple times. It's safe to add or remove subscriptions to
 // the topic after creating a channel, the channel will be updated.
 func NewChannel[T any](r *Router, topic string) Channel[T] {
-	c := &_channel[T]{r: r, topic: topic}
+	c := &_channel[T]{r: r,
+		topic:     topic,
+		addedId:   r.added.Load() - 1,
+		deletedId: r.deleted.Load() - 1}
 	if r == nil {
 		return c
 	}
-	subsFn := func(subs *subscriptions) {
-		c.subs = subs
-	}
-	r.visit(topic, subsFn, nil)
-	c.sync()
 	return c
 }
 
 type _channel[T any] struct {
-	r        *Router
-	topic    string
-	changeId atomic.Int64
-	subs     *subscriptions
-	fns      []HandlerFunc[T]
+	r     *Router
+	topic string
+	// added and deleted let me know whenever the router state has changed,
+	// so I can rebuild my handlers. It'd be nice to be smarter but this works for now.
+	addedId   int64
+	deletedId int64
+	handlers  []HandlerFunc[T]
 }
 
 func (c *_channel[T]) Pub(value T) {
 	c.sync()
-	for _, fn := range c.fns {
+	for _, fn := range c.handlers {
 		fn(c.topic, value)
 	}
 }
 
 func (c *_channel[T]) sync() {
-	if c.changeId.Load() == c.subs.changeId.Load() {
+	added := c.r.added.Load()
+	deleted := c.r.deleted.Load()
+	if c.addedId == added && c.deletedId == deleted {
 		return
 	}
-	c.fns = c.fns[:0]
-	defer lock.Locker(&c.r.mut).Unlock()
-	for _, _a := range c.subs.subs {
-		if a, ok := _a.(HandlerFunc[T]); ok {
-			c.fns = append(c.fns, a)
+	c.addedId = added
+	c.deletedId = deleted
+	c.handlers = c.handlers[0:]
+	visitFn := func(pattern string, subs *_subscriptions) {
+		for _, _h := range subs.subs {
+			if h, ok := _h.(HandlerFunc[T]); ok {
+				c.handlers = append(c.handlers, h)
+			}
 		}
 	}
-	c.changeId.Store(c.subs.changeId.Load())
+	c.r.readVisit(c.topic, visitFn)
 }

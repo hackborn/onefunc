@@ -2,6 +2,7 @@ package msg
 
 import (
 	"sync"
+	"sync/atomic"
 
 	"github.com/hackborn/onefunc/lock"
 )
@@ -10,10 +11,10 @@ import (
 // the subscription. Use the subscription to unsubscribe.
 // The last message publshed to the topic will be immediately
 // sent to the function.
-func Sub[T any](r *Router, topic string, fn HandlerFunc[T]) Subscription {
-	subs, last := r.sub(topic, fn)
+func Sub[T any](r *Router, pattern string, fn HandlerFunc[T]) Subscription {
+	subs, last := r.sub(pattern, fn)
 	if lastT, ok := last.(T); ok {
-		fn(topic, lastT)
+		fn(pattern, lastT)
 	}
 	return subs
 }
@@ -22,65 +23,70 @@ func Pub[T any](r *Router, topic string, value T) {
 	if r == nil {
 		return
 	}
-	subsFn := func(subs *subscriptions) {
-		subs.last = value
-	}
-	r.visit(topic, subsFn, func(a any) {
-		if c, ok := a.(HandlerFunc[T]); ok {
-			c(topic, value)
+	//	subsFn := func(subs *subscriptions) {
+	//		subs.last = value
+	//	}
+	// r.readVisit(topic, subsFn, func(a any) {
+	r.readVisit(topic, func(pattern string, subs *_subscriptions) {
+		for _, _h := range subs.subs {
+			if h, ok := _h.(HandlerFunc[T]); ok {
+				h(topic, value)
+			}
 		}
 	})
 }
 
 type Router struct {
-	mut sync.Mutex
-	all map[string]*subscriptions
+	added   atomic.Int64
+	deleted atomic.Int64
+	mut     sync.RWMutex
+	r       MatchRouter[_subscriptions]
 }
 
-func (r *Router) sub(topic string, value any) (Subscription, any) {
-	defer lock.Locker(&r.mut).Unlock()
-	r.validate()
-	subs := r.validateSubscriptions(topic)
-	return subs.add(r, topic, value), subs.last
+// Subscribe to the handlerfunc. Note that clients can
+// not call this function directly, they must go through Sub
+// so that the function is properly recognized.
+func (r *Router) sub(pattern string, value any) (Subscription, any) {
+	// Current design lets clients create the router without
+	// going through an init func, but I still want initialization.
+	r.r.Init = r.subsInit
+	r.r.Match = globMatch
+
+	var sub Subscription
+	fn := func(n int64, subs *_subscriptions) {
+		r.added.Add(1)
+		sub = subs.add(value)
+	}
+	defer lock.Write(&r.mut).Unlock()
+	r.r.Edit(pattern, fn)
+	return sub, nil
 }
 
-func (r *Router) unsub(topic string, id int64) {
-	defer lock.Locker(&r.mut).Unlock()
-	if r.all == nil {
+func (r *Router) unsub(pattern string, id int64) {
+	// Current design lets clients create the router without
+	// going through an init func, but I still want initialization.
+	r.r.Match = globMatch
+
+	fn := func(n int64, subs *_subscriptions) {
+		subs.remove(id)
+	}
+	defer lock.Write(&r.mut).Unlock()
+	if len(r.r.patterns) < 1 {
 		return
 	}
-	if subs := r.all[topic]; subs != nil {
-		delete(subs.subs, id)
-		subs.changeId.Add(1)
-	}
+	r.r.Edit(pattern, fn)
 }
 
-func (r *Router) visit(topic string, subsFn visitSubscriptionsFunc, fn visitFunc) {
-	defer lock.Locker(&r.mut).Unlock()
-	r.validate()
-	subs := r.validateSubscriptions(topic)
-	if subsFn != nil {
-		subsFn(subs)
-	}
-	if fn != nil {
-		for _, s := range subs.subs {
-			fn(s)
-		}
-	}
+func (r *Router) readVisit(topic string, fn visitFunc[_subscriptions]) {
+	// Current design lets clients create the router without
+	// going through an init func, but I still want initialization.
+	r.r.Match = globMatch
+
+	defer lock.Read(&r.mut).Unlock()
+	r.r.Visit(topic, fn)
 }
 
-func (r *Router) validate() {
-	if r.all == nil {
-		r.all = make(map[string]*subscriptions)
-	}
-}
-
-func (r *Router) validateSubscriptions(topic string) *subscriptions {
-	if subs := r.all[topic]; subs != nil {
-		return subs
-	}
-	all := make(map[int64]any)
-	subs := &subscriptions{subs: all}
-	r.all[topic] = subs
-	return subs
+func (r *Router) subsInit(pattern string, subs *_subscriptions) {
+	subs.r = r
+	subs.pattern = pattern
 }

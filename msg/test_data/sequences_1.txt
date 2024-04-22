@@ -4,9 +4,23 @@ channel=ca topic=a
 pubChannel=ca value="10"
 want a="10"
 
-name = "Channels are updated after modifications to the topic tree."
+name = "Channels are updated after modifications to the topic tree"
 sub=s topic=a
 channel=ca topic=a
 unsub=s
 pubChannel=ca value="10"
 want
+
+name = "Wildcard subscription"
+sub=s topic="a/*"
+channel=ca1 topic="a/a"
+pubChannel=ca1 value="a"
+channel=ca2 topic="a/b"
+pubChannel=ca2 value="b"
+want "a/a"="a" "a/b"="b"
+
+name = "Real world wildcard subscription"
+sub=s topic="ui/**"
+channel=ca topic="ui/brush/pressure"
+pubChannel=ca value="1"
+want "a/a"="a" "a/b"="b"

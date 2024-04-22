@@ -1,7 +1,20 @@
 package msg
 
+import (
+	"path"
+)
+
 type HandlerFunc[T any] func(string, T)
 
-type visitFunc func(any)
+type initFunc[T any] func(pattern string, data *T)
 
-type visitSubscriptionsFunc func(*subscriptions)
+type editFunc[T any] func(int64, *T)
+
+type visitFunc[T any] func(topic string, data *T)
+
+type MatchFunc func(pattern, topic string) bool
+
+func globMatch(pattern, topic string) bool {
+	m, _ := path.Match(pattern, topic)
+	return m
+}
