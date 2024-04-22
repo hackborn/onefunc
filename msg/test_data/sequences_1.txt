@@ -24,3 +24,19 @@ sub=s topic="ui/#"
 channel=ca topic="ui/brush/pressure"
 pubChannel=ca value="1"
 want "ui/brush/pressure"="1"
+
+name = "Raw publish"
+sub=s topic=a
+pub topic=a value="10"
+want "a"="10"
+
+name = "Retained value, raw publish"
+pub topic=a value="10"
+sub=s topic=a
+want "a"="10"
+
+name = "Retained value, channel publish"
+channel=ca topic="a"
+pubChannel=ca value="1"
+sub=s topic=a
+want "a"="1"

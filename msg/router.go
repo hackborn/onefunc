@@ -8,71 +8,41 @@ import (
 	ofstrings "github.com/hackborn/onefunc/strings"
 )
 
-// Subscribe to the topic with the given function. Answer
-// the subscription. Use the subscription to unsubscribe.
-// The last message publshed to the topic will be immediately
-// sent to the function.
-// Topic subscriptions use MQTT rules:
-// Pattern is a hierarchy with / separators.
-// Wildcard "+" matches a single level in the hierarchy.
-// Wildcard "#" matches all remaining levels in the hierarchy.
-func Sub[T any](r *Router, pattern string, fn HandlerFunc[T]) Subscription {
-	subs, last := r.sub(pattern, fn)
-	if lastT, ok := last.(T); ok {
-		fn(pattern, lastT)
-	}
-	return subs
+func NewRouter() *Router {
+	match := mqttMatch
+	retained := newRetained(match)
+	r := &Router{retained: retained}
+	r.r.Init = r.subsInit
+	r.r.Match = match
+	return r
 }
 
-func Pub[T any](r *Router, topic string, value T) {
-	if r == nil {
-		return
-	}
-	//	subsFn := func(subs *subscriptions) {
-	//		subs.last = value
-	//	}
-	// r.readVisit(topic, subsFn, func(a any) {
-	r.readVisit(topic, func(pattern string, subs *_subscriptions) {
-		for _, _h := range subs.subs {
-			if h, ok := _h.(HandlerFunc[T]); ok {
-				h(topic, value)
-			}
-		}
-	})
-}
-
+// Router provides message routing. Never instantiate it directly,
+// use NewRouter() instead, which performs setup.
 type Router struct {
-	added   atomic.Int64
-	deleted atomic.Int64
-	mut     sync.RWMutex
-	r       MatchRouter[_subscriptions]
+	added    atomic.Int64
+	deleted  atomic.Int64
+	mut      sync.RWMutex
+	r        MatchRouter[routerSubscriptions]
+	retained *retained
 }
 
 // Subscribe to the handlerfunc. Note that clients can
 // not call this function directly, they must go through Sub
 // so that the function is properly recognized.
-func (r *Router) sub(pattern string, value any) (Subscription, any) {
-	// Current design lets clients create the router without
-	// going through an init func, but I still want initialization.
-	r.r.Init = r.subsInit
-	r.r.Match = mqttMatch
-
+func (r *Router) sub(pattern string, value any) Subscription {
 	var sub Subscription
-	fn := func(n int64, subs *_subscriptions) {
+	fn := func(n int64, subs *routerSubscriptions) {
 		r.added.Add(1)
 		sub = subs.add(value)
 	}
 	defer lock.Write(&r.mut).Unlock()
 	r.r.Edit(pattern, fn)
-	return sub, nil
+	return sub
 }
 
 func (r *Router) unsub(pattern string, id int64) {
-	// Current design lets clients create the router without
-	// going through an init func, but I still want initialization.
-	r.r.Match = mqttMatch
-
-	fn := func(n int64, subs *_subscriptions) {
+	fn := func(n int64, subs *routerSubscriptions) {
 		subs.remove(id)
 	}
 	defer lock.Write(&r.mut).Unlock()
@@ -82,16 +52,18 @@ func (r *Router) unsub(pattern string, id int64) {
 	r.r.Edit(pattern, fn)
 }
 
-func (r *Router) readVisit(topic string, fn visitFunc[_subscriptions]) {
-	// Current design lets clients create the router without
-	// going through an init func, but I still want initialization.
-	r.r.Match = mqttMatch
+func (r *Router) retain(topic string, value any) {
+	if r.retained != nil {
+		r.retained.Retain(topic, value)
+	}
+}
 
+func (r *Router) readVisit(topic string, fn visitFunc[routerSubscriptions]) {
 	defer lock.Read(&r.mut).Unlock()
 	r.r.Visit(topic, fn)
 }
 
-func (r *Router) subsInit(pattern string, subs *_subscriptions) {
+func (r *Router) subsInit(pattern string, subs *routerSubscriptions) {
 	subs.r = r
 	subs.pattern = pattern
 }

@@ -8,34 +8,33 @@ type Subscription interface {
 	Unsub()
 }
 
-type _subscription struct {
+type subscription struct {
 	r       *Router
 	pattern string
 	id      int64
 }
 
-func (s *_subscription) Unsub() {
+func (s *subscription) Unsub() {
 	s.r.unsub(s.pattern, s.id)
 }
 
-type _subscriptions struct {
+type routerSubscriptions struct {
 	r       *Router
 	pattern string
 	change  atomic.Int64
 	subs    map[int64]any
-	last    any // The last published value
 }
 
-func (s *_subscriptions) add(fn any) Subscription {
+func (s *routerSubscriptions) add(fn any) Subscription {
 	if s.subs == nil {
 		s.subs = make(map[int64]any)
 	}
 	id := s.change.Add(1)
 	s.subs[id] = fn
-	return &_subscription{r: s.r, pattern: s.pattern, id: id}
+	return &subscription{r: s.r, pattern: s.pattern, id: id}
 }
 
-func (s *_subscriptions) remove(id int64) {
+func (s *routerSubscriptions) remove(id int64) {
 	if s.subs == nil {
 		return
 	}

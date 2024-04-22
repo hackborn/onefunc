@@ -34,6 +34,7 @@ func (c *_channel[T]) Pub(value T) {
 	for _, fn := range c.handlers {
 		fn(c.topic, value)
 	}
+	c.r.retain(c.topic, value)
 }
 
 func (c *_channel[T]) sync() {
@@ -45,7 +46,7 @@ func (c *_channel[T]) sync() {
 	c.addedId = added
 	c.deletedId = deleted
 	c.handlers = c.handlers[0:]
-	visitFn := func(pattern string, subs *_subscriptions) {
+	visitFn := func(pattern string, subs *routerSubscriptions) {
 		for _, _h := range subs.subs {
 			if h, ok := _h.(HandlerFunc[T]); ok {
 				c.handlers = append(c.handlers, h)

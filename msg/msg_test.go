@@ -24,8 +24,8 @@ func TestPublishInt(t *testing.T) {
 		{"a", 1, []any{1}},
 	}
 	for i, v := range table {
-		r := &Router{}
-		sub := &subscription{}
+		r := NewRouter()
+		sub := &captureSubscription{}
 		Sub(r, v.topic, sub.receiveInt)
 		Pub(r, v.topic, v.message)
 
@@ -46,10 +46,10 @@ func TestChannelInt(t *testing.T) {
 		{"a", 1, []any{1}},
 	}
 	for i, v := range table {
-		sub := &subscription{}
-		r := Router{}
-		Sub(&r, v.topic, sub.receiveInt)
-		c := NewChannel[int](&r, v.topic)
+		sub := &captureSubscription{}
+		r := NewRouter()
+		Sub(r, v.topic, sub.receiveInt)
+		c := NewChannel[int](r, v.topic)
 		c.Pub(v.message)
 
 		if reflect.DeepEqual(v.want, sub.captured) != true {
@@ -89,7 +89,7 @@ type seqTest struct {
 }
 
 func newState() *seqState {
-	r := &Router{}
+	r := NewRouter()
 	data := make(map[string]any)
 	return &seqState{r: r, data: data}
 }
@@ -214,6 +214,23 @@ func (s *_seqChannel) SetParam(name string, value any) {
 		s.Id = v
 	} else if v, ok := getStringParam("topic", name, value); ok {
 		s.Topic = v
+	}
+}
+
+type _seqPub struct {
+	Topic string
+	Value string
+}
+
+func (s *_seqPub) Step(state *seqState) {
+	Pub(state.r, s.Topic, s.Value)
+}
+
+func (s *_seqPub) SetParam(name string, value any) {
+	if v, ok := getStringParam("topic", name, value); ok {
+		s.Topic = v
+	} else if v, ok := getStringParam("value", name, value); ok {
+		s.Value = v
 	}
 }
 
@@ -350,11 +367,11 @@ func (b *seqTestBuilder) make() []seqTest {
 // ---------------------------------------------------------
 // HANDLERS
 
-type subscription struct {
+type captureSubscription struct {
 	captured []any
 }
 
-func (s *subscription) receiveInt(topic string, value int) {
+func (s *captureSubscription) receiveInt(topic string, value int) {
 	s.captured = append(s.captured, value)
 }
 
@@ -370,6 +387,7 @@ var newSeqStepMap = map[string]newSeqStepFunc{
 	"name":       func() seqStep { return &_seqName{} },
 	"sub":        func() seqStep { return &_seqSub{} },
 	"unsub":      func() seqStep { return &_seqUnsub{} },
+	"pub":        func() seqStep { return &_seqPub{} },
 	"channel":    func() seqStep { return &_seqChannel{} },
 	"pubchannel": func() seqStep { return &_seqPubChannel{} },
 	"want":       func() seqStep { return &_seqWant{} },
