@@ -2,7 +2,7 @@ package msg
 
 // Subscribe to the topic with the given function. Answer
 // the subscription. Use the subscription to unsubscribe.
-// The last message publshed to the topic will be immediately
+// The last message(s) publshed to the pattern will be immediately
 // sent to the function.
 // Topic subscriptions use MQTT rules:
 // Pattern is a hierarchy with / separators.

@@ -26,9 +26,6 @@ type routerSubscriptions struct {
 }
 
 func (s *routerSubscriptions) add(fn any) Subscription {
-	if s.subs == nil {
-		s.subs = make(map[int64]any)
-	}
 	id := s.change.Add(1)
 	s.subs[id] = fn
 	return &subscription{r: s.r, pattern: s.pattern, id: id}

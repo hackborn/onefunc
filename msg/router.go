@@ -19,6 +19,21 @@ func NewRouter() *Router {
 
 // Router provides message routing. Never instantiate it directly,
 // use NewRouter() instead, which performs setup.
+//
+// The current implementation is not designed to be highly optimized.
+// The main optimization provided is the Channel, for clients that
+// will repeatedly publish to the same topic. A Channel is pretty
+// much just a straight function call on all handlers, so if subscription
+// changes are minimal and everyone uses Channels then performance should
+// be very good, but if you need frequent changes to subscriptions then
+// performance will degrade.
+//
+// The current implementation is curiously partially-thread safe.
+// The router itself is safe, but clients would need to correctly
+// handle thread safety if they actually sent/handled messages across
+// threads (and if you did that, you would want to use a chan). So
+// in practice this should only be used in a single thread, and I might
+// remove the locking at a future point.
 type Router struct {
 	added    atomic.Int64
 	deleted  atomic.Int64
@@ -72,6 +87,9 @@ func (r *Router) readVisit(topic string, fn visitFunc[routerSubscriptions]) {
 func (r *Router) subsInit(pattern string, subs *routerSubscriptions) {
 	subs.r = r
 	subs.pattern = pattern
+	if subs.subs == nil {
+		subs.subs = make(map[int64]any)
+	}
 }
 
 func mqttMatch(pattern, topic string) bool {
