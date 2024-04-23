@@ -21,17 +21,14 @@ func (r *retained) Retain(topic string, value any) {
 	r.all[topic] = last
 }
 
-func (r *retained) Last(pattern string) (string, any, bool) {
+func (r *retained) Visit(pattern string, fn retainedVisitFunc) {
 	for k, last := range r.all {
 		if r.match(pattern, k) {
 			if v := last.value.Load(); v != nil {
-				return k, v, true
-			} else {
-				return "", nil, false
+				fn(k, v)
 			}
 		}
 	}
-	return "", nil, false
 }
 
 type last struct {

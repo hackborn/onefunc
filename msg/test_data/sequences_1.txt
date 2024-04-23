@@ -40,3 +40,17 @@ channel=ca topic="a"
 pubChannel=ca value="1"
 sub=s topic=a
 want "a"="1"
+
+name = "Multiple retained values, raw publish"
+pub topic="a/a" value="1"
+pub topic="a/b" value="2"
+sub=s topic="a/#"
+want "a/a"="1" "a/b"="2"
+
+name = "Multiple retained values, channel publish"
+channel=ca1 topic="a/a"
+pubChannel=ca1 value="1"
+channel=ca2 topic="a/b"
+pubChannel=ca2 value="2"
+sub=s topic="a/#"
+want "a/a"="1" "a/b"="2"

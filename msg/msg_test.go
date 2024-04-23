@@ -149,6 +149,7 @@ type _seqName struct {
 
 func (s *_seqName) Step(state *seqState) {
 	state.name = s.Id
+	// fmt.Println("sequence", s.Id)
 }
 
 func (s *_seqName) SetParam(name string, value any) {

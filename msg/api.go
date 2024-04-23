@@ -10,12 +10,12 @@ package msg
 // Wildcard "#" matches all remaining levels in the hierarchy.
 func Sub[T any](r *Router, pattern string, fn HandlerFunc[T]) Subscription {
 	subs := r.sub(pattern, fn)
-	if r.retained != nil {
-		topic, last, ok := r.retained.Last(pattern)
-		if lastT, ok2 := last.(T); ok && ok2 {
+	retainFn := func(topic string, last any) {
+		if lastT, ok := last.(T); ok {
 			fn(topic, lastT)
 		}
 	}
+	r.visitRetained(pattern, retainFn)
 	return subs
 }
 

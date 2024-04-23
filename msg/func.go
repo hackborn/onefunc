@@ -8,4 +8,6 @@ type editFunc[T any] func(int64, *T)
 
 type visitFunc[T any] func(topic string, data *T)
 
+type retainedVisitFunc func(topic string, last any)
+
 type MatchFunc func(pattern, topic string) bool

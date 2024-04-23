@@ -58,6 +58,12 @@ func (r *Router) retain(topic string, value any) {
 	}
 }
 
+func (r *Router) visitRetained(pattern string, fn retainedVisitFunc) {
+	if r.retained != nil {
+		r.retained.Visit(pattern, fn)
+	}
+}
+
 func (r *Router) readVisit(topic string, fn visitFunc[routerSubscriptions]) {
 	defer lock.Read(&r.mut).Unlock()
 	r.r.Visit(topic, fn)
