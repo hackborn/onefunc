@@ -227,6 +227,12 @@ func dotProduct[T Number](v1, v2 Point[T]) float64 {
 	return float64(v1.X*v2.X + v1.Y*v2.Y)
 }
 
+func ConvertSegment[A Number, B Number](seg Segment[A]) Segment[B] {
+	a := ConvertPoint[A, B](seg.A)
+	b := ConvertPoint[A, B](seg.B)
+	return Segment[B]{A: a, B: b}
+}
+
 type SegmentF64 = Segment[float64]
 type SegmentI = Segment[int]
 type SegmentI64 = Segment[int64]
