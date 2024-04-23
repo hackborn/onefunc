@@ -1,9 +1,13 @@
 package rasterizing
 
 // PixelFunc handles a single pixel in a rasterization.
-type PixelFunc func(PixelArgs)
+type PixelFunc func(Pixel)
 
-type PixelArgs struct {
+// Part of a currently on-hold experiement to iterate blocks
+// of pixels at a time. The point is performance, but it's not really faster.
+type PixelsFunc func([]Pixel)
+
+type Pixel struct {
 	X, Y   int
 	Amount float64
 }

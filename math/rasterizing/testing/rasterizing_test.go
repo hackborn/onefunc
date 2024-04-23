@@ -50,6 +50,73 @@ func rasterizerFactories() map[string]newRasterizerFunc {
 }
 
 // ---------------------------------------------------------
+// BENCHMARKS
+
+func BenchmarkXiaolinwuShort(b *testing.B) {
+	r := xiaolinwu.NewRasterizer()
+	fn := func(args rasterizing.Pixel) {
+	}
+	runShortLine(b, r, fn)
+}
+
+func BenchmarkXiaolinwuLong(b *testing.B) {
+	r := xiaolinwu.NewRasterizer()
+	fn := func(args rasterizing.Pixel) {
+	}
+	runLongLine(b, r, fn)
+}
+
+func runShortLine(b *testing.B, r rasterizing.Rasterizer, fn rasterizing.PixelFunc) {
+	seg := geo.SegmentF64{A: geo.PointF64{X: 0.0, Y: 0.0},
+		B: geo.PointF64{X: 20.0, Y: 10.0}}
+	runLine(b, seg, r, fn)
+}
+
+func runLongLine(b *testing.B, r rasterizing.Rasterizer, fn rasterizing.PixelFunc) {
+	seg := geo.SegmentF64{A: geo.PointF64{X: 0.0, Y: 0.0},
+		B: geo.PointF64{X: 200.0, Y: 100.0}}
+	runLine(b, seg, r, fn)
+}
+
+func runLine(b *testing.B, shape any, r rasterizing.Rasterizer, fn rasterizing.PixelFunc) {
+	for n := 0; n < b.N; n++ {
+		r.Rasterize(shape, fn)
+	}
+}
+
+func BenchmarkXiaolinwuShort2(b *testing.B) {
+	r := xiaolinwu.NewRasterizer2()
+	fn := func([]rasterizing.Pixel) {
+	}
+	runShortLine2(b, r, fn)
+}
+
+func BenchmarkXiaolinwuLong2(b *testing.B) {
+	r := xiaolinwu.NewRasterizer2()
+	fn := func([]rasterizing.Pixel) {
+	}
+	runLongLine2(b, r, fn)
+}
+
+func runShortLine2(b *testing.B, r rasterizing.Rasterizer2, fn rasterizing.PixelsFunc) {
+	seg := geo.SegmentF64{A: geo.PointF64{X: 0.0, Y: 0.0},
+		B: geo.PointF64{X: 20.0, Y: 10.0}}
+	runLine2(b, seg, r, fn)
+}
+
+func runLongLine2(b *testing.B, r rasterizing.Rasterizer2, fn rasterizing.PixelsFunc) {
+	seg := geo.SegmentF64{A: geo.PointF64{X: 0.0, Y: 0.0},
+		B: geo.PointF64{X: 200.0, Y: 100.0}}
+	runLine2(b, seg, r, fn)
+}
+
+func runLine2(b *testing.B, shape any, r rasterizing.Rasterizer2, fn rasterizing.PixelsFunc) {
+	for n := 0; n < b.N; n++ {
+		r.Rasterize2(shape, fn)
+	}
+}
+
+// ---------------------------------------------------------
 // FUNC
 
 type newRasterizerFunc func() rasterizing.Rasterizer
@@ -104,7 +171,7 @@ type LineOut struct {
 	pixels []Pixel
 }
 
-func (l *LineOut) Draw(args rasterizing.PixelArgs) {
+func (l *LineOut) Draw(args rasterizing.Pixel) {
 	l.pixels = append(l.pixels, Pixel{X: args.X, Y: args.Y, Amount: args.Amount})
 }
 
