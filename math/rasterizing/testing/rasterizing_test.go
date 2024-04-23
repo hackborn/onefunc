@@ -104,8 +104,8 @@ type LineOut struct {
 	pixels []Pixel
 }
 
-func (l *LineOut) Draw(x, y int, amount float64) {
-	l.pixels = append(l.pixels, Pixel{X: x, Y: y, Amount: amount})
+func (l *LineOut) Draw(args rasterizing.PixelArgs) {
+	l.pixels = append(l.pixels, Pixel{X: args.X, Y: args.Y, Amount: args.Amount})
 }
 
 func (l *LineOut) Print() {
