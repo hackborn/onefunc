@@ -9,6 +9,32 @@ import (
 )
 
 // ---------------------------------------------------------
+// TEST-DEGREES
+func TestDegrees(t *testing.T) {
+	table := []struct {
+		center PointF64
+		pt     PointF64
+		want   float64
+	}{
+		{Pt(0.0, 0.0), Pt(10.0, 0.0), 180.0},
+		{Pt(0.0, 0.0), Pt(10.0, 10.0), 225.0},
+		{Pt(0.0, 0.0), Pt(0.0, 10.0), 270.0},
+		{Pt(0.0, 0.0), Pt(-10.0, 10.0), 315.0},
+		{Pt(0.0, 0.0), Pt(-10.0, 0.0), 360.0},
+		{Pt(0.0, 0.0), Pt(-10.0, -10.0), 45.0},
+		{Pt(0.0, 0.0), Pt(0.0, -10.0), 90.0},
+		{Pt(0.0, 0.0), Pt(10.0, -10.0), 135.0},
+	}
+	for i, v := range table {
+		have := Seg(v.center, v.pt).Degrees()
+		fmt.Println(v.pt, have)
+		if !floatsEqualTol(have, v.want, 0.0001) {
+			t.Fatalf("TestDegrees %v has %v but expected %v", i, have, v.want)
+		}
+	}
+}
+
+// ---------------------------------------------------------
 // TEST-SEGMENT-INTERSECTION
 func TestSegmentIntersection(t *testing.T) {
 	table := []struct {

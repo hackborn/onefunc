@@ -55,3 +55,8 @@ func FloatsEqual(a, b float64) bool {
 	diff := math.Abs(a - b)
 	return diff < eps
 }
+
+func floatsEqualTol(a, b, tolerance float64) bool {
+	diff := math.Abs(a - b)
+	return diff < tolerance
+}
