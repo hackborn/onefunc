@@ -102,6 +102,7 @@ func FindIntersection[T Number](s1, s2 Segment[T]) (Point[T], bool) {
 
 // DistSquared answers the squared distance from the point to the segment,
 // as well as the point found on the segment.
+// From https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
 func DistSquared(seg SegmentF64, p PointF64) (float64, PointF64) {
 	l2 := seg.A.DistSquared(seg.B)
 	if l2 == 0 {
@@ -114,29 +115,13 @@ func DistSquared(seg SegmentF64, p PointF64) (float64, PointF64) {
 	return p.DistSquared(newP), newP
 }
 
-/*
-function distToSegmentSquared(p, v, w) {
-  var l2 = dist2(v, w);
-  if (l2 == 0) return dist2(p, v);
-  var t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
-  t = Math.max(0, Math.min(1, t));
-  return dist2(p, { x: v.x + t * (w.x - v.x),
-                    y: v.y + t * (w.y - v.y) });
+// DistPointToSegment answers the distance from the point to the segment,
+// as well as the point found on the segment.
+// From https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+func DistPointToSegment(seg SegmentF64, p PointF64) (float64, PointF64) {
+	d, newP := DistSquared(seg, p)
+	return math.Sqrt(d), newP
 }
-*/
-/*
-function sqr(x) { return x * x }
-function dist2(v, w) { return sqr(v.x - w.x) + sqr(v.y - w.y) }
-function distToSegmentSquared(p, v, w) {
-  var l2 = dist2(v, w);
-  if (l2 == 0) return dist2(p, v);
-  var t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
-  t = Math.max(0, Math.min(1, t));
-  return dist2(p, { x: v.x + t * (w.x - v.x),
-                    y: v.y + t * (w.y - v.y) });
-}
-function distToSegment(p, v, w) { return Math.sqrt(distToSegmentSquared(p, v, w)); }
-*/
 
 func cross[T Number](a, b Point[T]) T {
 	return a.X*b.Y - a.Y*b.X
@@ -204,6 +189,11 @@ func FindIntersectionBAD[T Number](s1, s2 Segment[T]) (Point[T], bool) {
 }
 
 // DistanceFromPointToSegment calculates the distance from a point to a line segment
+// Ugh, what a mess. I guess this is obsoleted by DistPointToSegment, although
+// I don't see why this couldn't answer return the point. And then I suppose
+// I should see if there are differenecs in result and speed to decide which to keep.
+// Although looking at the implementation, it sorta looks like it's just a distance
+// to the closest endpoint? Which seems completely wrong?
 func DistanceFromPointToSegment[T Number](p Point[T], s Segment[T]) float64 {
 	p1, p2 := s.A, s.B
 

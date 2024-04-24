@@ -4,6 +4,11 @@ import (
 	"math"
 )
 
+// Pt is shorthand for creating a point from two values.
+func Pt[T Number](x, y T) Point[T] {
+	return Point[T]{X: x, Y: y}
+}
+
 type Point[T Number] struct {
 	X T
 	Y T
