@@ -20,6 +20,11 @@ func (a Point[T]) Dist(b Point[T]) float64 {
 	return math.Sqrt(x2 + y2)
 }
 
+// Dist2 is the distance without the square root.
+func (a Point[T]) DistSquared(b Point[T]) T {
+	return Sqr(a.X-b.X) + Sqr(a.Y-b.Y)
+}
+
 func (a Point[T]) Add(b Point[T]) Point[T] {
 	return Point[T]{X: a.X + b.X, Y: a.Y + b.Y}
 }

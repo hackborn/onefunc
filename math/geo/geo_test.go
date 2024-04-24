@@ -2,6 +2,7 @@ package geo
 
 import (
 	"fmt"
+	"math"
 	"testing"
 
 	"github.com/hackborn/onefunc/jacl"
@@ -31,6 +32,29 @@ func TestSegmentIntersection(t *testing.T) {
 			t.Fatalf("TestSegmentIntersection %v has ok %v but expected %v", i, haveOk, v.wantOk)
 		} else if !pointsEqual(v.want, have) {
 			t.Fatalf("TestSegmentIntersection %v has intersection %v but expected %v", i, have, v.want)
+		}
+	}
+}
+
+// ---------------------------------------------------------
+// TEST-POINT-SEGMENT-INTERSECTION
+func TestPointSegmentIntersection(t *testing.T) {
+	table := []struct {
+		s     SegmentF64
+		p     PointF64
+		check bool // Set to true to fail the test and see the values
+	}{
+		{segf(0, 0, 10, 10), ptf(10, 0), false},
+		{segf(0, 0, 10, 10), ptf(20, 10), false},
+		{segf(0, 0, 10, 10), ptf(5, 2), false},
+	}
+	for i, v := range table {
+		have, pt := DistSquared(v.s, v.p)
+
+		if v.check {
+			t.Fatalf("TestPointSegmentIntersection %v segment (%v) to pt %v found %v dist %v distsqrt %v", i, v.s, v.p, pt, have, math.Sqrt(have))
+			//		} else if !pointsEqual(v.want, have) {
+			//	t.Fatalf("TestSegmentIntersection %v has intersection %v but expected %v", i, have, v.want)
 		}
 	}
 }

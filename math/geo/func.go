@@ -16,6 +16,10 @@ func RadiansToDegrees(radians float64) float64 {
 	return radians * (180.0 / math.Pi)
 }
 
+func Sqr[T Number](x T) T {
+	return x * x
+}
+
 func Centroid[T Number](pts []Point[T]) Point[T] {
 	var x float64 = 0.0
 	var y float64 = 0.0

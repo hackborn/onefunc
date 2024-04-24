@@ -100,6 +100,44 @@ func FindIntersection[T Number](s1, s2 Segment[T]) (Point[T], bool) {
 	return Point[T]{}, false
 }
 
+// DistSquared answers the squared distance from the point to the segment,
+// as well as the point found on the segment.
+func DistSquared(seg SegmentF64, p PointF64) (float64, PointF64) {
+	l2 := seg.A.DistSquared(seg.B)
+	if l2 == 0 {
+		return p.DistSquared(seg.A), seg.A
+	}
+	t := ((p.X-seg.A.X)*(seg.B.X-seg.A.X) + (p.Y-seg.A.Y)*(seg.B.Y-seg.A.Y)) / l2
+	t = math.Max(0, math.Min(1, t))
+	newP := PointF64{X: seg.A.X + t*(seg.B.X-seg.A.X),
+		Y: seg.A.Y + t*(seg.B.Y-seg.A.Y)}
+	return p.DistSquared(newP), newP
+}
+
+/*
+function distToSegmentSquared(p, v, w) {
+  var l2 = dist2(v, w);
+  if (l2 == 0) return dist2(p, v);
+  var t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return dist2(p, { x: v.x + t * (w.x - v.x),
+                    y: v.y + t * (w.y - v.y) });
+}
+*/
+/*
+function sqr(x) { return x * x }
+function dist2(v, w) { return sqr(v.x - w.x) + sqr(v.y - w.y) }
+function distToSegmentSquared(p, v, w) {
+  var l2 = dist2(v, w);
+  if (l2 == 0) return dist2(p, v);
+  var t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return dist2(p, { x: v.x + t * (w.x - v.x),
+                    y: v.y + t * (w.y - v.y) });
+}
+function distToSegment(p, v, w) { return Math.sqrt(distToSegmentSquared(p, v, w)); }
+*/
+
 func cross[T Number](a, b Point[T]) T {
 	return a.X*b.Y - a.Y*b.X
 }
