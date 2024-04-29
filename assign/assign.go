@@ -33,7 +33,7 @@ func Values(r ValuesRequest, dst any) error {
 			return err
 		}
 
-		if err = assignValue(srcValue, destField); err != nil {
+		if err = assignValue(srcValue, destField, r.Flags); err != nil {
 			return err
 		}
 	}
@@ -51,7 +51,7 @@ func getReflectFieldValue(fieldName string, structValue reflect.Value) (reflect.
 	return field, nil
 }
 
-func assignValue(src, dst reflect.Value) error {
+func assignValue(src, dst reflect.Value, flags uint8) error {
 	switch dst.Kind() {
 	case reflect.Bool:
 		v, err := valueToBool(src)
@@ -59,8 +59,30 @@ func assignValue(src, dst reflect.Value) error {
 			return err
 		}
 		dst.Set(reflect.ValueOf(v))
+	case reflect.Float32:
+		if kindIsFloat(src.Kind()) {
+			dst.Set(reflect.ValueOf(float32(src.Float())))
+		} else if flags&FuzzyFloats != 0 {
+			if kindIsInt(src.Kind()) {
+				dst.Set(reflect.ValueOf(float32(src.Int())))
+			}
+		} else {
+			return fmt.Errorf("can't assign %v to %v", src.Kind(), dst.Kind())
+		}
+	case reflect.Float64:
+		if kindIsFloat(src.Kind()) {
+			dst.Set(reflect.ValueOf(src.Float()))
+		} else if flags&FuzzyFloats != 0 {
+			if kindIsInt(src.Kind()) {
+				dst.Set(reflect.ValueOf(float64(src.Int())))
+			}
+		} else {
+			return fmt.Errorf("can't assign %v to %v", src.Kind(), dst.Kind())
+		}
 	case reflect.Int:
-		dst.Set(reflect.ValueOf(int(src.Int())))
+		if kindIsInt(src.Kind()) {
+			dst.Set(reflect.ValueOf(int(src.Int())))
+		}
 	case reflect.Int8:
 		dst.Set(reflect.ValueOf(int8(src.Int())))
 	case reflect.Int32:
@@ -76,6 +98,14 @@ func assignValue(src, dst reflect.Value) error {
 		return fmt.Errorf("unsupported field type %v", dst.Kind())
 	}
 	return nil
+}
+
+func kindIsFloat(kind reflect.Kind) bool {
+	return kind == reflect.Float32 || kind == reflect.Float64
+}
+
+func kindIsInt(kind reflect.Kind) bool {
+	return kind == reflect.Int || kind == reflect.Int8 || kind == reflect.Int32 || kind == reflect.Int64
 }
 
 func unwrapValueToAny(v any) (any, error) {

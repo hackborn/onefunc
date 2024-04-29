@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+
+	"github.com/hackborn/onefunc/jacl"
 )
 
 // ---------------------------------------------------------
@@ -55,6 +57,9 @@ func TestValues(t *testing.T) {
 		{valReqBool("t"), &Data1{}, `{"E":true}`, nil},
 		{valReqBool("false"), &Data1{}, `{}`, nil},
 		{valReqBool("f"), &Data1{}, `{}`, nil},
+		{valReqAny("D", 10.0, 0), &Data1{}, `{"D":10}`, nil},
+		{valReqAny("D", 10, 0), &Data1{}, `{}`, fmt.Errorf("wrong type")},
+		{valReqAny("D", 10, Fuzzy), &Data1{}, `{"D":10}`, nil},
 	}
 	for i, v := range table {
 		haveErr := Values(v.req, v.dst)
@@ -62,8 +67,8 @@ func TestValues(t *testing.T) {
 		panicErr(err)
 		have := string(haveB)
 
-		if haveErr != v.wantErr {
-			t.Fatalf("TestValues %v has err \"%v\" but wanted \"%v\"", i, haveErr, v.wantErr)
+		if err := jacl.RunErr(haveErr, v.wantErr); err != nil {
+			t.Fatalf("TestValues %v %v", i, err.Error())
 		} else if have != v.want {
 			t.Fatalf("TestValues %v has \"%v\" but wanted \"%v\"", i, have, v.want)
 		}
@@ -88,6 +93,14 @@ func newAnyString(s string) any {
 	n := new(any)
 	*n = s
 	return n
+}
+
+func valReqAny(name string, v any, flags uint8) ValuesRequest {
+	return ValuesRequest{
+		FieldNames: []string{name},
+		NewValues:  []any{v},
+		Flags:      flags,
+	}
 }
 
 func valReqBool(v any) ValuesRequest {

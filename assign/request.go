@@ -7,6 +7,7 @@ import (
 type ValuesRequest struct {
 	FieldNames []string
 	NewValues  []any
+	Flags      uint8
 }
 
 func ValuesRequestFrom(m map[string]any) ValuesRequest {
