@@ -29,23 +29,6 @@ func (p Range[T]) Clip(value T) T {
 func (p Range[T]) Map(value T) T {
 	value = Range[T]{Min: 0, Max: 1}.Clip(value)
 	return ((1.0 - value) * p.Min) + (value * p.Max)
-	/*
-	   min, max := p.Min, p.Max
-
-	   	if p.Max < p.Min {
-	   		min, max = p.Max, p.Min
-	   	}
-
-	   	if value <= 0 {
-	   		return min
-	   	} else if value >= 1 {
-
-	   		return max
-	   	} else {
-
-	   		return min + ((max - min) * value)
-	   	}
-	*/
 }
 
 type RangeF64 = Range[float64]
