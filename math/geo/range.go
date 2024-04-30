@@ -1,5 +1,9 @@
 package geo
 
+func Rng[T Number](min, max T) Range[T] {
+	return Range[T]{Min: min, Max: max}
+}
+
 type Range[T Number] struct {
 	Min T
 	Max T
@@ -21,20 +25,27 @@ func (p Range[T]) Clip(value T) T {
 	}
 }
 
-// Map returns the vnormalValue mapped to my range.
+// Map returns the normalized value mapped to my range.
 func (p Range[T]) Map(value T) T {
-	min, max := p.Min, p.Max
-	if p.Max < p.Min {
-		min, max = p.Max, p.Min
-	}
+	value = Range[T]{Min: 0, Max: 1}.Clip(value)
+	return ((1.0 - value) * p.Min) + (value * p.Max)
+	/*
+	   min, max := p.Min, p.Max
 
-	if value <= 0 {
-		return min
-	} else if value >= 1 {
-		return max
-	} else {
-		return min + ((max - min) * value)
-	}
+	   	if p.Max < p.Min {
+	   		min, max = p.Max, p.Min
+	   	}
+
+	   	if value <= 0 {
+	   		return min
+	   	} else if value >= 1 {
+
+	   		return max
+	   	} else {
+
+	   		return min + ((max - min) * value)
+	   	}
+	*/
 }
 
 type RangeF64 = Range[float64]

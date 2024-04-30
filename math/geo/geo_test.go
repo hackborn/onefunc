@@ -27,9 +27,37 @@ func TestDegrees(t *testing.T) {
 	}
 	for i, v := range table {
 		have := Seg(v.center, v.pt).Degrees()
-		fmt.Println(v.pt, have)
 		if !floatsEqualTol(have, v.want, 0.0001) {
 			t.Fatalf("TestDegrees %v has %v but expected %v", i, have, v.want)
+		}
+	}
+}
+
+// ---------------------------------------------------------
+// TEST-RANGE-MAP
+func TestRangeMap(t *testing.T) {
+	table := []struct {
+		value float64
+		r     RangeF64
+		want  float64
+	}{
+		{0, Rng(0.0, 1.0), 0},
+		{0.1, Rng(0.0, 10.0), 1},
+		{0.5, Rng(0.0, 1.0), 0.5},
+		{0.5, Rng(0.0, 100.0), 50},
+		{1, Rng(0.0, 1.0), 1},
+		{10, Rng(0.0, 1.0), 1},
+		{-10, Rng(0.0, 1.0), 0},
+		{0, Rng(1.0, 0.0), 1},
+		{0.1, Rng(10.0, 0.0), 9},
+		{1, Rng(100.0, 10.0), 10},
+		{100, Rng(100.0, 10.0), 10},
+		{-1, Rng(1.0, 0.0), 1},
+	}
+	for i, v := range table {
+		have := v.r.Map(v.value)
+		if !floatsEqualTol(have, v.want, 0.0001) {
+			t.Fatalf("TestRangeMap %v has %v but expected %v", i, have, v.want)
 		}
 	}
 }
