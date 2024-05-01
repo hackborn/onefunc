@@ -14,18 +14,17 @@ func PolygonBounds(pts []PointF64) RectF64 {
 		return RectF64{}
 	}
 	pt := pts[0]
-	bounds := RectF64{LT: PointF64{X: pt.X, Y: pt.Y},
-		RB: PointF64{X: pt.X, Y: pt.Y}}
+	bounds := Rect(pt.X, pt.Y, pt.X, pt.Y)
 	for _, pt := range pts {
-		if pt.X < bounds.LT.X {
-			bounds.LT.X = pt.X
-		} else if pt.X > bounds.RB.X {
-			bounds.RB.X = pt.X
+		if pt.X < bounds.L {
+			bounds.L = pt.X
+		} else if pt.X > bounds.R {
+			bounds.R = pt.X
 		}
-		if pt.Y < bounds.LT.Y {
-			bounds.LT.Y = pt.Y
-		} else if pt.Y > bounds.RB.Y {
-			bounds.RB.Y = pt.Y
+		if pt.Y < bounds.T {
+			bounds.T = pt.Y
+		} else if pt.Y > bounds.B {
+			bounds.B = pt.Y
 		}
 	}
 	return bounds

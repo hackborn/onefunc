@@ -1,24 +1,35 @@
 package geo
 
-func NewRect[T Number](left, top, right, bottom T) Rect[T] {
-	return Rect[T]{LT: Point[T]{X: left, Y: top}, RB: Point[T]{X: right, Y: bottom}}
+func Rect[T Number](left, top, right, bottom T) RectT[T] {
+	return RectT[T]{L: left, T: top, R: right, B: bottom}
 }
 
-type Rect[T Number] struct {
-	LT Point[T]
-	RB Point[T]
+type RectT[T Number] struct {
+	L, T, R, B T
 }
 
-func (r Rect[T]) Size() Point[T] {
-	return Point[T]{X: r.RB.X - r.LT.X, Y: r.RB.Y - r.LT.Y}
+func (r RectT[T]) LT() Point[T] {
+	return Pt(r.L, r.T)
 }
 
-func (p Rect[T]) Area() T {
-	return (p.RB.X - p.LT.X) * (p.RB.Y - p.LT.Y)
+func (r RectT[T]) RB() Point[T] {
+	return Pt(r.R, r.B)
 }
 
-type RectF32 = Rect[float32]
-type RectF64 = Rect[float64]
-type RectI = Rect[int]
-type RectI64 = Rect[int64]
-type RectUI64 = Rect[uint64]
+func (r RectT[T]) Size() Point[T] {
+	lt := r.LT()
+	rb := r.RB()
+	return Point[T]{X: rb.X - lt.X, Y: rb.Y - lt.Y}
+}
+
+func (r RectT[T]) Area() T {
+	lt := r.LT()
+	rb := r.RB()
+	return (rb.X - lt.X) * (rb.Y - lt.Y)
+}
+
+type RectF32 = RectT[float32]
+type RectF64 = RectT[float64]
+type RectI = RectT[int]
+type RectI64 = RectT[int64]
+type RectUI64 = RectT[uint64]

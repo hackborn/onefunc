@@ -58,8 +58,8 @@ func (a Point[T]) Radians() float64 {
 	return math.Atan2(float64(a.Y), float64(a.X))
 }
 
-func (a Point[T]) Inside(r Rect[T]) bool {
-	return a.X >= r.LT.X && a.Y >= r.LT.Y && a.X < r.RB.X && a.Y < r.RB.Y
+func (a Point[T]) Inside(r RectT[T]) bool {
+	return a.X >= r.L && a.Y >= r.T && a.X < r.R && a.Y < r.B
 }
 
 // Given slope m and distance, project the positive and negative points on the line.

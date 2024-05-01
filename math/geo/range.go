@@ -27,7 +27,11 @@ func (p Range[T]) Clip(value T) T {
 
 // Map returns the normalized value mapped to my range.
 func (p Range[T]) Map(value T) T {
-	value = Range[T]{Min: 0, Max: 1}.Clip(value)
+	if value < 0 {
+		value = 0
+	} else if value > 1 {
+		value = 1
+	}
 	return ((1.0 - value) * p.Min) + (value * p.Max)
 }
 
