@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 
@@ -59,19 +60,27 @@ func (s Settings) MustString(path, fallback string) string {
 }
 
 // Strings answers the string slice at the given path.
+// If path points to a string slice, it's returned,
+// otherwise the current keys are returned.
 func (s Settings) Strings(path string) []string {
 	defer lock.Read(s.rw).Unlock()
 	p := strings.Split(path, pathSeparator)
+	p = slices.DeleteFunc(p, func(n string) bool {
+		return len(n) < 1
+	})
 	sub := Settings{}
 	switch len(p) {
 	case 0:
-		return nil
+		return s.treeKeys()
 	case 1:
 		sub = s.lockedSubset(p[0])
 	default:
 		newPath := strings.Join(p[0:len(p)-1], pathSeparator)
 		sub = s.lockedSubset(newPath)
 		//		return s.lockedSubset(newPath).flatString(p[len(p)-1])
+	}
+	if len(sub.sliceKey) < 1 {
+		return sub.treeKeys()
 	}
 	if list, ok := sub.t[sub.sliceKey].([]any); ok {
 		sl := make([]string, 0, len(list))
@@ -84,6 +93,17 @@ func (s Settings) Strings(path string) []string {
 			}
 		}
 		return sl
+	}
+	return nil
+}
+
+func (s Settings) treeKeys() []string {
+	if len(s.t) > 0 {
+		keys := make([]string, 0, len(s.t))
+		for k, _ := range s.t {
+			keys = append(keys, k)
+		}
+		return keys
 	}
 	return nil
 }
@@ -219,6 +239,11 @@ func (s Settings) IsChanged() bool {
 	return v
 }
 
+// WalkKeys iterates the keys.
+// You can get the same info from calling Strings(), which
+// is easier to use but less efficient. Not sure that I'll
+// ever need the difference in efficiency though, so this might
+// go away.
 func (s Settings) WalkKeys(fn WalkKeysFunc) error {
 	for k, _ := range s.t {
 		err := fn(k)
@@ -245,7 +270,9 @@ func (s Settings) lockedRemotePrivateKeys() {
 }
 
 func (s Settings) Print() {
-	fmt.Println(s.t)
+	if d, err := json.MarshalIndent(s.t, "", "  "); err == nil {
+		fmt.Println(string(d))
+	}
 }
 
 type getFlatTypeFunc[T any] func(s Settings, path string) (T, bool)

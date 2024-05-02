@@ -126,8 +126,9 @@ func TestStrings(t *testing.T) {
 		want    []string
 		wantErr error
 	}{
-		//		{nil, nil, "", nil, nil},
 		{[]Option{WithFS(dataFs, "test_data/c.json")}, nil, "list", []string{"a", "b", "d"}, nil},
+		{[]Option{WithFS(dataFs, "test_data/c.json")}, []string{"map"}, "", []string{"x", "y"}, nil},
+		{[]Option{WithFS(dataFs, "test_data/c.json")}, nil, "smallmap", []string{"x"}, nil},
 	}
 	for i, v := range table {
 		s, haveErr := NewSettings(v.opts...)

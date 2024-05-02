@@ -3,5 +3,12 @@
   "bad": false,
   "goodstr1": "true",
   "goodstr2": "t",
-  "list": ["a", "b", "d"]
+  "list": ["a", "b", "d"],
+  "map": {
+    "x": 10,
+    "y": 20
+  },
+  "smallmap": {
+    "x": 10
+  }
 }
