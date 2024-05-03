@@ -105,3 +105,14 @@ func (m *envPrefixMatcher) Match(key string) (string, error) {
 	}
 	return key[len(m.prefix):], nil
 }
+
+// WithKeys adds all keys in the supplied settings.
+func WithKeys(src Settings, keys []string) Option {
+	return func(s Settings, eb oferrors.Block) {
+		for _, key := range keys {
+			if v, ok := src.t[key]; ok {
+				s.t[key] = v
+			}
+		}
+	}
+}
