@@ -16,19 +16,41 @@ func TestDegrees(t *testing.T) {
 		pt     PointF64
 		want   float64
 	}{
-		{Pt(0.0, 0.0), Pt(10.0, 0.0), 180.0},
-		{Pt(0.0, 0.0), Pt(10.0, 10.0), 225.0},
-		{Pt(0.0, 0.0), Pt(0.0, 10.0), 270.0},
-		{Pt(0.0, 0.0), Pt(-10.0, 10.0), 315.0},
-		{Pt(0.0, 0.0), Pt(-10.0, 0.0), 360.0},
-		{Pt(0.0, 0.0), Pt(-10.0, -10.0), 45.0},
-		{Pt(0.0, 0.0), Pt(0.0, -10.0), 90.0},
-		{Pt(0.0, 0.0), Pt(10.0, -10.0), 135.0},
+		{Pt(0.0, 0.0), Pt(10.0, 0.0), 0.0},
+		{Pt(0.0, 0.0), Pt(10.0, 10.0), 45.0},
+		{Pt(0.0, 0.0), Pt(0.0, 10.0), 90.0},
+		{Pt(0.0, 0.0), Pt(-10.0, 10.0), 135.0},
+		{Pt(0.0, 0.0), Pt(-10.0, 0.0), 180.0},
+		{Pt(0.0, 0.0), Pt(-10.0, -10.0), 225.0},
+		{Pt(0.0, 0.0), Pt(0.0, -10.0), 270.0},
+		{Pt(0.0, 0.0), Pt(10.0, -10.0), 315.0},
 	}
 	for i, v := range table {
 		have := Seg(v.center, v.pt).Degrees()
 		if !floatsEqualTol(have, v.want, 0.0001) {
 			t.Fatalf("TestDegrees %v has %v but expected %v", i, have, v.want)
+		}
+	}
+}
+
+// ---------------------------------------------------------
+// TEST-PROJECT-DEGREE
+func TestProjectDegree(t *testing.T) {
+	table := []struct {
+		center   PointF64
+		degree   float64
+		distance float64
+	}{
+		{Pt(0.0, 0.0), 0, 10},
+		{Pt(0.0, 0.0), 40, 10},
+		{Pt(0.0, 0.0), 122, 10},
+	}
+	for i, v := range table {
+		pt := v.center.ProjectDegree(v.degree, v.distance)
+		have := Seg(v.center, pt).Degrees()
+		want := v.degree
+		if !floatsEqualTol(have, want, 0.0001) {
+			t.Fatalf("TestProjectDegree %v has %v but expected %v for point %v", i, have, want, pt)
 		}
 	}
 }

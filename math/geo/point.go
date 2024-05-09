@@ -80,6 +80,13 @@ func (a Point[T]) Project(m, dist float64) (Point[T], Point[T]) {
 	return Point[T]{X: T(pp.X), Y: T(pp.Y)}, Point[T]{X: T(pn.X), Y: T(pn.Y)}
 }
 
+// ProjectDegree takes a degree and distance and projects a new point.
+func (a Point[T]) ProjectDegree(deg, dist float64) Point[T] {
+	radians := DegreesToRadians(deg)
+	return Point[T]{X: a.X + T(dist*math.Cos(radians)),
+		Y: a.Y + T(dist*math.Sin(radians))}
+}
+
 // ToIndex converts the xy point into an index into a flat
 // array as represented by this point.
 func (p Point[T]) ToIndex(xy Point[T]) T {
