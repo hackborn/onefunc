@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -185,12 +186,19 @@ func (s Settings) lockedSubset(path string) Settings {
 		return emptySettings(s.rw)
 	}
 	t := s.t
-	for _, n := range p {
+	for i, n := range p {
 		if sub, ok := t[n]; ok {
 			if subv, ok2 := sub.(map[string]any); ok2 {
 				// Recurse down the map.
 				t = subv
-			} else if _, ok3 := sub.([]any); ok3 {
+			} else if st, ok3 := sub.([]any); ok3 {
+				// Special case: We are indexing into a slice, and the
+				// result of the index is a map.
+				if index, ok4 := pathIndex(i+1, p); ok4 && index < len(st) {
+					if stm, ok5 := st[index].(map[string]any); ok5 {
+						return Settings{rw: s.rw, t: stm}
+					}
+				}
 				// Slices are handled specially: The parent key
 				// is maintained, and a new map with just the key
 				// and the slice value is returned. The key is then
@@ -210,6 +218,15 @@ func (s Settings) lockedSubset(path string) Settings {
 		}
 	}
 	return Settings{rw: s.rw, t: t}
+}
+
+// Length answers the length of the slice at path, or 0 if
+// path is not a slice.
+func (s Settings) Length(path string) int {
+	if v, ok := getType(s, path, leafSlice); ok {
+		return len(v)
+	}
+	return 0
 }
 
 // SetValue sets the given key to the given value.
@@ -371,6 +388,22 @@ func leafInt64(s Settings, p string) (int64, bool) {
 	return 0, false
 }
 
+// leafSlice takes a path with no seperator, i.e.
+// assumes it is an index in this map and not a subset,
+// and returns the value.
+func leafSlice(s Settings, p string) ([]any, bool) {
+	if v1, ok := s.t[p]; ok {
+		switch v2 := v1.(type) {
+		case []any:
+			return v2, true
+		default:
+			fmt.Printf("returning default on type %t\n", v2)
+			return nil, false
+		}
+	}
+	return nil, false
+}
+
 // leafString takes a path with no seperator, i.e.
 // assumes it is an index in this map and not a subset,
 // and returns the value.
@@ -384,6 +417,18 @@ func leafString(s Settings, p string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+// pathIndex looks at an index in a path slice and returns it
+// as an int, if it converts.
+func pathIndex(index int, path []string) (int, bool) {
+	if index >= len(path) {
+		return 0, false
+	}
+	if i, err := strconv.Atoi(path[index]); err == nil {
+		return i, true
+	}
+	return 0, false
 }
 
 type WalkKeysFunc func(key string) error
