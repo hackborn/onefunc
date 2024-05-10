@@ -10,5 +10,4 @@ type PixelsFunc func([]Pixel)
 type Pixel struct {
 	X, Y   int
 	Amount float64
-	Dist   float64 // Gross overgrowth to capture some data in an implementation that's become too wedded with this API.
 }

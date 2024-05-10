@@ -26,25 +26,31 @@ func (p Range[T]) Clip(value T) T {
 }
 
 // Normalize returns the value clipped to my range and normalized to 0-1.
-func (p Range[T]) Normalize(value T) T {
-	value = p.Clip(value)
-	return ((1.0 - value) * p.Min) + (value * p.Max)
-}
-
-// Map returns the normalized value mapped to my range.
-func (p Range[T]) Map(value T) T {
-	if value < 0 {
-		value = 0
-	} else if value > 1 {
-		value = 1
+func (p Range[T]) Normalize(value T) float64 {
+	min, max := p.Min, p.Max
+	if p.Max < p.Min {
+		min, max = p.Max, p.Min
 	}
-	return ((1.0 - value) * p.Min) + (value * p.Max)
+	//	fmt.Println("value", value, "min", min, "max", max)
+	if min == max {
+		return float64(min)
+	} else if value <= min {
+		return 0.0
+	} else if value >= max {
+		return 1.0
+	} else {
+		return float64(value) / float64(max-min)
+	}
 }
 
-// MapRanges takes value, normalizes it to lhs, then maps it to rhs.
-func MapRanges[T Number](value T, lhs, rhs Range[T]) T {
-	t := lhs.Normalize(value)
-	return rhs.Map(t)
+// MapNormal takes a normalized (0-1) value and maps it to my range.
+func (p Range[T]) MapNormal(normal T) T {
+	if normal < 0 {
+		normal = 0
+	} else if normal > 1 {
+		normal = 1
+	}
+	return ((1.0 - normal) * p.Min) + (normal * p.Max)
 }
 
 type RangeF64 = Range[float64]

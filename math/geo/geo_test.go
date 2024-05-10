@@ -56,8 +56,8 @@ func TestProjectDegree(t *testing.T) {
 }
 
 // ---------------------------------------------------------
-// TEST-RANGE-MAP
-func TestRangeMap(t *testing.T) {
+// TEST-RANGE-MAP-NORMAL
+func TestRangeMapNormal(t *testing.T) {
 	table := []struct {
 		value float64
 		r     RangeF64
@@ -77,9 +77,31 @@ func TestRangeMap(t *testing.T) {
 		{-1, Rng(1.0, 0.0), 1},
 	}
 	for i, v := range table {
-		have := v.r.Map(v.value)
+		have := v.r.MapNormal(v.value)
 		if !floatsEqualTol(have, v.want, 0.0001) {
-			t.Fatalf("TestRangeMap %v has %v but expected %v", i, have, v.want)
+			t.Fatalf("TestRangeMapNormal %v has %v but expected %v", i, have, v.want)
+		}
+	}
+}
+
+// ---------------------------------------------------------
+// TEST-NORMALIZE
+func TestNormalize(t *testing.T) {
+	table := []struct {
+		value float64
+		r     RangeF64
+		want  float64
+	}{
+		{-10, Rng(0.0, 10.0), 0},
+		{0, Rng(0.0, 10.0), 0},
+		{5, Rng(0.0, 10.0), 0.5},
+		{10, Rng(0.0, 10.0), 1},
+		{20, Rng(0.0, 10.0), 1},
+	}
+	for i, v := range table {
+		have := v.r.Normalize(v.value)
+		if !floatsEqualTol(have, v.want, 0.0001) {
+			t.Fatalf("TestNormalize %v has %v but expected %v", i, have, v.want)
 		}
 	}
 }
