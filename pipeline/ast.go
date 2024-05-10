@@ -2,6 +2,8 @@ package pipeline
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/hackborn/onefunc/errors"
 	ofstrings "github.com/hackborn/onefunc/strings"
@@ -76,25 +78,25 @@ func (t astPipeline) print() string {
 			w.WriteString(", ")
 		}
 		needsComma := false
-		for k, v := range node.vars {
+		for _, v := range sortVars(node.vars) {
 			if !needsComma {
 				needsComma = true
 			} else {
 				w.WriteString(", ")
 			}
-			w.WriteString(node.nodeName + "/" + k)
+			w.WriteString(node.nodeName + "/" + v.key)
 			w.WriteString("=")
-			w.WriteString(fmt.Sprintf("%v", v))
+			w.WriteString(fmt.Sprintf("%v", v.value))
 		}
-		for k, v := range node.envVars {
+		for _, v := range sortVars(node.envVars) {
 			if !needsComma {
 				needsComma = true
 			} else {
 				w.WriteString(", ")
 			}
-			w.WriteString(node.nodeName + "/" + k)
+			w.WriteString(node.nodeName + "/" + v.key)
 			w.WriteString("=")
-			w.WriteString(fmt.Sprintf("%v", v))
+			w.WriteString(fmt.Sprintf("%v", v.value))
 		}
 	}
 	if !first {
@@ -113,13 +115,13 @@ func (t astPipeline) print() string {
 			w.WriteString(", ")
 		}
 		needsComma := false
-		for _, v := range node.envVars {
+		for _, v := range sortVars(node.envVars) {
 			if !needsComma {
 				needsComma = true
 			} else {
 				w.WriteString(", ")
 			}
-			w.WriteString(fmt.Sprintf("%v", v))
+			w.WriteString(fmt.Sprintf("%v", v.value))
 		}
 	}
 	if !first {
@@ -168,4 +170,23 @@ func (t astPipeline) unattachedNodes() []*astNode {
 		}
 	}
 	return ans
+}
+
+type sortedVar struct {
+	key   string
+	value any
+}
+
+// sortVars returns a sorted slice of the map. Necessary for removing
+// map randomness during testing.
+func sortVars[T any](m map[string]T) []sortedVar {
+	sorted := make([]sortedVar, 0, len(m))
+	for k, v := range m {
+		sorted = append(sorted, sortedVar{key: k, value: v})
+	}
+	fn := func(a, b sortedVar) int {
+		return strings.Compare(a.key, b.key)
+	}
+	slices.SortFunc(sorted, fn)
+	return sorted
 }
