@@ -16,6 +16,10 @@ func (r RectT[T]) RB() Point[T] {
 	return Pt(r.R, r.B)
 }
 
+func (r RectT[T]) Add(pt Point[T]) RectT[T] {
+	return RectT[T]{L: r.L + pt.X, T: r.T + pt.Y, R: r.R + pt.X, B: r.B + pt.Y}
+}
+
 func (r RectT[T]) Size() Point[T] {
 	lt := r.LT()
 	rb := r.RB()
