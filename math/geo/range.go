@@ -39,7 +39,7 @@ func (p Range[T]) Normalize(value T) float64 {
 	} else if value >= max {
 		return 1.0
 	} else {
-		return float64(value) / float64(max-min)
+		return float64(value-min) / float64(max-min)
 	}
 }
 

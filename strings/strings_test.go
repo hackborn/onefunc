@@ -1,11 +1,11 @@
 package strings
 
 import (
+	"cmp"
 	_ "fmt"
 	"io"
 	"testing"
 
-	"github.com/hackborn/onefunc/errors"
 	"github.com/hackborn/onefunc/maps"
 )
 
@@ -79,7 +79,7 @@ func TestStringWriterPool(t *testing.T) {
 
 		var haveErr error
 		for _, action := range v.actions {
-			haveErr = errors.First(haveErr, action(state))
+			haveErr = cmp.Or(haveErr, action(state))
 		}
 		have := ""
 		haveLen := state.rawPool.CacheSize()
