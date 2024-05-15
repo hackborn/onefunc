@@ -40,10 +40,12 @@ func TestProjectDegree(t *testing.T) {
 		center   PointF64
 		degree   float64
 		distance float64
+		print    bool
 	}{
-		{Pt(0.0, 0.0), 0, 10},
-		{Pt(0.0, 0.0), 40, 10},
-		{Pt(0.0, 0.0), 122, 10},
+		{Pt(0.0, 0.0), 0, 10, false},
+		{Pt(0.0, 0.0), 40, 10, false},
+		{Pt(0.0, 0.0), 122, 10, false},
+		{Pt(0.0, 0.0), 270, 10, false},
 	}
 	for i, v := range table {
 		pt := v.center.ProjectDegree(v.degree, v.distance)
@@ -51,6 +53,8 @@ func TestProjectDegree(t *testing.T) {
 		want := v.degree
 		if !floatsEqualTol(have, want, 0.0001) {
 			t.Fatalf("TestProjectDegree %v has %v but expected %v for point %v", i, have, want, pt)
+		} else if v.print {
+			t.Fatalf("TestProjectDegree %v print pt %v degree %v dist %v new point %v", i, v.center, v.degree, v.distance, pt)
 		}
 	}
 }

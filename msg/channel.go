@@ -45,7 +45,7 @@ func (c *_channel[T]) sync() {
 	}
 	c.addedId = added
 	c.deletedId = deleted
-	c.handlers = c.handlers[0:]
+	c.handlers = c.handlers[:0]
 	visitFn := func(pattern string, subs *routerSubscriptions) {
 		for _, _h := range subs.subs {
 			if h, ok := _h.(HandlerFunc[T]); ok {
