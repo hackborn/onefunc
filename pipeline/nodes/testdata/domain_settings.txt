@@ -1,0 +1,8 @@
+package domain
+
+// CollectionSetting tests a slice of int64s. Slices are
+// unhandled by some backends so need to be serialized.
+type CollectionSetting struct {
+	Name       string `doc:", key"`
+	Collection []int64
+}

@@ -32,8 +32,11 @@ func Values(r ValuesRequest, dst any) error {
 		if err != nil {
 			return err
 		}
-
-		if err = assignValue(srcValue, destField, r.Flags); err != nil {
+		var assignFn AssignFunc
+		if i < len(r.Assigns) {
+			assignFn = r.Assigns[i]
+		}
+		if err = assignValue(srcValue, destField, assignFn, r.Flags); err != nil {
 			return err
 		}
 	}
@@ -51,7 +54,11 @@ func getReflectFieldValue(fieldName string, structValue reflect.Value) (reflect.
 	return field, nil
 }
 
-func assignValue(src, dst reflect.Value, flags uint8) error {
+func assignValue(src, dst reflect.Value, assign AssignFunc, flags uint8) error {
+	if assign != nil {
+		return assign(src, dst)
+	}
+
 	switch dst.Kind() {
 	case reflect.Bool:
 		v, err := valueToBool(src)

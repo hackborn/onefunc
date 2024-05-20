@@ -80,11 +80,12 @@ func TestPipeline(t *testing.T) {
 	}{
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/{type}="*StructData"`, `1/Payload/{type}="*StructData"`}, nil},
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Fields/0/Type=string`}, nil},
-		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Name=Company`, `1/Payload/Name=Filing`}, nil},
+		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Name=Company`, `1/Payload/Name=Filing`, `2/Payload/Name=CollectionSetting`}, nil},
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Fields/0/Name=Id`}, nil},
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/Fields/0/Tag="doc:''id, key''"`}, nil},
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`0/Payload/UnexportedFields/0/Name="_private"`, `0/Payload/UnexportedFields/0/Tag="json:''-''"`}, nil},
 		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct(Tag=doc))`, []string{`0/Payload/Fields/0/Tag="id, key"`}, nil},
+		{`graph (load(Glob="` + testDataDomainGlob + `") -> struct)`, []string{`2/Payload/Fields/1/Type=unknown`}, nil},
 		{`graph (load(Glob="` + testDataShortGlob + `"))`, []string{`0/Payload/{type}="*ContentData"`, `0/Payload/Data="a"`}, nil},
 		{`graph (load(Fs="test", Glob="` + testEmbedShortGlob + `"))`, []string{`0/Payload/{type}="*ContentData"`, `0/Payload/Data="a"`}, nil},
 		{`graph (anna -> regexp(Target="Content.Name",Expr="be"))`, []string{`0/Payload/{type}="*ContentData"`, `0/Payload/Name="Annath"`}, nil},
@@ -139,12 +140,12 @@ func setupTests() {
 	})
 }
 
-//go:embed test_data/*
+//go:embed testdata/*
 var testdataFs embed.FS
 
 // Globs
 var (
-	testDataDomainGlob = filepath.Join(".", "test_data", "domain_*")
-	testDataShortGlob  = filepath.Join(".", "test_data", "short_*")
-	testEmbedShortGlob = "test_data/short_*"
+	testDataDomainGlob = filepath.Join(".", "testdata", "domain_*")
+	testDataShortGlob  = filepath.Join(".", "testdata", "short_*")
+	testEmbedShortGlob = "testdata/short_*"
 )

@@ -44,3 +44,7 @@ func (d *ContentData) Clone() Cloner {
 	dst := *d
 	return &dst
 }
+
+const (
+	UnknownType = "unknown"
+)

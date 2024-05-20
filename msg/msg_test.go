@@ -64,7 +64,8 @@ func TestSequence(t *testing.T) {
 	table := []struct {
 		test string
 	}{
-		{"sequences_1.txt"},
+		//		{"sequences_1.txt"},
+		{"sequences_2.txt"},
 	}
 	for i, v := range table {
 		tests := loadSeqTests(v.test)
@@ -296,7 +297,7 @@ func load(name string) string {
 }
 
 func loadDataFile(fsys fs.FS, name string) string {
-	dat, err := fs.ReadFile(fsys, path.Join("test_data", name))
+	dat, err := fs.ReadFile(fsys, path.Join("testdata", name))
 	oferrors.LogFatal(err)
 	return string(dat)
 }

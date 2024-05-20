@@ -70,22 +70,23 @@ func newStructData(spec *astpkg.TypeSpec, structType *astpkg.StructType, tagFilt
 	name := spec.Name.Name
 	fields := make([]pipeline.StructField, 0, len(structType.Fields.List))
 	unexportedFields := make([]pipeline.StructField, 0, len(structType.Fields.List))
-
+	//	fmt.Println("STRUCT", name)
 	// Iterate over struct fields
 	for _, field := range structType.Fields.List {
-		sf := pipeline.StructField{Name: field.Names[0].Name,
-			Type: field.Type.(*astpkg.Ident).Name}
-		tag := ""
-
-		if field.Tag != nil {
-			// Not totally sure why it supplies it with the backticks, hopefully
-			// this doesn't breaking something.
-			tag = strings.Trim(field.Tag.Value, "`")
-			if tag != "" && tagFilter != "" {
-				tag = filterTag(tag, tagFilter)
-			}
+		//		fmt.Printf("FIELD %T %v\n", field, field)
+		//		fmt.Printf("FIELD names %T %v\n", field.Names, field.Names)
+		//		fmt.Printf("FIELD type %T %v\n", field.Type, field.Type)
+		typeName := pipeline.UnknownType
+		switch t := field.Type.(type) {
+		case *astpkg.Ident:
+			typeName = t.Name
 		}
-		sf.Tag = tag
+
+		sf := pipeline.StructField{Name: field.Names[0].Name,
+			Type: typeName,
+			Tag:  getTag(field, tagFilter),
+		}
+
 		if astpkg.IsExported(sf.Name) {
 			fields = append(fields, sf)
 		} else {
@@ -93,6 +94,19 @@ func newStructData(spec *astpkg.TypeSpec, structType *astpkg.StructType, tagFilt
 		}
 	}
 	return pipeline.NewStructData(name, fields, unexportedFields)
+}
+
+func getTag(field *astpkg.Field, tagFilter string) string {
+	if field.Tag == nil {
+		return ""
+	}
+	// Not totally sure why it supplies it with the backticks, hopefully
+	// this doesn't breaking something.
+	tag := strings.Trim(field.Tag.Value, "`")
+	if tag != "" && tagFilter != "" {
+		tag = filterTag(tag, tagFilter)
+	}
+	return tag
 }
 
 // filterTag takes a tag string and finds the filter

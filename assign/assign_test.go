@@ -60,6 +60,7 @@ func TestValues(t *testing.T) {
 		{valReqAny("D", 10.0, 0), &Data1{}, `{"D":10}`, nil},
 		{valReqAny("D", 10, 0), &Data1{}, `{}`, fmt.Errorf("wrong type")},
 		{valReqAny("D", 10, Fuzzy), &Data1{}, `{"D":10}`, nil},
+		{valReqJson("F", `[2, 4]`, 0), &Data1{}, `{"F":[2,4]}`, nil},
 	}
 	for i, v := range table {
 		haveErr := Values(v.req, v.dst)
@@ -84,6 +85,7 @@ type Data1 struct {
 	C int64   `json:",omitempty"`
 	D float64 `json:",omitempty"`
 	E bool    `json:",omitempty"`
+	F []int64 `json:",omitempty"`
 }
 
 // ---------------------------------------------------------
@@ -107,6 +109,15 @@ func valReqBool(v any) ValuesRequest {
 	return ValuesRequest{
 		FieldNames: []string{"E"},
 		NewValues:  []any{v},
+	}
+}
+
+func valReqJson(name string, v any, flags uint8) ValuesRequest {
+	return ValuesRequest{
+		FieldNames: []string{name},
+		NewValues:  []any{v},
+		Assigns:    []AssignFunc{AssignJson},
+		Flags:      flags,
 	}
 }
 

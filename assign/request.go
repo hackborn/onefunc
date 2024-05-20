@@ -7,6 +7,7 @@ import (
 type ValuesRequest struct {
 	FieldNames []string
 	NewValues  []any
+	Assigns    []AssignFunc // Optional: Provide assignment func for each value. Nil will use default.
 	Flags      uint8
 }
 
