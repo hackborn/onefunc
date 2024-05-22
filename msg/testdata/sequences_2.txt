@@ -4,4 +4,4 @@ sub=s1 topic=a/a
 sub=s2 topic=a/b
 sub=s3 topic=a/c
 pubChannel=ca value="a"
-want "a"="a"
+want "a"="a" "a"="a" "a"="a"

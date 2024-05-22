@@ -26,7 +26,7 @@ func TestDegrees(t *testing.T) {
 		{Pt(0.0, 0.0), Pt(10.0, -10.0), 315.0},
 	}
 	for i, v := range table {
-		have := Seg(v.center, v.pt).Degrees()
+		have := Seg(v.center.X, v.center.Y, v.pt.X, v.pt.Y).Degrees()
 		if !floatsEqualTol(have, v.want, 0.0001) {
 			t.Fatalf("TestDegrees %v has %v but expected %v", i, have, v.want)
 		}
@@ -49,7 +49,7 @@ func TestProjectDegree(t *testing.T) {
 	}
 	for i, v := range table {
 		pt := v.center.ProjectDegree(v.degree, v.distance)
-		have := Seg(v.center, pt).Degrees()
+		have := Seg(v.center.X, v.center.Y, pt.X, pt.Y).Degrees()
 		want := v.degree
 		if !floatsEqualTol(have, want, 0.0001) {
 			t.Fatalf("TestProjectDegree %v has %v but expected %v for point %v", i, have, want, pt)

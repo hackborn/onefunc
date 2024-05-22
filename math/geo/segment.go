@@ -5,8 +5,8 @@ import (
 )
 
 // Seg is shorthand for creating a segment from two points.
-func Seg[T Number](a, b Point[T]) Segment[T] {
-	return Segment[T]{A: a, B: b}
+func Seg[T Number](ax, ay, bx, by T) Segment[T] {
+	return Segment[T]{A: Pt(ax, ay), B: Pt(bx, by)}
 }
 
 // Segment represents a line segment with start and end points

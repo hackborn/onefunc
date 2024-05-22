@@ -32,12 +32,12 @@ func Run(p *Pipeline, input *RunInput, env map[string]any) (*RunOutput, error) {
 			runOutput.Pins = outputPins[:0]
 			err := rn.cn.node.Run(state, rn.input, runOutput)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("Pipeline: %T run err: %w", rn.cn.node, err)
 			}
 			// This node is done processing, flush it.
 			err = flush(state, rn.cn.flusher, runOutput)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("Pipeline: %T flush err: %w", rn.cn.node, err)
 			}
 
 			if len(rn.output) > 0 {
@@ -148,16 +148,16 @@ func newBuildRun(compiled []*compiledNode) *buildRun {
 
 func (b *buildRun) buildPipeline(p *Pipeline, input *RunInput, env map[string]any) ([]*runningNode, error) {
 	if len(p.roots) < 1 {
-		return nil, fmt.Errorf("No roots")
+		return nil, fmt.Errorf("Pipeline: No roots")
 	}
 	for _, rn := range b.running {
 		err := b.buildNode(rn, env)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Pipeline: build node err %w", err)
 		}
 		err = b.buildPins(rn)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Pipeline: build pins err %w", err)
 		}
 	}
 	// Queue up the roots
@@ -166,7 +166,7 @@ func (b *buildRun) buildPipeline(p *Pipeline, input *RunInput, env map[string]an
 		if rn, ok := b.running[cn]; ok {
 			running = append(running, rn)
 		} else {
-			return nil, fmt.Errorf("missing running node for compiled node")
+			return nil, fmt.Errorf("Pipeline: Missing running node for compiled node")
 		}
 	}
 	if input != nil && len(input.Pins) > 0 {
