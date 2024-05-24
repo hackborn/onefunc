@@ -106,6 +106,38 @@ func FindIntersection[T Number](s1, s2 Segment[T]) (Point[T], bool) {
 	return Point[T]{}, false
 }
 
+// Function: perpendicularIntersection(line, point)
+func PerpendicularIntersection(seg SegmentF64, pt PointF64) (PointF64, bool) {
+	// Check for vertical line (infinite slope)
+	if seg.A.X == seg.B.X {
+		// Point is on the line if px == x1, return the point itself
+		if pt.X == seg.A.X {
+			return pt, true
+		} else {
+			// Point is not on the line, return None (or indicate error)
+			return PointF64{}, false
+		}
+	}
+
+	// Calculate the slope of the line
+	m := (seg.B.Y - seg.A.Y) / (seg.B.X - seg.A.X)
+
+	// Calculate the negative reciprocal of the slope (perpendicular slope)
+	m_perp := -1 / m
+
+	// Equation of the perpendicular line passing through the point (px, py)
+	// y = m_perp * (x - px) + py
+
+	// Calculate the x-coordinate of the intersection point (ix)
+	ix := (m*pt.X - pt.Y + m_perp*seg.A.X - m_perp*seg.A.Y) / (m - m_perp)
+
+	// Calculate the y-coordinate of the intersection point (iy) using either the point or line equation
+	iy := m_perp*(ix-pt.X) + pt.Y // Using point equation
+
+	// Return the intersection point
+	return Pt(ix, iy), true
+}
+
 // DistSquared answers the squared distance from the point to the segment,
 // as well as the point found on the segment.
 // From https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment

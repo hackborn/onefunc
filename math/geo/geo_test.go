@@ -34,6 +34,27 @@ func TestDegrees(t *testing.T) {
 }
 
 // ---------------------------------------------------------
+// TEST-PERPENDICULAR-INTERSECTIOn
+func TestPerpendicularIntersection(t *testing.T) {
+	table := []struct {
+		seg    SegmentF64
+		pt     PointF64
+		want   PointF64
+		wantOk bool
+	}{
+		{Seg(0.0, 0.0, 20.0, 20.0), Pt(10.0, 0.0), Pt(5.0, 5.0), true},
+	}
+	for i, v := range table {
+		have, haveOk := PerpendicularIntersection(v.seg, v.pt)
+		if haveOk != v.wantOk {
+			t.Fatalf("TestPerpendicularIntersection %v has %v but expected %v", i, haveOk, v.wantOk)
+		} else if !pointsEqual(have, v.want) {
+			t.Fatalf("TestPerpendicularIntersection %v has intersection %v but expected %v", i, have, v.want)
+		}
+	}
+}
+
+// ---------------------------------------------------------
 // TEST-PROJECT-DEGREE
 func TestProjectDegree(t *testing.T) {
 	table := []struct {

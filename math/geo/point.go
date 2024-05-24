@@ -38,6 +38,10 @@ func (a Point[T]) Sub(b Point[T]) Point[T] {
 	return Point[T]{X: a.X - b.X, Y: a.Y - b.Y}
 }
 
+func (a Point[T]) Mult(b Point[T]) Point[T] {
+	return Point[T]{X: a.X * b.X, Y: a.Y * b.Y}
+}
+
 func (a Point[T]) Normalize() Point[T] {
 	if a.X == 0 && a.Y == 0 {
 		return a
