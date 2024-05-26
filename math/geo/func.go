@@ -60,3 +60,27 @@ func floatsEqualTol(a, b, tolerance float64) bool {
 	diff := math.Abs(a - b)
 	return diff < tolerance
 }
+
+func cross[T Number](a, b Point[T]) T {
+	return a.X*b.Y - a.Y*b.X
+}
+
+func orient[T Number](a, b, c Point[T]) T {
+	return cross(b.Sub(a), c.Sub(a))
+}
+
+// Surely these are SOMEWHERE?
+
+func Min[T Number](a, b T) T {
+	if a <= b {
+		return a
+	}
+	return b
+}
+
+func Max[T Number](a, b T) T {
+	if a >= b {
+		return a
+	}
+	return b
+}
