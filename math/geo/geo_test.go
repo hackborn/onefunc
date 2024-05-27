@@ -9,6 +9,32 @@ import (
 )
 
 // ---------------------------------------------------------
+// TEST-CIRCLE-HIT-TEST
+func TestCircleHitTest(t *testing.T) {
+	table := []struct {
+		center PointF64
+		radius float64
+		pt     PointF64
+		want   bool
+	}{
+		{Pt(5.0, 5.0), 5, Pt(5.0, 4.0), true},
+		{Pt(5.0, 5.0), 5, Pt(5.0, 5.0), true},
+		{Pt(5.0, 5.0), 5, Pt(5.0, 10.0), true},
+		{Pt(5.0, 5.0), 5, Pt(5.0, 10.05), false},
+		{Pt(5.0, 5.0), 5, Pt(1.0, 1.0), false},
+		{Pt(5.0, 5.0), 5, Pt(2.0, 2.0), true},
+	}
+	for i, v := range table {
+		cht := &CircleHitTest{}
+		cht.Set(v.center, v.radius)
+		have := cht.Hit(v.pt)
+		if have != v.want {
+			t.Fatalf("TestCircleHitTest %v has %v but expected %v", i, have, v.want)
+		}
+	}
+}
+
+// ---------------------------------------------------------
 // TEST-DEGREES
 func TestDegrees(t *testing.T) {
 	table := []struct {
@@ -34,7 +60,7 @@ func TestDegrees(t *testing.T) {
 }
 
 // ---------------------------------------------------------
-// TEST-PERPENDICULAR-INTERSECTIOn
+// TEST-PERPENDICULAR-INTERSECTION
 func TestPerpendicularIntersection(t *testing.T) {
 	table := []struct {
 		seg    SegmentF64

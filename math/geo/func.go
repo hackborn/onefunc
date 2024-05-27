@@ -8,6 +8,13 @@ import (
 
 type ProcessPtF64Func func(pt PointF64) PointF64
 
+// HitTest answers true if the point is a hit.
+type HitTest func(PointF64) bool
+
+func NullHitTest(PointF64) bool {
+	return false
+}
+
 func DegreesToRadians(degrees float64) float64 {
 	return degrees * (math.Pi / 180.0)
 }
