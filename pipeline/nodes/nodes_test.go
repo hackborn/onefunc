@@ -51,6 +51,7 @@ func TestLoad(t *testing.T) {
 		wantErr  error
 	}{
 		{`graph (load(Glob="` + testDataShortGlob + `"))`, []string{`0/Payload/Data=a`, `1/Payload/Data=b`, `2/Payload/Data=c`}, nil},
+		{`graph (load(Glob="` + testGroupsGlob + `",Separator=";"))`, []string{`0/Payload/Data=ga`, `1/Payload/Data=gb`, `2/Payload/Data=gc`}, nil},
 	}
 	for i, v := range table {
 		p, err := pipeline.Compile(v.pipeline)
@@ -147,5 +148,6 @@ var testdataFs embed.FS
 var (
 	testDataDomainGlob = filepath.Join(".", "testdata", "domain_*")
 	testDataShortGlob  = filepath.Join(".", "testdata", "short_*")
+	testGroupsGlob     = filepath.Join(".", "testdata", "groupa/*") + ";" + filepath.Join(".", "testdata", "groupb/*")
 	testEmbedShortGlob = "testdata/short_*"
 )
