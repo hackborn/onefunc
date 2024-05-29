@@ -44,18 +44,10 @@ func (s Segment[T]) Dir() Point[T] {
 	return s.B.Sub(s.A)
 }
 
-// Degrees is a convenience that finds the radians of the segment,
-// with A a the origin. Degrees will be 0-360, with 0/360 on the right,
-// proceeding clockwise.
+// Degrees finds the angle of the segment with A as the origin.
+// Degrees will be 0-360, with 0/360 on the right, proceeding clockwise.
 func (s Segment[T]) Degrees() float64 {
-	angle := math.Atan2(float64(s.B.Y-s.A.Y), float64(s.B.X-s.A.X))
-	v := angle*180/math.Pi + 180
-	// Rotate to put 0 at hard right
-	v += 180
-	if v >= 360 {
-		v -= 360
-	}
-	return v
+	return s.A.Degrees(s.B)
 }
 
 // IsCollinear checks if three points are collinear

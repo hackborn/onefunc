@@ -76,6 +76,16 @@ func orient[T Number](a, b, c Point[T]) T {
 	return cross(b.Sub(a), c.Sub(a))
 }
 
+// Ratio answers a 0-1 value based on a's
+// contributing factor to the final value.
+func Ratio(a, b float64) float64 {
+	if a <= 0 {
+		return 0
+	}
+	sum := a + b
+	return a / sum
+}
+
 // Surely these are SOMEWHERE?
 
 func Min[T Number](a, b T) T {

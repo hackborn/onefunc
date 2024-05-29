@@ -62,6 +62,19 @@ func (a Point[T]) Radians() float64 {
 	return math.Atan2(float64(a.Y), float64(a.X))
 }
 
+// Degrees finds the angle of the segment with this point as the origin.
+// Degrees will be 0-360, with 0/360 on the right, proceeding clockwise.
+func (a Point[T]) Degrees(b Point[T]) float64 {
+	angle := math.Atan2(float64(b.Y-a.Y), float64(b.X-a.X))
+	v := angle*180/math.Pi + 180
+	// Rotate to put 0 at hard right
+	v += 180
+	if v >= 360 {
+		v -= 360
+	}
+	return v
+}
+
 func (a Point[T]) Inside(r RectT[T]) bool {
 	return a.X >= r.L && a.Y >= r.T && a.X < r.R && a.Y < r.B
 }

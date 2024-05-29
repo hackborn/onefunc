@@ -1,5 +1,7 @@
 package geo
 
+import "fmt"
+
 type CircleHitTest struct {
 	center        PointF64
 	radiusSquared float64
@@ -17,4 +19,8 @@ func (t *CircleHitTest) Hit(pt PointF64) bool {
 		return false
 	}
 	return t.center.DistSquared(pt) <= t.radiusSquared
+}
+
+func (t *CircleHitTest) String() string {
+	return fmt.Sprintf("CircleHit (center = %.5f, %.5f radiusSqr = %.5f)", t.center.X, t.center.Y, t.radiusSquared)
 }

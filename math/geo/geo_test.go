@@ -136,6 +136,32 @@ func TestRangeMapNormal(t *testing.T) {
 }
 
 // ---------------------------------------------------------
+// TEST-RATIO
+func TestRatio(t *testing.T) {
+	table := []struct {
+		a    float64
+		b    float64
+		want float64
+	}{
+		{0.0, 1.0, 0.0},
+		{1.0, 0.0, 1.0},
+		{2, 2, 0.5},
+		{25, 100, 0.2},
+		{75, 100, 0.42857},
+		{125, 100, 0.5555},
+		{200, 100, 0.6666},
+		{500, 100, 0.8333},
+	}
+	for i, v := range table {
+		have := Ratio(v.a, v.b)
+
+		if !floatsEqualTol(have, v.want, 0.0001) {
+			t.Fatalf("TestRatio %v has %v but expected %v", i, have, v.want)
+		}
+	}
+}
+
+// ---------------------------------------------------------
 // TEST-NORMALIZE
 func TestNormalize(t *testing.T) {
 	table := []struct {
