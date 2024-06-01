@@ -11,13 +11,15 @@ import (
 	oferrors "github.com/hackborn/onefunc/errors"
 )
 
-type Option func(Settings, oferrors.Block)
+// Option used during construction of a Settings.
+// Clients can add to the settings with the Builder.
+type Option func(Builder, oferrors.Block)
 
 // WithFS loads all files that match the pattern
 // into the Settings. All matched files must be in JSON format.
 // See path.Match() for match rules.
 func WithFS(fsys fs.FS, pattern string) Option {
-	return func(s Settings, eb oferrors.Block) {
+	return func(b Builder, eb oferrors.Block) {
 		matches, err := fs.Glob(fsys, pattern)
 		eb.AddError(err)
 		for _, match := range matches {
@@ -27,23 +29,22 @@ func WithFS(fsys fs.FS, pattern string) Option {
 				eb.AddError(err)
 			}
 
-			s2 := emptySettings(s.rw)
-			err = json.Unmarshal(dat, &s2.t)
+			s := b.NewSettings()
+			err = json.Unmarshal(dat, &s)
 			if err != nil {
 				err = fmt.Errorf("%v: %w", match, err)
 				eb.AddError(err)
 			}
-
-			mergeKeys(s.t, s2.t)
+			b.AddSettings(s)
 		}
 	}
 }
 
 // WithEnv loads all matching env vars.
 func WithEnv(match EnvMatcher) Option {
-	return func(s Settings, eb oferrors.Block) {
+	return func(b Builder, eb oferrors.Block) {
 		envs := os.Environ()
-		s2 := emptySettings(s.rw)
+		s := b.NewSettings()
 		for _, env := range envs {
 			pos := strings.Index(env, "=")
 			if pos > 0 && pos < len(env)-1 {
@@ -52,11 +53,11 @@ func WithEnv(match EnvMatcher) Option {
 				left, err := match.Match(left)
 				eb.AddError(err)
 				if left != "" {
-					s2.t[left] = right
+					s[left] = right
 				}
 			}
 		}
-		mergeKeys(s.t, s2.t)
+		b.AddSettings(s)
 	}
 }
 
@@ -108,11 +109,13 @@ func (m *envPrefixMatcher) Match(key string) (string, error) {
 
 // WithKeys adds all keys in the supplied settings.
 func WithKeys(src Settings, keys []string) Option {
-	return func(s Settings, eb oferrors.Block) {
+	return func(b Builder, eb oferrors.Block) {
+		s := b.NewSettings()
 		for _, key := range keys {
 			if v, ok := src.t[key]; ok {
-				s.t[key] = v
+				s[key] = v
 			}
 		}
+		b.AddSettings(s)
 	}
 }

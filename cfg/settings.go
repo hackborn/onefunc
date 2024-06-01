@@ -29,8 +29,9 @@ type Settings struct {
 func NewSettings(opts ...Option) (Settings, error) {
 	s := emptySettings(&sync.RWMutex{})
 	eb := &oferrors.FirstBlock{}
+	builder := &_builder{t: s.t}
 	for _, opt := range opts {
-		opt(s, eb)
+		opt(builder, eb)
 	}
 	return s, eb.Err
 }
