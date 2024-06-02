@@ -1,6 +1,6 @@
 //go:build !darwin
 
-package platform
+package sys
 
 import (
 	"fmt"

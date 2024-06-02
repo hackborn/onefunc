@@ -1,4 +1,4 @@
-package platform
+package sys
 
 // Set platform properties. This should be done once, at
 // at app startup or in an init.

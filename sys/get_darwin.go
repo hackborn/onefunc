@@ -1,4 +1,4 @@
-package platform
+package sys
 
 /*
 #cgo CFLAGS: -x objective-c
@@ -60,14 +60,14 @@ func get(keys ...string) (Info, error) {
 		case Dpi:
 			size := C.getScreenDpi()
 			if size.width == 0 || size.height == 0 {
-				errs = append(errs, fmt.Errorf("Key \"%v\" not valid", key))
+				errs = append(errs, fmt.Errorf("platform.Get(Dpi): Invalid response"))
 			}
 			info.Dpi = geo.Pt(float64(size.width), float64(size.height))
 		case Scale:
 			scale := float64(C.getScreenBackingScale())
 			info.Scale = scale
 		default:
-			errs = append(errs, fmt.Errorf("Unknown key \"%v\"", key))
+			errs = append(errs, fmt.Errorf("platform.Get: Unknown key \"%v\"", key))
 		}
 	}
 	return info, errors.Join(errs...)
@@ -75,16 +75,16 @@ func get(keys ...string) (Info, error) {
 
 func makeAppDataPath() (string, error) {
 	if appName == "" {
-		return "", fmt.Errorf("No app name for appdatapath, must first Set(SetAppName)")
+		return "", fmt.Errorf("platform.Get: Missing app name, must first Set(SetAppName)")
 	}
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("platform.Get: %w", err)
 	}
 	path := filepath.Join(homeDir, "Library", "Application Support", appName)
 	err = os.Mkdir(path, 0750)
 	if err != nil && !os.IsExist(err) {
-		return "", err
+		return "", fmt.Errorf("platform.Get: %w", err)
 	}
 	return path, nil
 }

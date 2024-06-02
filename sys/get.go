@@ -1,4 +1,4 @@
-package platform
+package sys
 
 import (
 	"github.com/hackborn/onefunc/math/geo"
