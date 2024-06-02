@@ -1,16 +1,16 @@
-package extract
+package values
 
 import (
 	"reflect"
 )
 
-// AsMap iterates the fields in a struct, adding the
+// GetAsMap iterates the fields in a struct, adding the
 // results to a map based on a handler and returning the map.
 // The handler can be a chain. The final element of the
 // chain must be a Mapper, but you don't need to
 // include it: If the chain doesn't end in a Mapper, then
 // one will be added and provided the MapOpts.
-func AsMap(s any, h Handler, opts *MapOpts) map[string]any {
+func GetAsMap(s any, h GetHandler, opts *MapOpts) map[string]any {
 	mapper, ok := getLast[Mapper](h)
 	if !ok {
 		if opts == nil {
@@ -21,17 +21,17 @@ func AsMap(s any, h Handler, opts *MapOpts) map[string]any {
 			return nil
 		}
 	}
-	From(s, h)
+	Get(s, h)
 	return mapper.Map()
 }
 
-// AsSlice iterates the fields in a struct, adding the
+// GetAsSlice iterates the fields in a struct, adding the
 // results to a slice based on a handler and returning the slice.
 // The handler can be a chain. The final element of the
 // chain must be a Slicer, but you don't need to
 // include it: If the chain doesn't end in a Slicer, then
 // one will be added and provided the SliceOpts.
-func AsSlice(s any, h Handler, opts *SliceOpts) []any {
+func GetAsSlice(s any, h GetHandler, opts *SliceOpts) []any {
 	slicer, ok := getLast[Slicer](h)
 	if !ok {
 		if opts == nil {
@@ -42,13 +42,13 @@ func AsSlice(s any, h Handler, opts *SliceOpts) []any {
 			return nil
 		}
 	}
-	From(s, h)
+	Get(s, h)
 	return slicer.Slice()
 }
 
-// From iterates the fields in a struct, sending the results
+// Get iterates the fields in a struct, sending the results
 // to a handler.
-func From(s any, h Handler) {
+func Get(s any, h GetHandler) {
 	s = getStruct(s)
 	rType := reflect.TypeOf(s)
 	rValue := reflect.ValueOf(s)

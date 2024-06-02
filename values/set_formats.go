@@ -1,4 +1,4 @@
-package assign
+package values
 
 import (
 	"encoding/json"
@@ -6,13 +6,13 @@ import (
 	"reflect"
 )
 
-// AssignFunc handles the work of assigning the destination
+// SetFunc handles the work of assigning the destination
 // value to the source value.
-type AssignFunc func(src, dst reflect.Value) error
+type SetFunc func(src, dst reflect.Value) error
 
-// AssignJson takes a source string and a destination of any type
+// SetJson takes a source string and a destination of any type
 // and unmarshals the source to the destination.
-func AssignJson(src, dst reflect.Value) error {
+func SetJson(src, dst reflect.Value) error {
 	if src.Kind() != reflect.String {
 		return fmt.Errorf("JSON format requires string source value")
 	}

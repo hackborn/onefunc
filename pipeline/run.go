@@ -3,7 +3,7 @@ package pipeline
 import (
 	"fmt"
 
-	"github.com/hackborn/onefunc/assign"
+	"github.com/hackborn/onefunc/values"
 )
 
 func RunExpr(expr string, input *RunInput, env map[string]any) (*RunOutput, error) {
@@ -208,7 +208,7 @@ func (b *buildRun) buildNode(rn *runningNode, env map[string]any) error {
 	// Apply env vars
 	envlen := len(rn.cn.envVars)
 	if envlen > 0 {
-		req := assign.ValuesRequest{}
+		req := values.SetRequest{}
 		req.FieldNames = make([]string, envlen, envlen)
 		req.NewValues = make([]any, envlen, envlen)
 		i := -1
@@ -221,7 +221,7 @@ func (b *buildRun) buildNode(rn *runningNode, env map[string]any) error {
 				return fmt.Errorf("Missing environment variable \"%v\"", v)
 			}
 		}
-		return assign.Values(req, rn.nodeData)
+		return values.Set(req, rn.nodeData)
 	}
 	return nil
 }

@@ -1,18 +1,18 @@
-package assign
+package values
 
 import (
 	"fmt"
 )
 
-type ValuesRequest struct {
+type SetRequest struct {
 	FieldNames []string
 	NewValues  []any
-	Assigns    []AssignFunc // Optional: Provide assignment func for each value. Nil will use default.
+	Assigns    []SetFunc // Optional: Provide assignment func for each value. Nil will use default.
 	Flags      uint8
 }
 
-func ValuesRequestFrom(m map[string]any) ValuesRequest {
-	r := ValuesRequest{}
+func SetRequestFrom(m map[string]any) SetRequest {
+	r := SetRequest{}
 	if len(m) > 0 {
 		r.FieldNames = make([]string, 0, len(m))
 		r.NewValues = make([]any, 0, len(m))
@@ -24,7 +24,7 @@ func ValuesRequestFrom(m map[string]any) ValuesRequest {
 	return r
 }
 
-func (r ValuesRequest) Validate() error {
+func (r SetRequest) Validate() error {
 	if len(r.FieldNames) != len(r.NewValues) {
 		return fmt.Errorf("Size mismatch (%v names but %v values)", len(r.FieldNames), len(r.NewValues))
 	}

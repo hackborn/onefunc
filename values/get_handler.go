@@ -1,12 +1,14 @@
-package extract
+package values
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // ---------------------------------------------------------
 // HANDLING
 
-// Handler is used to handle name/value pairs from a struct.
-type Handler interface {
+// GetHandler is used to get name/value pairs from a struct.
+type GetHandler interface {
 	// Handle the pair in some fashion, returning the (potentially
 	// changed, filtered etc. data). The basic system
 	// is designed to work without errors; if a client needs
@@ -27,7 +29,7 @@ type Mapper interface {
 // ---------------------------------------------------------
 // CHAINING
 
-type Chain []Handler
+type Chain []GetHandler
 
 func (c Chain) Handle(name string, value any) (string, any) {
 	for _, h := range c {
@@ -48,9 +50,9 @@ func (c Chain) Handle(name string, value any) (string, any) {
 func NewChain(items ...any) Chain {
 	chain := make(Chain, 0, len(items))
 	for _, item := range items {
-		var h Handler
+		var h GetHandler
 		switch t := item.(type) {
-		case Handler:
+		case GetHandler:
 			h = t
 		case FilterMapOpts:
 			h = FilterMap(t)
@@ -85,7 +87,7 @@ type FilterMapOpts struct {
 	Passthrough bool
 }
 
-func FilterMap(opts FilterMapOpts) Handler {
+func FilterMap(opts FilterMapOpts) GetHandler {
 	return &filterMapHandler{opts: opts}
 }
 
@@ -94,14 +96,14 @@ type SliceOpts struct {
 	Combine string
 }
 
-func Slice(opts SliceOpts) Handler {
+func Slice(opts SliceOpts) GetHandler {
 	return &sliceHandler{opts: opts}
 }
 
 type MapOpts struct {
 }
 
-func Map(opts MapOpts) Handler {
+func Map(opts MapOpts) GetHandler {
 	result := make(map[string]any)
 	return &mapHandler{result: result, opts: opts}
 }
@@ -167,7 +169,7 @@ func (h *mapHandler) Map() map[string]any {
 
 // getLast answers the last handler in the (potential) chain
 // that matches type T.
-func getLast[T any](h Handler) (T, bool) {
+func getLast[T any](h GetHandler) (T, bool) {
 	if t, ok := h.(T); ok {
 		return t, true
 	}

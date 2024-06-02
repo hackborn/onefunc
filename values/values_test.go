@@ -1,4 +1,4 @@
-package extract
+package values
 
 import (
 	"encoding/json"
@@ -9,14 +9,15 @@ import (
 	"testing"
 
 	oferrors "github.com/hackborn/onefunc/errors"
+	"github.com/hackborn/onefunc/jacl"
 )
 
 // ---------------------------------------------------------
-// TEST-FROM
-func TestFrom(t *testing.T) {
+// TEST-GET
+func TestGet(t *testing.T) {
 	table := []struct {
 		src     any
-		handler Handler
+		handler GetHandler
 		want    string
 	}{
 		{Data1{A: "n"}, newHandler1(), `{"A":"n"}`},
@@ -29,11 +30,11 @@ func TestFrom(t *testing.T) {
 		{Data3{A: "n"}, newHandler1(), `{"A":"n","B":0}`},
 	}
 	for i, v := range table {
-		From(v.src, v.handler)
+		Get(v.src, v.handler)
 		have := v.handler.(Flattener).Flatten()
 
 		if have != v.want {
-			t.Fatalf("TestValues %v has \"%v\" but wanted \"%v\"", i, have, v.want)
+			t.Fatalf("TestGet %v has \"%v\" but wanted \"%v\"", i, have, v.want)
 		}
 	}
 }
@@ -41,14 +42,14 @@ func TestFrom(t *testing.T) {
 // ---------------------------------------------------------
 // TEST-GET-LAST
 func TestGetLast(t *testing.T) {
-	type ConvFunc func(Handler) (string, bool)
-	convHandler1 := func(h Handler) (string, bool) {
+	type ConvFunc func(GetHandler) (string, bool)
+	convHandler1 := func(h GetHandler) (string, bool) {
 		if t, ok := getLast[*Handler1](h); ok {
 			return reflect.TypeOf(t).Elem().Name(), true
 		}
 		return "", false
 	}
-	convSlicer := func(h Handler) (string, bool) {
+	convSlicer := func(h GetHandler) (string, bool) {
 		if t, ok := getLast[Slicer](h); ok {
 			return reflect.TypeOf(t).Elem().Name(), true
 		}
@@ -56,7 +57,7 @@ func TestGetLast(t *testing.T) {
 	}
 
 	table := []struct {
-		h        Handler
+		h        GetHandler
 		fn       ConvFunc
 		wantName string // a type name
 		wantOk   bool
@@ -78,11 +79,11 @@ func TestGetLast(t *testing.T) {
 }
 
 // ---------------------------------------------------------
-// TEST-AS-MAP
-func TestAsMap(t *testing.T) {
+// TEST-GET-AS-MAP
+func TestGetAsMap(t *testing.T) {
 	table := []struct {
 		src     any
-		handler Handler
+		handler GetHandler
 		opts    *MapOpts
 		want    string
 	}{
@@ -91,24 +92,24 @@ func TestAsMap(t *testing.T) {
 		{Data1{A: "n"}, NewChain(filterMap1, newHandler1()), &MapOpts{}, `{"name":"n"}`},
 	}
 	for i, v := range table {
-		haveMap := AsMap(v.src, v.handler, v.opts)
+		haveMap := GetAsMap(v.src, v.handler, v.opts)
 		have := ""
 		if len(haveMap) > 0 {
 			have = flattenMap(haveMap)
 		}
 
 		if have != v.want {
-			t.Fatalf("TestAsMap %v has \"%v\" but wanted \"%v\"", i, have, v.want)
+			t.Fatalf("TestGetAsMap %v has \"%v\" but wanted \"%v\"", i, have, v.want)
 		}
 	}
 }
 
 // ---------------------------------------------------------
-// TEST-AS-SLICE
-func TestAsSlice(t *testing.T) {
+// TEST-GET-AS-SLICE
+func TestGetAsSlice(t *testing.T) {
 	table := []struct {
 		src     any
-		handler Handler
+		handler GetHandler
 		opts    *SliceOpts
 		want    string
 	}{
@@ -117,24 +118,106 @@ func TestAsSlice(t *testing.T) {
 		{Data1{A: "n"}, NewChain(filterMap1, newHandler1()), &SliceOpts{Assign: "="}, `["name","=","n"]`},
 	}
 	for i, v := range table {
-		haveSlice := AsSlice(v.src, v.handler, v.opts)
+		haveSlice := GetAsSlice(v.src, v.handler, v.opts)
 		have := ""
 		if len(haveSlice) > 0 {
 			have = flattenAny(haveSlice)
 		}
 
 		if have != v.want {
-			t.Fatalf("TestAsSlice %v has \"%v\" but wanted \"%v\"", i, have, v.want)
+			t.Fatalf("TestGetAsSlice %v has \"%v\" but wanted \"%v\"", i, have, v.want)
 		}
 	}
 }
 
 // ---------------------------------------------------------
-// SUPPORT var and const
+// TEST-SET
+func TestSet(t *testing.T) {
+	table := []struct {
+		req     SetRequest
+		dst     any
+		want    string
+		wantErr error
+	}{
+		{valuesReq1, &SetData1{}, `{"A":"ten"}`, nil},
+		{valReqBool(true), &SetData1{}, `{"E":true}`, nil},
+		{valReqBool(false), &SetData1{}, `{}`, nil},
+		{valReqBool("true"), &SetData1{}, `{"E":true}`, nil},
+		{valReqBool("t"), &SetData1{}, `{"E":true}`, nil},
+		{valReqBool("false"), &SetData1{}, `{}`, nil},
+		{valReqBool("f"), &SetData1{}, `{}`, nil},
+		{valReqAny("D", 10.0, 0), &SetData1{}, `{"D":10}`, nil},
+		{valReqAny("D", 10, 0), &SetData1{}, `{}`, fmt.Errorf("wrong type")},
+		{valReqAny("D", 10, Fuzzy), &SetData1{}, `{"D":10}`, nil},
+		{valReqJson("F", `[2, 4]`, 0), &SetData1{}, `{"F":[2,4]}`, nil},
+	}
+	for i, v := range table {
+		haveErr := Set(v.req, v.dst)
+		haveB, err := json.Marshal(v.dst)
+		oferrors.Panic(err)
+		have := string(haveB)
+
+		if err := jacl.RunErr(haveErr, v.wantErr); err != nil {
+			t.Fatalf("TestSet %v %v", i, err.Error())
+		} else if have != v.want {
+			t.Fatalf("TestSet %v has \"%v\" but wanted \"%v\"", i, have, v.want)
+		}
+	}
+}
+
+// ---------------------------------------------------------
+// TEST-UNWRAP-VALUE-TO-ANY
+func TestUnwrapValueToAny(t *testing.T) {
+	table := []struct {
+		v       any
+		want    string
+		wantErr error
+	}{
+		{tenStr, `string "ten"`, nil},
+		{&tenStr, `string "ten"`, nil},
+		{newAnyString("s"), `string "s"`, nil},
+		{tenInt, `int 10`, nil},
+		{&tenInt, `int 10`, nil},
+		{tenFloat64, `float64 10`, nil},
+		{&tenFloat64, `float64 10`, nil},
+		{stringMap, `map[string]string {"a":"b"}`, nil},
+		{&stringMap, `map[string]string {"a":"b"}`, nil},
+	}
+	for i, v := range table {
+		haveV, haveErr := unwrapValueToAny(v.v)
+		haveB, jsonErr := json.Marshal(haveV)
+		oferrors.Panic(jsonErr)
+		have := fmt.Sprintf("%T %v", haveV, string(haveB))
+
+		if haveErr != v.wantErr {
+			t.Fatalf("TestUnwrapValueToAny %v has err \"%v\" but wanted \"%v\"", i, haveErr, v.wantErr)
+		} else if have != v.want {
+			t.Fatalf("TestUnwrapValueToAny %v has \"%v\" but wanted \"%v\"", i, have, v.want)
+		}
+	}
+}
+
+// ---------------------------------------------------------
+// CONST and VAR
 
 var (
 	filterMap1 = map[string]string{
 		"A": "name",
+	}
+)
+
+// Testing data. non-const because we use the address for some tests.
+var (
+	tenStr             = "ten"
+	tenInt             = 10
+	tenFloat64 float64 = 10.0
+	stringMap          = map[string]string{"a": "b"}
+)
+
+var (
+	valuesReq1 = SetRequest{
+		FieldNames: []string{"A"},
+		NewValues:  []any{&tenStr},
 	}
 )
 
@@ -146,7 +229,7 @@ type Flattener interface {
 }
 
 // ---------------------------------------------------------
-// SUPPORT types
+// SUPPORT types (Get)
 
 type Tuple[A any, B any] struct {
 	A A
@@ -168,7 +251,7 @@ type Data3 struct {
 	_priv string
 }
 
-func newHandler1() Handler {
+func newHandler1() GetHandler {
 	results := make(map[string]any)
 	return &Handler1{results: results}
 }
@@ -210,7 +293,52 @@ func (h *pairHandler) Flatten() string {
 }
 
 // ---------------------------------------------------------
-// HANDLER SUPPORT
+// SUPPORT types (Set)
+
+type SetData1 struct {
+	A string  `json:",omitempty"`
+	B int     `json:",omitempty"`
+	C int64   `json:",omitempty"`
+	D float64 `json:",omitempty"`
+	E bool    `json:",omitempty"`
+	F []int64 `json:",omitempty"`
+}
+
+// ---------------------------------------------------------
+// MACROS (Set)
+
+func newAnyString(s string) any {
+	n := new(any)
+	*n = s
+	return n
+}
+
+func valReqAny(name string, v any, flags uint8) SetRequest {
+	return SetRequest{
+		FieldNames: []string{name},
+		NewValues:  []any{v},
+		Flags:      flags,
+	}
+}
+
+func valReqBool(v any) SetRequest {
+	return SetRequest{
+		FieldNames: []string{"E"},
+		NewValues:  []any{v},
+	}
+}
+
+func valReqJson(name string, v any, flags uint8) SetRequest {
+	return SetRequest{
+		FieldNames: []string{name},
+		NewValues:  []any{v},
+		Assigns:    []SetFunc{SetJson},
+		Flags:      flags,
+	}
+}
+
+// ---------------------------------------------------------
+// GET HANDLER SUPPORT
 
 func (c Chain) Flatten() string {
 	// Assume the last element has the data of interest
