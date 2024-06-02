@@ -39,6 +39,7 @@ CGFloat getScreenBackingScale() {
 import "C"
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -49,29 +50,27 @@ import (
 
 func get(keys ...string) (Info, error) {
 	info := Info{}
+	errs := []error{}
 	for _, key := range keys {
 		switch key {
 		case AppDataPath:
-			fn := sync.OnceValues(makeAppDataPath)
-			path, err := fn()
-			if err != nil {
-				return Info{}, err
-			}
+			path, err := appDataPathFn()
+			errs = append(errs, err)
 			info.AppDataPath = path
 		case Dpi:
 			size := C.getScreenDpi()
 			if size.width == 0 || size.height == 0 {
-				return info, fmt.Errorf("Key \"%v\" not valid", key)
+				errs = append(errs, fmt.Errorf("Key \"%v\" not valid", key))
 			}
 			info.Dpi = geo.Pt(float64(size.width), float64(size.height))
 		case Scale:
 			scale := float64(C.getScreenBackingScale())
 			info.Scale = scale
 		default:
-			return info, fmt.Errorf("Unknown key \"%v\"", key)
+			errs = append(errs, fmt.Errorf("Unknown key \"%v\"", key))
 		}
 	}
-	return info, nil
+	return info, errors.Join(errs...)
 }
 
 func makeAppDataPath() (string, error) {
@@ -89,3 +88,5 @@ func makeAppDataPath() (string, error) {
 	}
 	return path, nil
 }
+
+var appDataPathFn = sync.OnceValues(makeAppDataPath)
