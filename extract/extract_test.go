@@ -7,6 +7,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	oferrors "github.com/hackborn/onefunc/errors"
 )
 
 // ---------------------------------------------------------
@@ -198,11 +200,11 @@ func (h *pairHandler) Handle(name string, value any) (string, any) {
 func (h *pairHandler) Flatten() string {
 	var sb strings.Builder
 	b, err := json.Marshal(h.fields)
-	panicErr(err)
+	oferrors.Panic(err)
 	sb.WriteString(string(b))
 	sb.WriteString(",")
 	b, err = json.Marshal(h.values)
-	panicErr(err)
+	oferrors.Panic(err)
 	sb.WriteString(string(b))
 	return sb.String()
 }
@@ -224,28 +226,28 @@ func (c Chain) Flatten() string {
 
 func flattenAny(a any) string {
 	b, err := json.Marshal(a)
-	panicErr(err)
+	oferrors.Panic(err)
 	return string(b)
 }
 
 func flattenMap(m map[string]any) string {
 	var sb strings.Builder
 	_, err := sb.WriteString("{")
-	panicErr(err)
+	oferrors.Panic(err)
 	for i, t := range orderMap(m) {
 		if i > 0 {
 			_, err = sb.WriteString(",")
-			panicErr(err)
+			oferrors.Panic(err)
 		}
 		_, err = sb.WriteString(fmt.Sprintf("\"%v\":", t.A))
-		panicErr(err)
+		oferrors.Panic(err)
 		b, err := json.Marshal(t.B)
-		panicErr(err)
+		oferrors.Panic(err)
 		_, err = sb.WriteString(string(b))
-		panicErr(err)
+		oferrors.Panic(err)
 	}
 	_, err = sb.WriteString("}")
-	panicErr(err)
+	oferrors.Panic(err)
 	return sb.String()
 }
 

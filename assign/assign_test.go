@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	oferrors "github.com/hackborn/onefunc/errors"
 	"github.com/hackborn/onefunc/jacl"
 )
 
@@ -31,7 +32,7 @@ func TestUnwrapValueToAny(t *testing.T) {
 	for i, v := range table {
 		haveV, haveErr := unwrapValueToAny(v.v)
 		haveB, jsonErr := json.Marshal(haveV)
-		panicErr(jsonErr)
+		oferrors.Panic(jsonErr)
 		have := fmt.Sprintf("%T %v", haveV, string(haveB))
 
 		if haveErr != v.wantErr {
@@ -65,7 +66,7 @@ func TestValues(t *testing.T) {
 	for i, v := range table {
 		haveErr := Values(v.req, v.dst)
 		haveB, err := json.Marshal(v.dst)
-		panicErr(err)
+		oferrors.Panic(err)
 		have := string(haveB)
 
 		if err := jacl.RunErr(haveErr, v.wantErr); err != nil {
