@@ -50,6 +50,11 @@ func (s Segment[T]) Degrees() float64 {
 	return s.A.Degrees(s.B)
 }
 
+func (s Segment[T]) Midpoint() Point[T] {
+	return Point[T]{X: (s.A.X / 2) + (s.B.X / 2),
+		Y: (s.A.Y / 2) + (s.B.Y / 2)}
+}
+
 // IsCollinear checks if three points are collinear
 func IsCollinear[T Number](p1, p2, p3 Point[T]) bool {
 	a := float64(p2.X - p1.X)
