@@ -25,6 +25,13 @@ func (p Range[T]) Clip(value T) T {
 	}
 }
 
+// Intersection returns the intersection of A and B ranges.
+func (a Range[T]) Intersection(b Range[T]) Range[T] {
+	a.Min = Max(a.Min, b.Min)
+	a.Max = Min(a.Max, b.Max)
+	return a
+}
+
 // Normalize returns the value clipped to my range and normalized to 0-1.
 func (p Range[T]) Normalize(value T) float64 {
 	min, max := p.Min, p.Max
@@ -44,13 +51,23 @@ func (p Range[T]) Normalize(value T) float64 {
 }
 
 // MapNormal takes a normalized (0-1) value and maps it to my range.
-func (p Range[T]) MapNormal(normal T) T {
+func (p Range[T]) MapNormal(normal float64) T {
 	if normal < 0 {
 		normal = 0
 	} else if normal > 1 {
 		normal = 1
 	}
-	return ((1.0 - normal) * p.Min) + (normal * p.Max)
+	ans := T(((1.0 - normal) * float64(p.Min)) + (normal * float64(p.Max)))
+	// Don't think we need to clip this but not sure
+	//	min, max := p.Min, p.Max
+	//	if min > max {
+	//	min, max = max, min
+	//	if ans <= min {
+	//		return min
+	//	} else if ans >= max {
+	//		return max
+	//	}
+	return ans
 }
 
 type RangeF64 = Range[float64]
