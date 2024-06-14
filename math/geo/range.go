@@ -25,6 +25,15 @@ func (p Range[T]) Clip(value T) T {
 	}
 }
 
+// Overlaps returns true if the ranges overlap.
+func (a Range[T]) Overlaps(b Range[T]) bool {
+	min, max := a.Min, a.Max
+	if min > max {
+		min, max = max, min
+	}
+	return b.Min >= min && b.Min <= max
+}
+
 // Intersection returns the intersection of A and B ranges.
 func (a Range[T]) Intersection(b Range[T]) Range[T] {
 	a.Min = Max(a.Min, b.Min)
