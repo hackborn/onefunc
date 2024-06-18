@@ -53,7 +53,7 @@ func TestDegrees(t *testing.T) {
 	}
 	for i, v := range table {
 		have := Seg(v.center.X, v.center.Y, v.pt.X, v.pt.Y).Degrees()
-		if !floatsEqualTol(have, v.want, 0.0001) {
+		if !FloatsEqualTol(have, v.want, 0.0001) {
 			t.Fatalf("TestDegrees %v has %v but expected %v", i, have, v.want)
 		}
 	}
@@ -98,7 +98,7 @@ func TestProjectDegree(t *testing.T) {
 		pt := v.center.ProjectDegree(v.degree, v.distance)
 		have := Seg(v.center.X, v.center.Y, pt.X, pt.Y).Degrees()
 		want := v.degree
-		if !floatsEqualTol(have, want, 0.0001) {
+		if !FloatsEqualTol(have, want, 0.0001) {
 			t.Fatalf("TestProjectDegree %v has %v but expected %v for point %v", i, have, want, pt)
 		} else if v.print {
 			t.Fatalf("TestProjectDegree %v print pt %v degree %v dist %v new point %v", i, v.center, v.degree, v.distance, pt)
@@ -129,7 +129,7 @@ func TestRangeMapNormal(t *testing.T) {
 	}
 	for i, v := range table {
 		have := v.r.MapNormal(v.value)
-		if !floatsEqualTol(have, v.want, 0.0001) {
+		if !FloatsEqualTol(have, v.want, 0.0001) {
 			t.Fatalf("TestRangeMapNormal %v has %v but expected %v", i, have, v.want)
 		}
 	}
@@ -155,7 +155,7 @@ func TestRatio(t *testing.T) {
 	for i, v := range table {
 		have := Ratio(v.a, v.b)
 
-		if !floatsEqualTol(have, v.want, 0.0001) {
+		if !FloatsEqualTol(have, v.want, 0.0001) {
 			t.Fatalf("TestRatio %v has %v but expected %v", i, have, v.want)
 		}
 	}
@@ -178,7 +178,7 @@ func TestNormalize(t *testing.T) {
 	}
 	for i, v := range table {
 		have := v.r.Normalize(v.value)
-		if !floatsEqualTol(have, v.want, 0.0001) {
+		if !FloatsEqualTol(have, v.want, 0.0001) {
 			t.Fatalf("TestNormalize %v has %v but expected %v", i, have, v.want)
 		}
 	}
