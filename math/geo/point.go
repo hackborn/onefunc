@@ -42,6 +42,37 @@ func (a Point[T]) Mult(b Point[T]) Point[T] {
 	return Point[T]{X: a.X * b.X, Y: a.Y * b.Y}
 }
 
+// ??? What? This doesn't look like a normalize, it
+// needs to divide by the magnitude. Is anyone using this?
+// Well hold on maybe this is valid (with tweaks), from the C#
+// source:
+// https://www.dotnetframework.org/default.aspx/Net/Net/3@5@50727@3053/DEVDIV/depot/DevDiv/releases/Orcas/SP/wpf/src/Core/CSharp/System/Windows/Media3D/Vector3D@cs/1/Vector3D@cs
+/*
+public void Normalize()
+       {
+           // Computation of length can overflow easily because it
+           // first computes squared length, so we first divide by
+           // the largest coefficient.
+           double m = Math.Abs(_x);
+           double absy = Math.Abs(_y);
+           double absz = Math.Abs(_z);
+           if (absy > m)
+           {
+               m = absy;
+           }
+           if (absz > m)
+           {
+               m = absz;
+           }
+
+           _x /= m;
+           _y /= m;
+           _z /= m;
+
+           double length = Math.Sqrt(_x * _x + _y * _y + _z * _z);
+           this /= length;
+       }
+*/
 func (a Point[T]) Normalize() Point[T] {
 	if a.X == 0 && a.Y == 0 {
 		return a
@@ -114,8 +145,10 @@ func ConvertPoint[A Number, B Number](a Point[A]) Point[B] {
 	return Point[B]{X: B(a.X), Y: B(a.Y)}
 }
 
+type PointI = Point[int]
+type PointF = Point[float64]
+
 type PointF32 = Point[float32]
 type PointF64 = Point[float64]
-type PointI = Point[int]
 type PointI64 = Point[int64]
 type PointUI64 = Point[uint64]
