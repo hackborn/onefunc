@@ -9,6 +9,15 @@ type Range[T Number] struct {
 	Max T
 }
 
+// Contains returns true if the value is contained in the range.
+func (p Range[T]) Contains(value T) bool {
+	min, max := p.Min, p.Max
+	if p.Max < p.Min {
+		min, max = p.Max, p.Min
+	}
+	return value >= min && value <= max
+}
+
 // Clip returns the value clipped to my range.
 func (p Range[T]) Clip(value T) T {
 	min, max := p.Min, p.Max
@@ -43,20 +52,26 @@ func (a Range[T]) Intersection(b Range[T]) Range[T] {
 
 // Normalize returns the value clipped to my range and normalized to 0-1.
 func (p Range[T]) Normalize(value T) float64 {
+	if p.Min == p.Max {
+		return float64(p.Min)
+	}
 	min, max := p.Min, p.Max
 	if p.Max < p.Min {
 		min, max = p.Max, p.Min
 	}
 	//	fmt.Println("value", value, "min", min, "max", max)
-	if min == max {
-		return float64(min)
-	} else if value <= min {
-		return 0.0
+	var v float64
+	if value <= min {
+		v = 0.0
 	} else if value >= max {
-		return 1.0
+		v = 1.0
 	} else {
-		return float64(value-min) / float64(max-min)
+		v = float64(value-min) / float64(max-min)
 	}
+	if p.Max < p.Min {
+		return 1. - v
+	}
+	return v
 }
 
 // MapNormal takes a normalized (0-1) value and maps it to my range.

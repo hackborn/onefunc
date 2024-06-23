@@ -175,6 +175,8 @@ func TestNormalize(t *testing.T) {
 		{10, Rng(0.0, 10.0), 1},
 		{20, Rng(0.0, 10.0), 1},
 		{84000, Rng(10000.0, 90000.0), 0.925},
+		{0, Rng(1.0, .0), 1},
+		{.25, Rng(1.0, .0), .75},
 	}
 	for i, v := range table {
 		have := v.r.Normalize(v.value)

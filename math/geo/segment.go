@@ -184,6 +184,9 @@ func ConvertSegment[A Number, B Number](seg Segment[A]) Segment[B] {
 	return Segment[B]{A: a, B: b}
 }
 
+type SegF = Segment[float64]
+type SegI = Segment[int]
+
 type SegmentF64 = Segment[float64]
 type SegmentI = Segment[int]
 type SegmentI64 = Segment[int64]
