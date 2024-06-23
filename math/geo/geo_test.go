@@ -274,16 +274,16 @@ func TestXYToIndex(t *testing.T) {
 	table := []struct {
 		width   int
 		height  int
-		pt      PointI
+		pt      PtI
 		want    int
 		wantErr error
 	}{
-		{10, 10, PointI{X: 0, Y: 0}, 0, nil},
-		{10, 10, PointI{X: 0, Y: 4}, 40, nil},
-		{20, 10, PointI{X: 1, Y: 4}, 81, nil},
+		{10, 10, PtI{X: 0, Y: 0}, 0, nil},
+		{10, 10, PtI{X: 0, Y: 4}, 40, nil},
+		{20, 10, PtI{X: 1, Y: 4}, 81, nil},
 		// Errors
-		{10, 10, PointI{X: -1, Y: 0}, 0, outOfBoundsErr},
-		{10, 10, PointI{X: 10, Y: 10}, 0, outOfBoundsErr},
+		{10, 10, PtI{X: -1, Y: 0}, 0, outOfBoundsErr},
+		{10, 10, PtI{X: 10, Y: 10}, 0, outOfBoundsErr},
 	}
 	for i, v := range table {
 		have, haveErr := XYToIndex(v.width, v.height, v.pt)

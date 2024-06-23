@@ -206,8 +206,8 @@ func (r *rasterizer) getSegment(shape any) (int, int, int, int, bool) {
 func DrawLine(x0, y0, x1, y1 int, out rasterizing.PixelFunc) {
 	// This is just a convenience on constructing a rasterizzer.
 	// Probably should remove it, it just came first and feels sentimental.
-	seg := geo.SegmentI{A: geo.PointI{X: x0, Y: y0},
-		B: geo.PointI{X: x1, Y: y1}}
+	seg := geo.SegmentI{A: geo.PtI{X: x0, Y: y0},
+		B: geo.PtI{X: x1, Y: y1}}
 	r := rasterizer{}
 	r.Rasterize(seg, out)
 }

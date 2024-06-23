@@ -145,8 +145,8 @@ func ConvertPoint[A Number, B Number](a Point[A]) Point[B] {
 	return Point[B]{X: B(a.X), Y: B(a.Y)}
 }
 
-type PointI = Point[int]
-type PointF = Point[float64]
+type PtI = Point[int]
+type PtF = Point[float64]
 
 type PointF32 = Point[float32]
 type PointF64 = Point[float64]
