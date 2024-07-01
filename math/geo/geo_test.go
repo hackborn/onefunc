@@ -194,21 +194,17 @@ func TestSegmentIntersection(t *testing.T) {
 		s2     SegmentF64
 		want   PointF64
 		wantOk bool
-		check  bool // Set to true to fail the test and see the values
 	}{
-		{segf(5, 0, 5, 10), segf(0, 5, 10, 5), ptf(5, 5), true, false},
-		{segf(0, 0, 10, 10), segf(0, 10, 10, 0), ptf(5, 5), true, false},
-		{segf(0, 0, 10, 10), segf(0, 5, 20, 0), ptf(4, 4), true, false},
+		{segf(5, 0, 5, 10), segf(0, 5, 10, 5), ptf(5, 5), true},
+		{segf(0, 0, 10, 10), segf(0, 10, 10, 0), ptf(5, 5), true},
+		{segf(0, 0, 10, 10), segf(0, 5, 20, 0), ptf(4, 4), true},
 	}
 	for i, v := range table {
 		have, haveOk := FindIntersection(v.s1, v.s2)
 
-		if v.check {
-			have2, haveOk2 := FindIntersectionBAD(v.s1, v.s2)
-			t.Fatalf("TestSegmentIntersection %v segment (%v) to (%v) pt1 %v pt2 %v ok1 %v ok2 %v", i, v.s1, v.s2, have, have2, haveOk, haveOk2)
-		} else if v.wantOk != haveOk {
+		if v.wantOk != haveOk {
 			t.Fatalf("TestSegmentIntersection %v has ok %v but expected %v", i, haveOk, v.wantOk)
-		} else if !pointsEqual(v.want, have) {
+		} else if haveOk && !pointsEqual(v.want, have) {
 			t.Fatalf("TestSegmentIntersection %v has intersection %v but expected %v", i, have, v.want)
 		}
 	}
@@ -241,16 +237,16 @@ func TestPointSegmentIntersection(t *testing.T) {
 // TEST-PROJECT
 func TestProject(t *testing.T) {
 	table := []struct {
-		seg   SegmentF64
+		seg   SegF
 		dist  float64
 		check bool // Set to true to fail the test and see the values
 	}{
-		{segf(0, 0, 10, 10), 1, false},
-		{segf(0, 0, 20, 10), 1, false},
-		{segf(0, 0, 20, 10), 10, false},
-		{segf(0, 0, 1, 100), 1, false},
-		{segf(0, 0, 0, 10), 1, false},
-		{segf(0, 0, 10, 0), 1, false},
+		{Seg(0., 0, 10, 10), 1, false},
+		{Seg(0., 0, 20, 10), 1, false},
+		{Seg(0., 0, 20, 10), 10, false},
+		{Seg(0., 0, 1, 100), 1, false},
+		{Seg(0., 0, 0, 10), 1, false},
+		{Seg(0., 0, 10, 0), 1, false},
 	}
 	for i, v := range table {
 		//		m := v.seg.Slope()
@@ -268,6 +264,69 @@ func TestProject(t *testing.T) {
 	}
 }
 
+// ---------------------------------------------------------
+// TEST-PT-TO-SEG-INTERSECTION
+func TestPtToSegIntersection(t *testing.T) {
+	table := []struct {
+		pt      PtF
+		degrees float64
+		seg     SegF
+		want    PtF
+		wantOk  bool
+	}{
+		{Pt(10., 10.), 270., Seg(0., 0., 20., 0.), Pt(10., 0.), true},
+		{Pt(10., 10.), 90., Seg(0., 20., 20., 20.), Pt(10., 20.), true},
+		{Pt(10., 10.), 0., Seg(0., 0., 0., 20.), Pt(0., 0.), false},
+		{Pt(10., 10.), 0., Seg(20., 0., 20., 20.), Pt(20., 10.), true},
+	}
+	for i, v := range table {
+		dir := DegreesToDirectionCw(v.degrees)
+		have, haveOk := PtToSegIntersection(v.pt, dir, v.seg)
+
+		if haveOk != v.wantOk {
+			t.Fatalf("TestPtToSegIntersection %v expected ok %v but has %v", i, v.wantOk, haveOk)
+		} else if haveOk && !pointsEqual(v.want, have) {
+			t.Fatalf("TestPtToSegIntersection %v has %v but expected %v", i, have, v.want)
+		}
+	}
+}
+
+// ---------------------------------------------------------
+// TEST-TRIANGLE-PLANE-INTERSECTION
+func TestTrianglePlaneIntersection(t *testing.T) {
+	table := []struct {
+		tri      Tri3dF
+		triPt    Pt3dF
+		planeTri Tri3dF
+		planePt  Pt3dF
+		want     Pt3dF
+		wantOk   bool
+	}{
+		{Tri3dFlat(1., 0., 2., 2., 1., 2., 1., 2., 4), tri1.Center(), plane1Tri, zeroPt, Pt3d(-1., 2., 0.), true},
+	}
+	for i, v := range table {
+		//		have, haveOk := TrianglePlaneIntersection(v.tri, v.triPt, v.planeTri, v.planePt)
+		have, haveOk := TrianglePlaneIntersection(v.tri, v.triPt, v.planeTri, v.planePt)
+
+		if haveOk != v.wantOk {
+			t.Fatalf("TestTrianglePlaneIntersection %v expected ok %v but has %v", i, v.wantOk, haveOk)
+		} else if !points3dEqual(v.want, have) {
+			t.Fatalf("TestTrianglePlaneIntersection %v has %v but expected %v", i, have, v.want)
+		}
+	}
+}
+
+var zeroPlane = Tri3dFlat(10., 0., 0., 10., 10., 0., 0., 10., 0.)
+var zeroPt = Pt3d(0., 0., 0.)
+var tri1 = Tri3dFlat(1., 0., 4., 2., 1., 4., 1., 2., 2)
+var plane1Tri = Tri3dFlat(1., 0., 0., 2., 1., 0., 1., 2., 0.)
+
+var tri2 = Tri3dFlat(1., 0., 1., 2., 1., 0., 1., 2., 1.)
+var tri2Pt = Pt3d(1.5, 0.5, 0)
+var plane2Nornal = Pt3d(0., 1., 1.)
+var plane2Tri = Tri3dFlat(1., 0., 0., 2., 1., 0., 1., 2., 0.)
+
+// var plane2Normal = Tri3dFlat(1., 0., 0., 2., 1., 0., 1., 2., 0.)
 // ---------------------------------------------------------
 // TEST-XY-TO-INDEX
 func TestXYToIndex(t *testing.T) {
@@ -413,5 +472,9 @@ func (a *LineOut) Cmp(b LineOut) error {
 }
 
 func pointsEqual(a, b PointF64) bool {
-	return FloatsEqual(a.X, b.X) && FloatsEqual(a.Y, b.Y)
+	return FloatsEqualTol(a.X, b.X, 0.000001) && FloatsEqualTol(a.Y, b.Y, 0.000001)
+}
+
+func points3dEqual(a, b Pt3dF) bool {
+	return FloatsEqual(a.X, b.X) && FloatsEqual(a.Y, b.Y) && FloatsEqual(a.Z, b.Z)
 }

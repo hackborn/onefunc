@@ -50,59 +50,13 @@ func PerpendicularIntersection[T Float](seg Segment[T], pt Point[T]) (Point[T], 
 	return Pt(ix, iy), true
 }
 
-/*
-Actually, the answers everyone have given you so far are not optimal. They are imprecise, and so are not guaranteed to work on integer coordinates. Also, they are way too complicated.
+func PtToSegIntersection(pt, direction PtF, seg SegF) (PtF, bool) {
+	// Create a new segment and check the intersection.
+	scale := Max(math.Abs(pt.X-seg.A.X), math.Abs(pt.X-seg.B.X))
+	scale = Max(scale, math.Abs(pt.Y-seg.A.Y))
+	scale = Max(scale, math.Abs(pt.Y-seg.B.Y))
+	scale *= 2
 
-Taken from Victor Lecomte's fabulous handbook, and modified for simplicity, this C++ function properInter returns whether there is an intersection between segments AB and CD:
-
-struct pt { int x, int y };
-
-int cross(pt a, pt b) {
-    return a.x*b.y - a.y*b.x;
-}
-
-int orient(pt a, pt b, pt c) {
-    return cross(b-a, c-a);
-}
-
-bool properInter(pt a, pt b, pt c, pt d) {
-    int oa = orient(c,d,a),
-        ob = orient(c,d,b),
-        oc = orient(a,b,c),
-        od = orient(a,b,d);
-    // Proper intersection exists iff opposite signs
-    return (oa*ob < 0 && oc*od < 0);
-}
-*/
-// FindIntersection finds the intersection point of two line segments
-func FindIntersectionBAD[T Number](s1, s2 Segment[T]) (Point[T], bool) {
-	p1, p2 := s1.A, s1.B
-	q1, q2 := s2.A, s2.B
-
-	// Check if the lines are parallel
-	o1 := Orientation(p1, q1, p2)
-	o2 := Orientation(p1, q2, p2)
-	if o1 == 0 && o2 == 0 {
-		// Check if they are collinear
-		if OnSegment(p1, q1, q2) || OnSegment(p2, q1, q2) || OnSegment(q1, p1, p2) || OnSegment(q2, p1, p2) {
-			// Line segments are overlapping
-			x := math.Min(float64(p1.X), math.Max(float64(p1.X), float64(p2.X)))
-			y := math.Min(float64(p1.Y), math.Max(float64(p1.Y), float64(p2.Y)))
-			return Point[T]{X: T(x), Y: T(y)}, true
-		}
-		return Point[T]{}, false // Lines are parallel and don't overlap
-	}
-
-	// Check if the segments intersect
-	o3 := Orientation(q1, p1, q2)
-	o4 := Orientation(q2, p1, q1)
-
-	if o1 != o2 && o3 != o4 {
-		// Lines intersect
-		x := (q1.X*q2.Y - q1.Y*q2.X - p1.X*p2.Y + p1.Y*p2.X) / (q2.X - q1.X)
-		y := (q1.X*p2.Y + p1.X*q1.Y - q1.Y*p2.X - p1.Y*q1.X) / (q2.Y - q1.Y)
-		return Point[T]{x, y}, true
-	}
-
-	return Point[T]{}, false // Lines don't intersect
+	newPt := PtF{X: pt.X + direction.X*scale, Y: pt.Y + direction.Y*scale}
+	return FindIntersection(seg, SegF{A: pt, B: newPt})
 }
