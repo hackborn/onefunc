@@ -15,7 +15,7 @@ type Info struct {
 	// The system-reported platform DPI. Note that this might
 	// not be a final value: In some cases it might need to
 	// be multipled by the scale.
-	Dpi geo.PointF64
+	Dpi geo.PtF
 
 	// The current screen scaling. Will be 1 for no scale.
 	Scale float64

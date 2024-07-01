@@ -6,12 +6,12 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
-type ProcessPtF64Func func(pt PointF64) PointF64
+type ProcessPtF64Func func(pt PtF) PtF
 
 // HitTest answers true if the point is a hit.
-type HitTest func(PointF64) bool
+type HitTest func(PtF) bool
 
-func NullHitTest(PointF64) bool {
+func NullHitTest(PtF) bool {
 	return false
 }
 

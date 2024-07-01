@@ -191,9 +191,9 @@ func (r *rasterizer) Rasterize2(shape any, fn rasterizing.PixelsFunc) {
 
 func (r *rasterizer) getSegment(shape any) (int, int, int, int, bool) {
 	switch s := shape.(type) {
-	case geo.SegmentI:
+	case geo.SegI:
 		return s.A.X, s.A.Y, s.B.X, s.B.Y, true
-	case geo.SegmentF64:
+	case geo.SegF:
 		return int(s.A.X), int(s.A.Y), int(s.B.X), int(s.B.Y), true
 
 	}
@@ -206,7 +206,7 @@ func (r *rasterizer) getSegment(shape any) (int, int, int, int, bool) {
 func DrawLine(x0, y0, x1, y1 int, out rasterizing.PixelFunc) {
 	// This is just a convenience on constructing a rasterizzer.
 	// Probably should remove it, it just came first and feels sentimental.
-	seg := geo.SegmentI{A: geo.PtI{X: x0, Y: y0},
+	seg := geo.SegI{A: geo.PtI{X: x0, Y: y0},
 		B: geo.PtI{X: x1, Y: y1}}
 	r := rasterizer{}
 	r.Rasterize(seg, out)

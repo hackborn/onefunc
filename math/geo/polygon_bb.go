@@ -9,14 +9,14 @@ func PolyBB[T Float](pts []Point[T]) PolygonBB[T] {
 // the computed bounding box.
 type PolygonBB[T Number] struct {
 	Pts []Point[T]
-	BB  RectT[T]
+	BB  Rectangle[T]
 }
 
 type PolygonBBF64 = PolygonBB[float64]
 
-func PolygonBounds[T Float](pts []Point[T]) RectT[T] {
+func PolygonBounds[T Float](pts []Point[T]) Rectangle[T] {
 	if len(pts) < 1 {
-		return RectT[T]{}
+		return Rectangle[T]{}
 	}
 	pt := pts[0]
 	bounds := Rect(pt.X, pt.Y, pt.X, pt.Y)

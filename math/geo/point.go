@@ -106,20 +106,20 @@ func (a Point[T]) Degrees(b Point[T]) float64 {
 	return v
 }
 
-func (a Point[T]) Inside(r RectT[T]) bool {
+func (a Point[T]) Inside(r Rectangle[T]) bool {
 	return a.X >= r.L && a.Y >= r.T && a.X < r.R && a.Y < r.B
 }
 
 // Given slope m and distance, project the positive and negative points on the line.
 // https://stackoverflow.com/questions/1250419/finding-points-on-a-line-with-a-given-distance
 func (a Point[T]) Project(m, dist float64) (Point[T], Point[T]) {
-	af := PointF64{X: float64(a.X), Y: float64(a.Y)}
-	n := PointF64{}
+	af := PtF{X: float64(a.X), Y: float64(a.Y)}
+	n := PtF{}
 	if m >= math.MaxFloat64 {
-		n = PointF64{X: 0.0, Y: 1.0}
+		n = PtF{X: 0.0, Y: 1.0}
 	} else {
 		magnitude := math.Pow(1*1+m*m, 1.0/2.0)
-		n = PointF64{X: 1.0 / magnitude, Y: m / magnitude}
+		n = PtF{X: 1.0 / magnitude, Y: m / magnitude}
 	}
 	n.X *= dist
 	n.Y *= dist
@@ -145,10 +145,9 @@ func ConvertPoint[A Number, B Number](a Point[A]) Point[B] {
 	return Point[B]{X: B(a.X), Y: B(a.Y)}
 }
 
-type PtI = Point[int]
 type PtF = Point[float64]
+type PtI = Point[int]
 
-type PointF32 = Point[float32]
-type PointF64 = Point[float64]
-type PointI64 = Point[int64]
-type PointUI64 = Point[uint64]
+type PtF32 = Point[float32]
+type PtF64 = Point[float64]
+type PtI64 = Point[int64]

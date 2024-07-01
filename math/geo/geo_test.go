@@ -12,9 +12,9 @@ import (
 // TEST-CIRCLE-HIT-TEST
 func TestCircleHitTest(t *testing.T) {
 	table := []struct {
-		center PointF64
+		center PtF
 		radius float64
-		pt     PointF64
+		pt     PtF
 		want   bool
 	}{
 		{Pt(5.0, 5.0), 5, Pt(5.0, 4.0), true},
@@ -38,8 +38,8 @@ func TestCircleHitTest(t *testing.T) {
 // TEST-DEGREES
 func TestDegrees(t *testing.T) {
 	table := []struct {
-		center PointF64
-		pt     PointF64
+		center PtF
+		pt     PtF
 		want   float64
 	}{
 		{Pt(0.0, 0.0), Pt(10.0, 0.0), 0.0},
@@ -63,9 +63,9 @@ func TestDegrees(t *testing.T) {
 // TEST-PERPENDICULAR-INTERSECTION
 func TestPerpendicularIntersection(t *testing.T) {
 	table := []struct {
-		seg    SegmentF64
-		pt     PointF64
-		want   PointF64
+		seg    SegF
+		pt     PtF
+		want   PtF
 		wantOk bool
 	}{
 		{Seg(0.0, 0.0, 20.0, 20.0), Pt(10.0, 0.0), Pt(5.0, 5.0), true},
@@ -84,7 +84,7 @@ func TestPerpendicularIntersection(t *testing.T) {
 // TEST-PROJECT-DEGREE
 func TestProjectDegree(t *testing.T) {
 	table := []struct {
-		center   PointF64
+		center   PtF
 		degree   float64
 		distance float64
 		print    bool
@@ -111,7 +111,7 @@ func TestProjectDegree(t *testing.T) {
 func TestRangeMapNormal(t *testing.T) {
 	table := []struct {
 		value float64
-		r     RangeF64
+		r     RngF
 		want  float64
 	}{
 		{0, Rng(0.0, 1.0), 0},
@@ -166,7 +166,7 @@ func TestRatio(t *testing.T) {
 func TestNormalize(t *testing.T) {
 	table := []struct {
 		value float64
-		r     RangeF64
+		r     RngF
 		want  float64
 	}{
 		{-10, Rng(0.0, 10.0), 0},
@@ -190,14 +190,14 @@ func TestNormalize(t *testing.T) {
 // TEST-SEGMENT-INTERSECTION
 func TestSegmentIntersection(t *testing.T) {
 	table := []struct {
-		s1     SegmentF64
-		s2     SegmentF64
-		want   PointF64
+		s1     SegF
+		s2     SegF
+		want   PtF
 		wantOk bool
 	}{
-		{segf(5, 0, 5, 10), segf(0, 5, 10, 5), ptf(5, 5), true},
-		{segf(0, 0, 10, 10), segf(0, 10, 10, 0), ptf(5, 5), true},
-		{segf(0, 0, 10, 10), segf(0, 5, 20, 0), ptf(4, 4), true},
+		{Seg(5., 0, 5, 10), Seg(0., 5, 10, 5), Pt(5., 5), true},
+		{Seg(0., 0, 10, 10), Seg(0., 10, 10, 0), Pt(5., 5), true},
+		{Seg(0., 0, 10, 10), Seg(0., 5, 20, 0), Pt(4., 4), true},
 	}
 	for i, v := range table {
 		have, haveOk := FindIntersection(v.s1, v.s2)
@@ -214,13 +214,13 @@ func TestSegmentIntersection(t *testing.T) {
 // TEST-POINT-SEGMENT-INTERSECTION
 func TestPointSegmentIntersection(t *testing.T) {
 	table := []struct {
-		s     SegmentF64
-		p     PointF64
+		s     SegF
+		p     PtF
 		check bool // Set to true to fail the test and see the values
 	}{
-		{segf(0, 0, 10, 10), ptf(10, 0), false},
-		{segf(0, 0, 10, 10), ptf(20, 10), false},
-		{segf(0, 0, 10, 10), ptf(5, 2), false},
+		{Seg(0., 0, 10, 10), Pt(10., 0), false},
+		{Seg(0., 0, 10, 10), Pt(20., 10), false},
+		{Seg(0., 0, 10, 10), Pt(5., 2), false},
 	}
 	for i, v := range table {
 		have, pt := DistSquared(v.s, v.p)
@@ -359,17 +359,17 @@ func TestXYToIndex(t *testing.T) {
 // TEST-X-AT-Y
 func TestXAtY(t *testing.T) {
 	table := []struct {
-		seg    SegmentF64
+		seg    SegF
 		y      float64
 		want   float64
 		wantOk bool
 		check  bool // Set to true to fail the test and see the values
 	}{
-		{SegmentF64{A: ptf(0, 0), B: ptf(0, 10)}, 5, 0, true, false},
-		{SegmentF64{A: ptf(5, 0), B: ptf(5, 10)}, 5, 5, true, false},
-		{SegmentF64{A: ptf(0, 0), B: ptf(10, 10)}, 5, 5, true, false},
-		{SegmentF64{A: ptf(0, 0), B: ptf(10, 20)}, 5, 2.5, true, false},
-		{SegmentF64{A: ptf(5, 0), B: ptf(5, 10)}, 11, 0, false, false},
+		{Seg(0., 0, 0, 10), 5, 0, true, false},
+		{Seg(5., 0, 5, 10), 5, 5, true, false},
+		{Seg(0., 0, 10, 10), 5, 5, true, false},
+		{Seg(0., 0, 10, 20), 5, 2.5, true, false},
+		{Seg(5., 0, 5, 10), 11, 0, false, false},
 	}
 	for i, v := range table {
 		have, haveOk := XAtY(v.seg, v.y)
@@ -386,15 +386,6 @@ func TestXAtY(t *testing.T) {
 
 // ---------------------------------------------------------
 // SUPPORT
-
-// ptf is a convenience for creating a PointF64
-func ptf(x, y float64) PointF64 {
-	return PointF64{X: x, Y: y}
-}
-
-func segf(x1, y1, x2, y2 float64) SegmentF64 {
-	return SegmentF64{A: ptf(x1, y1), B: ptf(x2, y2)}
-}
 
 // Create a new line out on the supplied pixel components.
 // Components must always be two ints (the x and y) optionally
@@ -471,7 +462,7 @@ func (a *LineOut) Cmp(b LineOut) error {
 	return nil
 }
 
-func pointsEqual(a, b PointF64) bool {
+func pointsEqual(a, b PtF) bool {
 	return FloatsEqualTol(a.X, b.X, 0.000001) && FloatsEqualTol(a.Y, b.Y, 0.000001)
 }
 

@@ -94,9 +94,9 @@ func (p Range[T]) MapNormal(normal float64) T {
 	return ans
 }
 
-type RngI = Range[int]
 type RngF = Range[float64]
+type RngI = Range[int]
 
-type RangeF64 = Range[float64]
-type RangeI = Range[int]
-type RangeI64 = Range[int64]
+type RngF32 = Range[float32]
+type RngF64 = Range[float64]
+type RngI64 = Range[int64]

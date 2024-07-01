@@ -96,6 +96,6 @@ func Float64NearZero(v float64, tolerance float64) bool {
 type Pt3dF = Point3d[float64]
 type Pt3dI = Point3d[int]
 
+type Pt3dF32 = Point3d[float32]
 type Pt3dF64 = Point3d[float64]
 type Pt3dI64 = Point3d[int64]
-type Pt3dUI64 = Point3d[uint64]

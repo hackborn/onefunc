@@ -1,0 +1,70 @@
+package geo
+
+func Rect[T Number](left, top, right, bottom T) Rectangle[T] {
+	return Rectangle[T]{L: left, T: top, R: right, B: bottom}
+}
+
+type Rectangle[T Number] struct {
+	L, T, R, B T
+}
+
+func (r Rectangle[T]) LT() Point[T] {
+	return Pt(r.L, r.T)
+}
+
+func (r Rectangle[T]) RB() Point[T] {
+	return Pt(r.R, r.B)
+}
+
+func (r Rectangle[T]) Translate(pt Point[T]) Rectangle[T] {
+	return Rectangle[T]{L: r.L + pt.X, T: r.T + pt.Y, R: r.R + pt.X, B: r.B + pt.Y}
+}
+
+func (r Rectangle[T]) Size() Point[T] {
+	return Point[T]{X: r.R - r.L, Y: r.B - r.T}
+}
+
+func (r Rectangle[T]) WithSize(pt Point[T]) Rectangle[T] {
+	return Rectangle[T]{L: r.L, T: r.T, R: r.L + pt.X, B: r.T + pt.Y}
+}
+
+func (r Rectangle[T]) Area() T {
+	lt := r.LT()
+	rb := r.RB()
+	return (rb.X - lt.X) * (rb.Y - lt.Y)
+}
+
+func (r1 Rectangle[T]) Union(r2 Rectangle[T]) Rectangle[T] {
+	r1.L = min(r1.L, r2.L)
+	r1.T = min(r1.T, r2.T)
+	r1.R = max(r1.R, r2.R)
+	r1.B = max(r1.B, r2.B)
+	return r1
+}
+
+// Expand adds the value to all edges.
+func (r Rectangle[T]) WithExpand(v T) Rectangle[T] {
+	return r.Add(-v, -v, v, v)
+}
+
+func (r1 Rectangle[T]) Add(l, t, r, b T) Rectangle[T] {
+	return Rectangle[T]{L: r1.L + l,
+		T: r1.T + t,
+		R: r1.R + r,
+		B: r1.B + b,
+	}
+}
+
+func ConvertRect[A Number, B Number](a Rectangle[A]) Rectangle[B] {
+	return Rectangle[B]{L: B(a.L),
+		T: B(a.T),
+		R: B(a.R),
+		B: B(a.B)}
+}
+
+type RectF = Rectangle[float64]
+type RectI = Rectangle[int]
+
+type RectF32 = Rectangle[float32]
+type RectF64 = Rectangle[float64]
+type RectI64 = Rectangle[int64]

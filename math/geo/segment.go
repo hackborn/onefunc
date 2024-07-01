@@ -91,14 +91,14 @@ func Orientation[T Number](p0, p1, p2 Point[T]) int {
 // DistSquared answers the squared distance from the point to the segment,
 // as well as the point found on the segment.
 // From https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
-func DistSquared(seg SegmentF64, p PointF64) (float64, PointF64) {
+func DistSquared(seg SegF, p PtF) (float64, PtF) {
 	l2 := seg.A.DistSquared(seg.B)
 	if l2 == 0 {
 		return p.DistSquared(seg.A), seg.A
 	}
 	t := ((p.X-seg.A.X)*(seg.B.X-seg.A.X) + (p.Y-seg.A.Y)*(seg.B.Y-seg.A.Y)) / l2
 	t = math.Max(0, math.Min(1, t))
-	newP := PointF64{X: seg.A.X + t*(seg.B.X-seg.A.X),
+	newP := PtF{X: seg.A.X + t*(seg.B.X-seg.A.X),
 		Y: seg.A.Y + t*(seg.B.Y-seg.A.Y)}
 	return p.DistSquared(newP), newP
 }
@@ -106,7 +106,7 @@ func DistSquared(seg SegmentF64, p PointF64) (float64, PointF64) {
 // DistPointToSegment answers the distance from the point to the segment,
 // as well as the point found on the segment.
 // From https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
-func DistPointToSegment(seg SegmentF64, p PointF64) (float64, PointF64) {
+func DistPointToSegment(seg SegF, p PtF) (float64, PtF) {
 	d, newP := DistSquared(seg, p)
 	return math.Sqrt(d), newP
 }
@@ -141,7 +141,7 @@ func DistanceFromPointToSegment[T Number](p Point[T], s Segment[T]) float64 {
 
 // XAtY answers the X value for this segment at the given Y
 // value, or false if the line does not intersect y.
-func XAtY(s SegmentF64, y float64) (float64, bool) {
+func XAtY(s SegF, y float64) (float64, bool) {
 	if s.B.Y-s.A.Y == 0 {
 		return 0, false
 	}
@@ -187,7 +187,6 @@ func ConvertSegment[A Number, B Number](seg Segment[A]) Segment[B] {
 type SegF = Segment[float64]
 type SegI = Segment[int]
 
-type SegmentF64 = Segment[float64]
-type SegmentI = Segment[int]
-type SegmentI64 = Segment[int64]
-type SegmentUI64 = Segment[uint64]
+type SegF32 = Segment[float32]
+type SegF64 = Segment[float64]
+type SegI64 = Segment[int64]
