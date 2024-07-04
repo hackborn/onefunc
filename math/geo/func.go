@@ -59,6 +59,11 @@ func XYToIndex[T constraints.Integer](width, height T, pt Point[T]) (T, error) {
 	return idx, nil
 }
 
+// XYToIndexFast converts an X, Y to a flat index without any bounds checking.
+func XYToIndexFast[T constraints.Integer](x, y, width T) T {
+	return (y * width) + x
+}
+
 func FloatsEqual(a, b float64) bool {
 	const eps = 0.000000000000001
 	diff := math.Abs(a - b)

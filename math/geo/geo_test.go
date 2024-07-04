@@ -283,6 +283,14 @@ func TestPtToSegIntersection(t *testing.T) {
 		dir := DegreesToDirectionCw(v.degrees)
 		have, haveOk := PtToSegIntersection(v.pt, dir, v.seg)
 
+		/*
+			dirpt := v.pt.Add(dir)
+			have2, have2Ok := LineToSegIntersection(v.pt, dirpt, v.seg)
+			if !pointsEqual(have, have2) {
+				t.Fatalf("TestPtToSegIntersection %v NEW CHECK BAD has %v new one %v newHave %v", i, have, have2, have2Ok)
+			}
+		*/
+
 		if haveOk != v.wantOk {
 			t.Fatalf("TestPtToSegIntersection %v expected ok %v but has %v", i, v.wantOk, haveOk)
 		} else if haveOk && !pointsEqual(v.want, have) {

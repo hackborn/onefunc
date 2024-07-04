@@ -60,3 +60,19 @@ func PtToSegIntersection(pt, direction PtF, seg SegF) (PtF, bool) {
 	newPt := PtF{X: pt.X + direction.X*scale, Y: pt.Y + direction.Y*scale}
 	return FindIntersection(seg, SegF{A: pt, B: newPt})
 }
+
+// https://stackoverflow.com/questions/34415671/intersection-of-a-line-with-a-line-segment-in-c
+// line segment p-q intersect with line A-B.
+// This looks a lot more efficient than the current seg-seg test I'm doing,
+// but also I actually want a seg-seg test because this gives false positives.
+// So... maybe I'll switch to it if I think of a way for it to make sense,
+// but probably not because this is just a different operation.
+func LineToSegIntersection(A, B PtF, pq SegF) (PtF, bool) {
+	a := B.Y - A.Y
+	b := A.X - B.X
+	c := B.X*A.Y - A.X*B.Y
+	u := math.Abs(a*pq.A.X + b*pq.A.Y + c)
+	v := math.Abs(a*pq.B.X + b*pq.B.Y + c)
+	newPt := Pt((pq.A.X*v+pq.B.X*u)/(u+v), (pq.A.Y*v+pq.B.Y*u)/(u+v))
+	return newPt, true
+}
