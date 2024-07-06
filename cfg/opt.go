@@ -15,10 +15,12 @@ import (
 // Clients can add to the settings with the Builder.
 type Option func(Builder, oferrors.Block)
 
+type Process func(map[string]any) map[string]any
+
 // WithFS loads all files that match the pattern
 // into the Settings. All matched files must be in JSON format.
 // See path.Match() for match rules.
-func WithFS(fsys fs.FS, pattern string) Option {
+func WithFS(fsys fs.FS, pattern string, processors ...Process) Option {
 	return func(b Builder, eb oferrors.Block) {
 		matches, err := fs.Glob(fsys, pattern)
 		eb.AddError(err)
@@ -34,6 +36,9 @@ func WithFS(fsys fs.FS, pattern string) Option {
 			if err != nil {
 				err = fmt.Errorf("%v: %w", match, err)
 				eb.AddError(err)
+			}
+			for _, process := range processors {
+				s = process(s)
 			}
 			b.AddSettings(s)
 		}
