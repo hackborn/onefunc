@@ -55,7 +55,7 @@ func PtToSegIntersection(pt, direction PtF, seg SegF) (PtF, bool) {
 	scale := Max(math.Abs(pt.X-seg.A.X), math.Abs(pt.X-seg.B.X))
 	scale = Max(scale, math.Abs(pt.Y-seg.A.Y))
 	scale = Max(scale, math.Abs(pt.Y-seg.B.Y))
-	scale *= 2
+	scale *= 10
 
 	newPt := PtF{X: pt.X + direction.X*scale, Y: pt.Y + direction.Y*scale}
 	return FindIntersection(seg, SegF{A: pt, B: newPt})
