@@ -5,6 +5,9 @@ import (
 )
 
 // https://github.com/vlecomte/cp-geo/blob/master/basics/segment.tex
+// Note: I am finding cases where this doesn't work, where an
+// intersection is found on some segments but if you scale one of
+// the points further out, no intersection.
 func FindIntersection[T Number](s1, s2 Segment[T]) (Point[T], bool) {
 	oa := orient(s2.A, s2.B, s1.A)
 	ob := orient(s2.A, s2.B, s1.B)

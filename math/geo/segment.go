@@ -55,6 +55,14 @@ func (s Segment[T]) Midpoint() Point[T] {
 		Y: (s.A.Y / 2) + (s.B.Y / 2)}
 }
 
+// Interp answers a new point at the unit position on this segment,
+// where 0. = A and 1. = B.
+// Note this really only works on floats, need a way to narrow that constraint.
+func (s Segment[T]) Interp(unit T) Point[T] {
+	return Point[T]{X: (s.A.X * (1 - unit)) + (s.B.X * unit),
+		Y: (s.A.Y * (1 - unit)) + (s.B.Y * unit)}
+}
+
 // IsCollinear checks if three points are collinear
 func IsCollinear[T Number](p1, p2, p3 Point[T]) bool {
 	a := float64(p2.X - p1.X)
