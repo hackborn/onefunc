@@ -39,6 +39,18 @@ func Centroid[T Number](pts []Point[T]) Point[T] {
 	return Point[T]{X: T(x), Y: T(y)}
 }
 
+// Orientation checks the orientation of three points
+func Orientation[T Number](p0, p1, p2 Point[T]) int {
+	val := (p1.Y-p0.Y)*(p2.X-p1.X) - (p1.X-p0.X)*(p2.Y-p1.Y)
+	if val == 0 {
+		return 0 // collinear
+	} else if val > 0 {
+		return 1 // clockwise
+	} else {
+		return -1 // counter-clockwise
+	}
+}
+
 // IndexToXY converts a flat index into an array into
 // an XY position.
 func IndexToXY[T constraints.Integer](width, height, index T) (Point[T], error) {

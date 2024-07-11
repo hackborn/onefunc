@@ -236,6 +236,41 @@ func TestPointSegmentIntersection(t *testing.T) {
 // ---------------------------------------------------------
 // TEST-PROJECT
 func TestProject(t *testing.T) {
+	f := func(pt PtF, m, dist float64, wantP, wantN PtF) {
+		t.Helper()
+
+		haveP, haveN := pt.Project(m, dist)
+		if !pointsEqual(wantP, haveP) {
+			t.Fatalf("TestProject wants positive %v has %v", wantP, haveP)
+		} else if !pointsEqual(wantN, haveN) {
+			t.Fatalf("TestProject wants negative %v has %v", wantN, haveN)
+		}
+		/*
+			cmpP, cmpN := pt.projectAlgo2(m, dist)
+			if !pointsEqual(cmpP, haveP) {
+				t.Fatalf("TestProject wants cmp positive %v has %v", cmpP, haveP)
+			} else if !pointsEqual(cmpN, haveN) {
+				t.Fatalf("TestProject wants cmp negative %v has %v", cmpN, haveN)
+			}
+		*/
+	}
+	//	/*
+	f(Pt(10., 10.), 1., 5., Pt(13.535533, 6.46446609), Pt(6.464466, 13.5355339))
+	f(Pt(10., 10.), 0., 5., Pt(15., 10.), Pt(5., 10.))
+	f(Pt(10., 10.), 0.0000000001, 5., Pt(15., 10.), Pt(5., 10.))
+	f(Pt(10., 10.), 0.1, 5., Pt(14.9751859, 9.50248140), Pt(5.02481404, 10.4975185))
+	f(Pt(10., 10.), math.MaxFloat64, 5., Pt(10., 15.), Pt(10., 5.))
+	f(Pt(10., 10.), 9999999999., 5., Pt(10., 5.), Pt(9.9999999, 15.))
+	//	*/
+	//
+	// Real world data
+	f(Pt(8., 8.), 2., 5., Pt(10.2360679, 3.5278640), Pt(5.763932022, 12.47213595))
+	f(Pt(8., 8.), -2., 5., Pt(5.76393202, 3.52786404), Pt(10.236067977, 12.472135954))
+}
+
+// ---------------------------------------------------------
+// TEST-SLOPE-AND-PROJECT
+func TestSlopeAndProject(t *testing.T) {
 	table := []struct {
 		seg   SegF
 		dist  float64
@@ -255,11 +290,11 @@ func TestProject(t *testing.T) {
 		distA := v.seg.A.Dist(haveA)
 		distB := v.seg.A.Dist(haveB)
 		if !FloatsEqual(v.dist, distA) {
-			t.Fatalf("TestProject %v has distance a %v but expected %v (pt %v)", i, distA, v.dist, haveA)
+			t.Fatalf("TestSlopeAndProject %v has distance a %v but expected %v (pt %v)", i, distA, v.dist, haveA)
 		} else if !FloatsEqual(v.dist, distB) {
-			t.Fatalf("TestProject %v has distance b %v but expected %v (pt %v)", i, distB, v.dist, haveB)
+			t.Fatalf("TestSlopeAndProject %v has distance b %v but expected %v (pt %v)", i, distB, v.dist, haveB)
 		} else if v.check {
-			t.Fatalf("TestProject %v check: m %v dist %v pt %v haveA %v haveB %v distA %v distB %v", i, m, v.dist, v.seg.A, haveA, haveB, distA, distB)
+			t.Fatalf("TestSlopeAndProject %v check: m %v dist %v pt %v haveA %v haveB %v distA %v distB %v", i, m, v.dist, v.seg.A, haveA, haveB, distA, distB)
 		}
 	}
 }

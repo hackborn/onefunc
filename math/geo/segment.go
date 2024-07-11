@@ -22,9 +22,10 @@ func (s Segment[T]) Slope() Slope {
 	} else if s.A.Y == s.B.Y {
 		return HorizontalSlope
 	}
+	// Account for reverse-Y coords
 	x1, y1 := float64(s.A.X), float64(s.A.Y)
 	x2, y2 := float64(s.B.X), float64(s.B.Y)
-	return Slope{Angle: Oblique, M: (y2 - y1) / (x2 - x1)}
+	return Slope{Angle: Oblique, M: (y1 - y2) / (x2 - x1)}
 }
 
 // PerpendicularSlope answers the perpendicular of Slope.
@@ -36,6 +37,19 @@ func (s Segment[T]) PerpendicularSlope() Slope {
 		return HorizontalSlope
 	}
 	return Slope{Angle: Oblique, M: -1.0 / m.M}
+}
+
+// AsArray returns my points in a slice.
+func (s Segment[T]) AsArray() []Point[T] {
+	return []Point[T]{
+		s.A,
+		s.B,
+	}
+}
+
+// Len answers the length of this segment.
+func (s Segment[T]) Len() T {
+	return T(s.A.Dist(s.B))
 }
 
 // Dir answers the direction vector of this segment.
@@ -81,18 +95,6 @@ func OnSegment[T Number](p, start, end Point[T]) bool {
 		float64(p.X) <= math.Max(sx, ex) &&
 		float64(p.Y) >= math.Min(sy, ey) &&
 		float64(p.Y) <= math.Max(sy, ey))
-}
-
-// Orientation checks the orientation of three points
-func Orientation[T Number](p0, p1, p2 Point[T]) int {
-	val := (p1.Y-p0.Y)*(p2.X-p1.X) - (p1.X-p0.X)*(p2.Y-p1.Y)
-	if val == 0 {
-		return 0 // collinear
-	} else if val > 0 {
-		return 1 // clockwise
-	} else {
-		return -1 // counter-clockwise
-	}
 }
 
 // DistSquared answers the squared distance from the point to the segment,

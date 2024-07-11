@@ -111,22 +111,67 @@ func (a Point[T]) Inside(r Rectangle[T]) bool {
 }
 
 // Given slope m and distance, project the positive and negative points on the line.
-// https://stackoverflow.com/questions/1250419/finding-points-on-a-line-with-a-given-distance
+// Uses upper-left coordinate system.
 func (a Point[T]) Project(m, dist float64) (Point[T], Point[T]) {
 	af := PtF{X: float64(a.X), Y: float64(a.Y)}
+
+	// Special case -- vertical lines as reported by Slope()
+	if m == math.MaxFloat64 {
+		return Point[T]{X: a.X, Y: T(af.Y + dist)},
+			Point[T]{X: a.X, Y: T(af.Y - dist)}
+	}
+
+	denom := math.Sqrt(1. + m*m)
+	x1 := dist * (1. / denom)
+	y1 := dist * (m / denom)
+	if m < 0. {
+		x1 = -x1
+	} else if m > 0. {
+		y1 = -y1
+	}
+
+	return Point[T]{X: T(af.X + x1), Y: T(af.Y + y1)},
+		Point[T]{X: T(af.X - x1), Y: T(af.Y - y1)}
+}
+
+// Given slope m and distance, project the positive and negative points on the line.
+// https://stackoverflow.com/questions/1250419/finding-points-on-a-line-with-a-given-distance
+// A bit confused because I wasn't paying attention to the coordinate
+// system, but I was using this to check against my real algo for awhile.
+func (a Point[T]) projectAlgo2(m, dist float64) (Point[T], Point[T]) {
 	n := PtF{}
 	if m >= math.MaxFloat64 {
-		n = PtF{X: 0.0, Y: 1.0}
+		n = PtF{X: 0., Y: 1.}
+	} else if FloatsEqualTol(m, 0., 0.00001) {
+		n = PtF{X: 1., Y: 0.}
 	} else {
-		magnitude := math.Pow(1*1+m*m, 1.0/2.0)
-		n = PtF{X: 1.0 / magnitude, Y: m / magnitude}
+		magnitude := math.Pow(1*1+m*m, 1./2.)
+		// n = PtF{X: m / magnitude, Y: 1. / magnitude}
+		n = PtF{X: 1. / magnitude, Y: m / magnitude}
 	}
 	n.X *= dist
 	n.Y *= dist
+	af := PtF{X: float64(a.X), Y: float64(a.Y)}
 	pp := af.Add(n)
 	pn := af.Sub(n)
 	return Point[T]{X: T(pp.X), Y: T(pp.Y)}, Point[T]{X: T(pn.X), Y: T(pn.Y)}
 }
+
+// projectAlgo3 is a different implementation of Project found via gemini.
+// I assume the Sqrt makes it a little slower, but it also has no branching
+// so who can say. In comparisons they both work the same.
+// Update, doesn't work right, possibly because of not paying attention to
+// the coord system.
+/*
+func (a Point[T]) projectAlgo3(m, dist float64) (Point[T], Point[T]) {
+	dyP := dist / math.Sqrt(1+m*m) // Δy based on distance and slope
+	dyN := -dyP
+	dxP := math.Sqrt(dist*dist - dyP*dyP)
+	dxN := -dxP
+	af := PtF{X: float64(a.X), Y: float64(a.Y)}
+	return Point[T]{X: T(af.X + dxP), Y: T(af.Y + dyP)}, Point[T]{X: T(af.X + dxN), Y: T(af.Y + dyN)}
+}
+*/
 
 // ProjectDegree takes a degree and distance and projects a new point.
 func (a Point[T]) ProjectDegree(deg, dist float64) Point[T] {
