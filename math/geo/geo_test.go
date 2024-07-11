@@ -250,7 +250,7 @@ func TestProject(t *testing.T) {
 	}
 	for i, v := range table {
 		//		m := v.seg.Slope()
-		m := v.seg.PerpendicularSlope()
+		m := v.seg.PerpendicularSlope().M
 		haveA, haveB := v.seg.A.Project(m, v.dist)
 		distA := v.seg.A.Dist(haveA)
 		distB := v.seg.A.Dist(haveB)

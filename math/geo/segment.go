@@ -15,28 +15,27 @@ type Segment[T Number] struct {
 	B Point[T]
 }
 
-// Slope answers the slope of this line segment. Vertical
-// lines are slope math.MaxFloat64, horizontal lines are slope 0.
-func (s Segment[T]) Slope() float64 {
+// Slope answers the slope of this line segment.
+func (s Segment[T]) Slope() Slope {
 	if s.A.X == s.B.X {
-		return math.MaxFloat64
+		return VerticalSlope
 	} else if s.A.Y == s.B.Y {
-		return 0.0
+		return HorizontalSlope
 	}
 	x1, y1 := float64(s.A.X), float64(s.A.Y)
 	x2, y2 := float64(s.B.X), float64(s.B.Y)
-	return (y2 - y1) / (x2 - x1)
+	return Slope{Angle: Oblique, M: (y2 - y1) / (x2 - x1)}
 }
 
 // PerpendicularSlope answers the perpendicular of Slope.
-func (s Segment[T]) PerpendicularSlope() float64 {
+func (s Segment[T]) PerpendicularSlope() Slope {
 	m := s.Slope()
-	if m == 0.0 {
-		return math.MaxFloat64
-	} else if m == math.MaxFloat64 {
-		return 0.0
+	if m.Angle == Horizontal {
+		return VerticalSlope
+	} else if m.Angle == Vertical {
+		return HorizontalSlope
 	}
-	return -1.0 / s.Slope()
+	return Slope{Angle: Oblique, M: -1.0 / m.M}
 }
 
 // Dir answers the direction vector of this segment.
