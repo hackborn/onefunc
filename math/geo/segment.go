@@ -53,6 +53,11 @@ func (s Segment[T]) Len() T {
 	return T(s.A.Dist(s.B))
 }
 
+// LenSquared answers the squared length of this segment.
+func (s Segment[T]) LenSquared() T {
+	return T(s.A.DistSquared(s.B))
+}
+
 // Dir answers the direction vector of this segment.
 func (s Segment[T]) Dir() Point[T] {
 	return s.B.Sub(s.A)
