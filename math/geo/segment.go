@@ -23,9 +23,9 @@ func (s Segment[T]) Slope() Slope {
 	} else if s.A.Y == s.B.Y {
 		return HorizontalSlope
 	}
-	// Account for reverse-Y coords
 	x1, y1 := float64(s.A.X), float64(s.A.Y)
 	x2, y2 := float64(s.B.X), float64(s.B.Y)
+	// Account for reverse-Y coords
 	return Slope{Angle: Oblique, M: (y1 - y2) / (x2 - x1)}
 }
 
