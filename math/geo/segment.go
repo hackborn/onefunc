@@ -16,6 +16,7 @@ type Segment[T Number] struct {
 }
 
 // Slope answers the slope of this line segment.
+// Uses upper left coordinates.
 func (s Segment[T]) Slope() Slope {
 	if s.A.X == s.B.X {
 		return VerticalSlope
