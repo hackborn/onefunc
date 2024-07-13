@@ -14,22 +14,18 @@ type PolygonBB[T Number] struct {
 
 type PolygonBBF64 = PolygonBB[float64]
 
-func PolygonBounds[T Float](pts []Point[T]) Rectangle[T] {
-	if len(pts) < 1 {
-		return Rectangle[T]{}
-	}
-	pt := pts[0]
-	bounds := Rect(pt.X, pt.Y, pt.X, pt.Y)
-	for _, pt := range pts {
-		if pt.X < bounds.L {
-			bounds.L = pt.X
-		} else if pt.X > bounds.R {
-			bounds.R = pt.X
-		}
-		if pt.Y < bounds.T {
-			bounds.T = pt.Y
-		} else if pt.Y > bounds.B {
-			bounds.B = pt.Y
+func PolygonBounds[T Float](ptss ...[]Point[T]) Rectangle[T] {
+	bounds := Rectangle[T]{}
+	for i, pts := range ptss {
+		for ii, pt := range pts {
+			if i == 0 && ii == 0 {
+				bounds = Rect(pt.X, pt.Y, pt.X, pt.Y)
+			} else {
+				bounds.L = Min(bounds.L, pt.X)
+				bounds.T = Min(bounds.T, pt.Y)
+				bounds.R = Max(bounds.R, pt.X)
+				bounds.B = Max(bounds.B, pt.Y)
+			}
 		}
 	}
 	return bounds

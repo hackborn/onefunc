@@ -187,6 +187,39 @@ func TestNormalize(t *testing.T) {
 }
 
 // ---------------------------------------------------------
+// TEST-POINT-NORMALIZE
+func TestPointNormalize(t *testing.T) {
+	f := func(pt PtF, want PtF) {
+		t.Helper()
+
+		have := pt.Normalize()
+		if !pointsEqual(want, have) {
+			t.Fatalf("TestPointNormalize wants %v has %v", want, have)
+		}
+	}
+	f(Pt(10., 0.), Pt(1., 0.))
+	f(Pt(0., 10.), Pt(0., 1.))
+	f(Pt(10., 10.), Pt(.7071067, .7071067))
+}
+
+// ---------------------------------------------------------
+// TEST-POINT-ROTATE
+func TestPointRotate(t *testing.T) {
+	f := func(pt PtF, angleInRads float64, want PtF) {
+		t.Helper()
+
+		cen := Pt(0., 0.)
+		have := pt.Rotate(cen, angleInRads)
+		if !pointsEqual(want, have) {
+			t.Fatalf("TestPointRotate wants %v has %v", want, have)
+		}
+	}
+	f(Pt(10., 0.), DegreesToRadians(45), Pt(7.07106781, 7.07106781))
+	f(Pt(10., 0.), DegreesToRadians(90), Pt(0., 10.))
+	f(Pt(10., 0.), DegreesToRadians(180), Pt(-10., 0.))
+}
+
+// ---------------------------------------------------------
 // TEST-SEGMENT-INTERSECTION
 func TestSegmentIntersection(t *testing.T) {
 	table := []struct {

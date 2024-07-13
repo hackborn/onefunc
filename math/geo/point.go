@@ -42,45 +42,26 @@ func (a Point[T]) Mult(b Point[T]) Point[T] {
 	return Point[T]{X: a.X * b.X, Y: a.Y * b.Y}
 }
 
-// ??? What? This doesn't look like a normalize, it
-// needs to divide by the magnitude. Is anyone using this?
-// Well hold on maybe this is valid (with tweaks), from the C#
-// source:
-// https://www.dotnetframework.org/default.aspx/Net/Net/3@5@50727@3053/DEVDIV/depot/DevDiv/releases/Orcas/SP/wpf/src/Core/CSharp/System/Windows/Media3D/Vector3D@cs/1/Vector3D@cs
-/*
-public void Normalize()
-       {
-           // Computation of length can overflow easily because it
-           // first computes squared length, so we first divide by
-           // the largest coefficient.
-           double m = Math.Abs(_x);
-           double absy = Math.Abs(_y);
-           double absz = Math.Abs(_z);
-           if (absy > m)
-           {
-               m = absy;
-           }
-           if (absz > m)
-           {
-               m = absz;
-           }
-
-           _x /= m;
-           _y /= m;
-           _z /= m;
-
-           double length = Math.Sqrt(_x * _x + _y * _y + _z * _z);
-           this /= length;
-       }
-*/
+// Normalize normalizs the point to a unit.
+// Can be negative if they are generated from a negative point,
+// i.e. a negative direction vector.
 func (a Point[T]) Normalize() Point[T] {
+	mag := a.Magnitude()
+	if mag <= 0. {
+		return Point[T]{X: 0, Y: 0}
+	}
+	return Point[T]{X: T(float64(a.X) / mag),
+		Y: T(float64(a.Y) / mag)}
+}
+
+// TODO: I think above is more correct. My understanding now is the
+// normal would be each component divided by the magnitude.
+// This function isn't in use so I will replace and see what that looks like.
+func (a Point[T]) _Normalize2() Point[T] {
 	if a.X == 0 && a.Y == 0 {
 		return a
 	}
-	max := a.X
-	if a.Y > max {
-		max = a.Y
-	}
+	max := Max(a.X, a.Y)
 	return Point[T]{X: a.X / max, Y: a.Y / max}
 }
 
@@ -108,6 +89,28 @@ func (a Point[T]) Degrees(b Point[T]) float64 {
 
 func (a Point[T]) Inside(r Rectangle[T]) bool {
 	return a.X >= r.L && a.Y >= r.T && a.X < r.R && a.Y < r.B
+}
+
+// Rotate the point. Rotation will be:
+// In Quandrant 4 this rotates CW for positive angles and CCW for negative.
+func (a Point[T]) Rotate(origin Point[T], angleInRads float64) Point[T] {
+	// from https://stackoverflow.com/questions/2259476/rotating-a-point-about-another-point-2d
+
+	// translate to origin
+	a.X -= origin.X
+	a.Y -= origin.Y
+
+	af := ConvertPoint[T, float64](a)
+
+	// rotate
+	s := math.Sin(angleInRads)
+	c := math.Cos(angleInRads)
+	xnew := af.X*c - af.Y*s
+	ynew := af.X*s + af.Y*c
+
+	// translate back
+	return Point[T]{X: origin.X + T(xnew),
+		Y: origin.Y + T(ynew)}
 }
 
 // Given slope m and distance, project the positive and negative points on the line.
