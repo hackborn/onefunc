@@ -64,11 +64,17 @@ func IndexToXY[T constraints.Integer](width, height, index T) (Point[T], error) 
 func XYToIndex[T constraints.Integer](width, height T, pt Point[T]) (T, error) {
 	// TODO: But this isn't really right, we need to check x and y bounds
 	// or else we might get wraparound, right?
-	idx := (pt.Y * width) + pt.X
-	if idx < 0 || idx >= (width*height) {
+	if pt.X < 0 || pt.X >= width || pt.Y < 0 || pt.Y >= height {
 		return 0, outOfBoundsErr
 	}
-	return idx, nil
+	return XYToIndexFast(pt.X, pt.Y, width), nil
+	/*
+			idx := (pt.Y * width) + pt.X
+			if idx < 0 || idx >= (width*height) {
+				return 0, outOfBoundsErr
+			}
+		return idx, nil
+	*/
 }
 
 // XYToIndexFast converts an X, Y to a flat index without any bounds checking.
