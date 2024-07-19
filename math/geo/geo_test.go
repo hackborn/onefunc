@@ -365,11 +365,10 @@ func TestPtToSegIntersection(t *testing.T) {
 			{Pt(10., 10.), 90., Seg(0., 20., 20., 20.), Pt(10., 20.), true},
 			{Pt(10., 10.), 0., Seg(0., 0., 0., 20.), Pt(0., 0.), false},
 			{Pt(10., 10.), 0., Seg(20., 0., 20., 20.), Pt(20., 10.), true},
+
+			//	{Pt(2.5, 1.5), 135., Seg(0., 1.4, 1.4, 0.), Pt(0., 0.), false},
 		*/
-
-		//	{Pt(2.5, 1.5), 135., Seg(0., 1.4, 1.4, 0.), Pt(0., 0.), false},
-
-		//	{Pt(2.5, 1.5), 135., Seg(0., 4., 0., 1.4), Pt(0., 0.), true},
+		//		{Pt(2.5, 1.5), 135., Seg(0., 4., 0., 1.4), Pt(0., 0.), true},
 		// TODO: This doesn't work but should
 		//		{Pt(2.5, 1.5), 135., Seg(4., 4., 0., 4.), Pt(0., 0.), true},
 
@@ -377,6 +376,39 @@ func TestPtToSegIntersection(t *testing.T) {
 	}
 	for i, v := range table {
 		dir := DegreesToDirectionCw(v.degrees)
+		fmt.Println("dir", dir, "degrees", v.degrees)
+		scale := 3.536
+		newPt := PtF{X: v.pt.X + dir.X*scale, Y: v.pt.Y + dir.Y*scale}
+		fmt.Println("pt", v.pt, "newpt", newPt, "seg", v.seg)
+		/*
+			segs := []SegF{}
+			segs = append(segs, Seg(0, 0, 10, 0.))
+			segs = append(segs, Seg(10, 0, 10, 10.))
+			segs = append(segs, Seg(10, 10, 0, 10.))
+			segs = append(segs, Seg(0, 10, 0, 0.))
+			deg := v.degrees
+			dir2 := DegreesToDirectionCw(deg)
+			fmt.Println("deg", deg, "dir", dir2)
+			for _, seg := range segs {
+				have, haveOk := PtToSegIntersection(v.pt, dir2, seg)
+				if haveOk {
+					fmt.Println("have", have, "seg", seg)
+				} else {
+					fmt.Println("no have seg", seg)
+				}
+			}
+
+			cmpseg := Seg(-10., 5., 20., 5.)
+			fmt.Println("TEST", cmpseg)
+			for _, seg := range segs {
+				have, haveOk := intersectLines(cmpseg.A, cmpseg.B, seg.A, seg.B, Segments)
+				if haveOk {
+					fmt.Println("have", have, "seg", seg)
+				} else {
+					fmt.Println("no have seg", seg)
+				}
+			}
+		*/
 		have, haveOk := PtToSegIntersection(v.pt, dir, v.seg)
 
 		/*
@@ -393,6 +425,28 @@ func TestPtToSegIntersection(t *testing.T) {
 			t.Fatalf("TestPtToSegIntersection %v has %v but expected %v", i, have, v.want)
 		}
 	}
+}
+
+// ---------------------------------------------------------
+// TEST-PT-TO-SEG-INTERSECTIONS
+// Harness for some real-world intersection tests.
+func __TestPtToSegIntersections(t *testing.T) {
+	f := func(pt PtF, degrees float64, segs []SegF, want []PtF) {
+		t.Helper()
+
+		dir := DegreesToDirectionCw(degrees)
+		have := []PtF{}
+		for _, seg := range segs {
+			if havePt, ok := PtToSegIntersection(pt, dir, seg); ok {
+				have = append(have, havePt)
+			}
+		}
+
+		if !pointSlicesEqual(want, have) {
+			t.Fatalf("TestPtToSegIntersections wants %v has %v", want, have)
+		}
+	}
+	f(Pt(2.5, 1.5), 135., segs(Pt(0, 1.4), Pt(1.4, 0), Pt(1.4, 0), Pt(4., 0), Pt(4., 0), Pt(4., 4), Pt(4., 4), Pt(0., 4), Pt(0., 4), Pt(0., 1.4)), pts(Pt(1., 0.)))
 }
 
 // ---------------------------------------------------------
@@ -489,7 +543,7 @@ func TestXAtY(t *testing.T) {
 }
 
 // ---------------------------------------------------------
-// SUPPORT
+// CONSTRUCTION
 
 // Create a new line out on the supplied pixel components.
 // Components must always be two ints (the x and y) optionally
@@ -544,6 +598,19 @@ type Pixel struct {
 	Amount float64
 }
 
+func segs(ab ...PtF) []SegF {
+	ans := []SegF{}
+	for i := 1; i < len(ab); i += 2 {
+		a, b := ab[i-1], ab[i]
+		ans = append(ans, Seg(a.X, a.Y, b.X, b.Y))
+	}
+	return ans
+}
+
+func pts(pts ...PtF) []PtF {
+	return pts
+}
+
 // ---------------------------------------------------------
 // CMP
 
@@ -572,4 +639,15 @@ func pointsEqual(a, b PtF) bool {
 
 func points3dEqual(a, b Pt3dF) bool {
 	return FloatsEqual(a.X, b.X) && FloatsEqual(a.Y, b.Y) && FloatsEqual(a.Z, b.Z)
+}
+func pointSlicesEqual(a, b []PtF) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, apt := range a {
+		if !pointsEqual(apt, b[i]) {
+			return false
+		}
+	}
+	return true
 }

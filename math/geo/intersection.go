@@ -4,10 +4,11 @@ import (
 	"math"
 )
 
-// https://github.com/vlecomte/cp-geo/blob/master/basics/segment.tex
+// FindIntersection finds the intersection between two line segments.
 // Note: I am finding cases where this doesn't work, where an
 // intersection is found on some segments but if you scale one of
 // the points further out, no intersection.
+// From https://github.com/vlecomte/cp-geo/blob/master/basics/segment.tex
 func FindIntersection[T Number](s1, s2 Segment[T]) (Point[T], bool) {
 	oa := orient(s2.A, s2.B, s1.A)
 	ob := orient(s2.A, s2.B, s1.B)
@@ -55,14 +56,202 @@ func PerpendicularIntersection[T Float](seg Segment[T], pt Point[T]) (Point[T], 
 
 func PtToSegIntersection(pt, direction PtF, seg SegF) (PtF, bool) {
 	// Create a new segment and check the intersection.
-	scale := Max(math.Abs(pt.X-seg.A.X), math.Abs(pt.X-seg.B.X))
-	scale = Max(scale, math.Abs(pt.Y-seg.A.Y))
-	scale = Max(scale, math.Abs(pt.Y-seg.B.Y))
-	scale *= 10
+	scale := Max(pt.DistSquared(seg.A), pt.DistSquared(seg.B)) * 10.
 
 	newPt := PtF{X: pt.X + direction.X*scale, Y: pt.Y + direction.Y*scale}
 	return FindIntersection(seg, SegF{A: pt, B: newPt})
 }
+
+func PtToSegIntersection_Off(pt, direction PtF, seg SegF) (PtF, bool) {
+	p := pt
+	d := direction
+	a := seg.A
+	b := seg.B
+	//	fmt.Println("dir", direction)
+	// Handle parallel cases
+	denominator := d.X*(b.Y-a.Y) - d.Y*(b.X-a.X)
+	if denominator == 0 {
+		return PtF{}, false
+	}
+	t := ((p.X-a.X)*(b.Y-a.Y) - (p.Y-a.Y)*(b.X-a.X)) / denominator
+	u := ((p.X-a.X)*d.Y - (p.Y-a.Y)*d.X) / denominator
+
+	if t >= 0. && 0. <= u && u <= 1 {
+		return Pt(p.X+t*d.X, p.Y+t*d.Y), true
+	}
+	return PtF{}, false
+}
+
+func PtToSegIntersection_Off2(pt, direction PtF, seg SegF) (PtF, bool) {
+	scale := 1000000.
+	newPt := PtF{X: pt.X + direction.X*scale, Y: pt.Y + direction.Y*scale}
+	return intersectLines(pt, newPt, seg.A, seg.B, Segments)
+}
+
+func intersectLines(a1, a2, b1, b2 PtF, mode Mode) (PtF, bool) {
+	// Eh I see this is a shortcut
+	if mode == Segments {
+		ar := rectFromSeg(a1, a2)
+		br := rectFromSeg(b1, b2)
+		if !ar.Overlaps(br) {
+			return PtF{}, false
+		}
+	}
+
+	cc := (hp(a1).Cross(hp(a2))).Cross(hp(b1).Cross(hp(b2)))
+	if math.Abs(cc.Z) < 1.e-6 {
+		return PtF{}, false
+	}
+	mult := 1. / cc.Z
+	x := Pt(cc.X*mult, cc.Y*mult)
+
+	fail := true
+	switch mode {
+	case Rays:
+		fail = !testInter(x, a1, a2, false) || !testInter(x, b1, b2, false)
+	case RayLine:
+		fail = !testInter(x, a1, a2, false)
+	case RaySegment:
+		fail = !testInter(x, a1, a2, false) || !testInter(x, b1, b2, true)
+	case Segments:
+		fail = !testInter(x, a1, a2, true) || !testInter(x, b1, b2, true)
+	}
+	if fail {
+		return PtF{}, false
+	}
+	/*
+		ok := false
+
+		if(mode switch {
+		  Mode.Rays => !test(x, a1, a2) || !test(x, b1, b2),
+		  Mode.RayLine => !test(x, a1, a2),
+		  Mode.RaySegment => !test(x, a1, a2) || !test(x, b1, b2, bidi: true),
+		  Mode.Segments => !test(x, a1, a2, bidi: true) || !test(x, b1, b2, bidi: true),
+		  _ => false // lines can't fail at this
+		}) return false;
+	*/
+	return x, true
+}
+
+type ptfField func(PtF) float64
+
+func ptfFieldX(pt PtF) float64 {
+	return pt.X
+}
+func ptfFieldY(pt PtF) float64 {
+	return pt.Y
+}
+
+func testInter(p, a, b PtF, bidi bool) bool {
+	fn := ptfFieldX
+	if math.Abs(b.X-a.X) < math.Abs(b.Y-a.Y) {
+		fn = ptfFieldY
+	}
+	n, d := fn(p)-fn(a), fn(b)-fn(a)
+	if bidi && math.Abs(n) > math.Abs(d) {
+		return false
+	}
+	return (n >= 0.) == (d >= 0.)
+}
+
+func hp(pt PtF) Pt3dF {
+	return Pt3d(pt.X, pt.Y, 1.)
+}
+
+func rectFromSeg(a, b PtF) RectF {
+	return Rect(Min(a.X, b.X), Min(a.Y, b.Y), Max(a.X, b.X), Max(a.Y, b.Y))
+	// var min = Vectx.LeastOf(a, b); // build your own, example is in the post
+	// return new Rect(min, Vectx.MostOf(a, b) - min);
+}
+
+type Mode = uint8
+
+const (
+	Lines Mode = iota
+	Rays
+	RayLine
+	RaySegment
+	Segments
+)
+
+/*
+// https://forum.unity.com/threads/need-a-good-2d-line-segment-intersector-grab-it-while-its-hot.1341557/
+
+// compute intersects like a boss you most certainly are™
+static bool intersectLines(Vector2 a1, Vector2 a2, Vector2 b1, Vector2 b2, out Vector2 intersect, Mode mode = Mode.Segments) {
+  intersect = new Vector2(float.NaN, float.NaN);
+
+  if(mode == Mode.Segments) {
+    var ar = rectFromSeg(a1, a2);
+    var br = rectFromSeg(b1, b2);
+    if(!ar.Overlaps(br)) return false;
+  }
+
+  var cc = (hp(a1).Cross(hp(a2))).Cross(hp(b1).Cross(hp(b2)));
+  if(cc.z.Abs() < 1E-6f) return false;
+
+  var x = ((Vector2)cc) * (1f / cc.z);
+
+  if(mode switch {
+    Mode.Rays => !test(x, a1, a2) || !test(x, b1, b2),
+    Mode.RayLine => !test(x, a1, a2),
+    Mode.RaySegment => !test(x, a1, a2) || !test(x, b1, b2, bidi: true),
+    Mode.Segments => !test(x, a1, a2, bidi: true) || !test(x, b1, b2, bidi: true),
+    _ => false // lines can't fail at this
+  }) return false;
+
+  intersect = x;
+  return true;
+
+  // local functions
+  static Vector3 hp(Vector2 p) => new Vector3(p.x, p.y, 1f);
+
+  static bool test(Vector2 p, Vector2 a, Vector2 b, bool bidi = false) {
+    int i = (b.x - a.x).Abs() < (b.y - a.y).Abs()? 1 : 0;
+    float n = p[i] - a[i], d = b[i] - a[i];
+    if(bidi && n.Abs() > d.Abs()) return false;
+    return n >= 0f == d >= 0f;
+  }
+
+}
+
+static Rect rectFromSeg(Vector2 a, Vector2 b) {
+  var min = Vectx.LeastOf(a, b); // build your own, example is in the post
+  return new Rect(min, Vectx.MostOf(a, b) - min);
+}
+
+enum Mode {
+  Lines,
+  Rays,
+  RayLine,
+  RaySegment,
+  Segments
+}
+Usage example
+Code (csharp):
+if(Inters
+*/
+
+/*
+p = np.array(ray_origin)
+  d = np.array(ray_direction)
+  a = np.array(line_start)
+  b = np.array(line_end)
+
+  # Handle parallel cases
+  denominator = d[0] * (b[1] - a[1]) - d[1] * (b[0] - a[0])
+  if denominator == 0:
+      return None, False
+
+  t = ((p[0] - a[0]) * (b[1] - a[1]) - (p[1] - a[1]) * (b[0] - a[0])) / denominator
+  u = ((p[0] - a[0]) * d[1] - (p[1] - a[1]) * d[0]) / denominator
+
+  if t >= 0 and 0 <= u <= 1:
+      intersection_point = p + t * d
+      return intersection_point, True
+
+  return None, False
+*/
 
 // https://stackoverflow.com/questions/34415671/intersection-of-a-line-with-a-line-segment-in-c
 // line segment p-q intersect with line A-B.

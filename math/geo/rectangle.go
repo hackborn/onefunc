@@ -34,6 +34,16 @@ func (r Rectangle[T]) Area() T {
 	return (rb.X - lt.X) * (rb.Y - lt.Y)
 }
 
+func (r1 Rectangle[T]) Overlaps(r2 Rectangle[T]) bool {
+	if r1.R < r2.L || r2.R < r1.L {
+		return false
+	}
+	if r1.B < r2.T || r2.B < r1.T {
+		return false
+	}
+	return true
+}
+
 func (r1 Rectangle[T]) Union(r2 Rectangle[T]) Rectangle[T] {
 	r1.L = min(r1.L, r2.L)
 	r1.T = min(r1.T, r2.T)
