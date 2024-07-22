@@ -9,6 +9,9 @@ import (
 // intersection is found on some segments but if you scale one of
 // the points further out, no intersection.
 // From https://github.com/vlecomte/cp-geo/blob/master/basics/segment.tex
+// Further note: This doesn't seem to find intersections exactly on
+// end points. Further review of that page shows yes this is correct,
+// there's a different algorithm to account for endpoints.
 func FindIntersection[T Number](s1, s2 Segment[T]) (Point[T], bool) {
 	oa := orient(s2.A, s2.B, s1.A)
 	ob := orient(s2.A, s2.B, s1.B)
@@ -22,6 +25,26 @@ func FindIntersection[T Number](s1, s2 Segment[T]) (Point[T], bool) {
 	}
 	return Point[T]{}, false
 }
+
+// Here's the full intersection function, where properInter is FindIntersection above
+/*
+struct cmpX {
+    bool operator()(pt a, pt b) {
+        return make_pair(a.x, a.y) < make_pair(b.x, b.y);
+    }
+};
+
+set<pt,cmpX> inters(pt a, pt b, pt c, pt d) {
+    pt out;
+    if (properInter(a,b,c,d,out)) return {out};
+    set<pt,cmpX> s;
+    if (onSegment(c,d,a)) s.insert(a);
+    if (onSegment(c,d,b)) s.insert(b);
+    if (onSegment(a,b,c)) s.insert(c);
+    if (onSegment(a,b,d)) s.insert(d);
+    return s;
+}
+*/
 
 // PerpendicularIntersection finds the intersection of point to the line
 // segment by drawing a perpendicular line from point to segment.

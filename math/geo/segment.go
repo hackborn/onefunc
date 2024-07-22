@@ -48,6 +48,11 @@ func (s Segment[T]) AsArray() []Point[T] {
 	}
 }
 
+// AddPt adds the point and returns the new segment.
+func (s Segment[T]) AddPt(pt Point[T]) Segment[T] {
+	return Segment[T]{A: s.A.Add(pt), B: s.B.Add(pt)}
+}
+
 // Len answers the length of this segment.
 func (s Segment[T]) Len() T {
 	return T(s.A.Dist(s.B))
@@ -102,6 +107,14 @@ func OnSegment[T Number](p, start, end Point[T]) bool {
 		float64(p.Y) >= math.Min(sy, ey) &&
 		float64(p.Y) <= math.Max(sy, ey))
 }
+
+//bool onSegment(pt a, pt b, pt p) {
+//   return orient(a,b,p) == 0 && inDisk(a,b,p);
+//}
+
+//bool inDisk(pt a, pt b, pt p) {
+//   return dot(a-p, b-p) <= 0;
+//}
 
 // DistSquared answers the squared distance from the point to the segment,
 // as well as the point found on the segment.
