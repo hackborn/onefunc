@@ -13,10 +13,10 @@ import (
 // end points. Further review of that page shows yes this is correct,
 // there's a different algorithm to account for endpoints.
 func FindIntersection[T Number](s1, s2 Segment[T]) (Point[T], bool) {
-	oa := orient(s2.A, s2.B, s1.A)
-	ob := orient(s2.A, s2.B, s1.B)
-	oc := orient(s1.A, s1.B, s2.A)
-	od := orient(s1.A, s1.B, s2.B)
+	oa := Orient(s2.A, s2.B, s1.A)
+	ob := Orient(s2.A, s2.B, s1.B)
+	oc := Orient(s1.A, s1.B, s2.A)
+	od := Orient(s1.A, s1.B, s2.B)
 	// Proper intersection exists if opposite signs
 	if oa*ob < 0 && oc*od < 0 {
 		pt := Point[T]{X: (s1.A.X*ob - s1.B.X*oa) / (ob - oa),

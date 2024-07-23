@@ -42,6 +42,10 @@ func (a Point[T]) Mult(b Point[T]) Point[T] {
 	return Point[T]{X: a.X * b.X, Y: a.Y * b.Y}
 }
 
+func (a Point[T]) Cross(b Point[T]) T {
+	return a.X*b.Y - a.Y*b.X
+}
+
 // Normalize normalizs the point to a unit.
 // Can be negative if they are generated from a negative point,
 // i.e. a negative direction vector.

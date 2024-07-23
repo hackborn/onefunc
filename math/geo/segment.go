@@ -139,34 +139,6 @@ func DistPointToSegment(seg SegF, p PtF) (float64, PtF) {
 	return math.Sqrt(d), newP
 }
 
-// DistanceFromPointToSegment calculates the distance from a point to a line segment
-// Ugh, what a mess. I guess this is obsoleted by DistPointToSegment, although
-// I don't see why this couldn't answer return the point. And then I suppose
-// I should see if there are differenecs in result and speed to decide which to keep.
-// Although looking at the implementation, it sorta looks like it's just a distance
-// to the closest endpoint? Which seems completely wrong?
-func DistanceFromPointToSegment[T Number](p Point[T], s Segment[T]) float64 {
-	p1, p2 := s.A, s.B
-
-	// Check if the point lies on the line segment
-	if IsCollinear(p, p1, p2) && OnSegment(p, p1, p2) {
-		return minDistanceToPointOnLine(p, p1, p2)
-	}
-
-	// Calculate distances to the two line endpoints
-	d1 := p.Dist(p1)
-	d2 := p.Dist(p2)
-
-	// Find the closer endpoint
-	closerPoint := p1
-	if d2 < d1 {
-		closerPoint = p2
-	}
-
-	// **Use the closer endpoint for distance calculation:**
-	return p.Dist(closerPoint)
-}
-
 // XAtY answers the X value for this segment at the given Y
 // value, or false if the line does not intersect y.
 func XAtY(s SegF, y float64) (float64, bool) {
@@ -183,22 +155,6 @@ func XAtY(s SegF, y float64) (float64, bool) {
 		return 0, false
 	}
 	return s.A.X + (((y - s.A.Y) * (s.B.X - s.A.X)) / (s.B.Y - s.A.Y)), true
-}
-
-// projectPointOnLine projects a point onto a line
-func projectPointOnLine[T Number](p, p1, p2 Point[T]) Point[T] {
-	v1 := Point[T]{p2.X - p1.X, p2.Y - p1.Y}
-	v2 := Point[T]{p.X - p1.X, p.Y - p1.Y}
-	t := dotProduct(v1, v2) / dotProduct(v1, v1)
-	return Point[T]{X: T(float64(p1.X) + t*float64(v1.X)),
-		Y: T(float64(p1.Y) + t*float64(v1.Y))}
-}
-
-// minDistanceToPointOnLine calculates the minimum distance from a point to a line
-func minDistanceToPointOnLine[T Number](p, p1, p2 Point[T]) float64 {
-	v1 := Point[T]{p2.X - p1.X, p2.Y - p1.Y}
-	v2 := Point[T]{p.X - p1.X, p.Y - p1.Y}
-	return math.Abs(dotProduct(v1, v2)) / math.Sqrt(dotProduct(v1, v1))
 }
 
 // dotProduct calculates the dot product of two vectors

@@ -8,6 +8,8 @@ import (
 	"github.com/hackborn/onefunc/jacl"
 )
 
+// go test -bench=.
+
 // ---------------------------------------------------------
 // TEST-CIRCLE-HIT-TEST
 func TestCircleHitTest(t *testing.T) {
@@ -57,6 +59,40 @@ func TestDegrees(t *testing.T) {
 			t.Fatalf("TestDegrees %v has %v but expected %v", i, have, v.want)
 		}
 	}
+}
+
+// ---------------------------------------------------------
+// TEST-DIST-PT-TO-SEGMENT
+func TestDistPointToSegment(t *testing.T) {
+	f := func(seg SegF, pt PtF, want float64, wantPt PtF) {
+		t.Helper()
+
+		have, havePt := DistPointToSegment(seg, pt)
+		if !FloatsEqualTol(have, want, 0.00001) {
+			t.Fatalf("TestDistPointToSegment has dist %.6f but wants %.6f", have, want)
+		} else if !pointsEqual(havePt, wantPt) {
+			t.Fatalf("TestDistPointToSegment has pt %v but wants %v", havePt, wantPt)
+		}
+	}
+	f(Seg(0., 0., 10., 10.), Pt(2., 0.), 1.414214, Pt(1., 1.))
+	f(Seg(0., 5., 10., 5.), Pt(2., 0.), 5., Pt(2., 5.))
+}
+
+// ---------------------------------------------------------
+// TEST-ORIENTATION
+func TestOrientation(t *testing.T) {
+	f := func(seg SegF, pt PtF, want float64) {
+		t.Helper()
+
+		have := Orient(seg.A, seg.B, pt)
+		if !FloatsEqualTol(have, want, 0.00001) {
+			t.Fatalf("TestOrientation has %.6f but wants %.6f", have, want)
+		}
+	}
+	f(Seg(5., 5., 10., 5.), Pt(2., 0.), -25.)
+	f(Seg(5., 5., 10., 5.), Pt(2., 10.), 25.)
+	f(Seg(5., 5., 10., 5.), Pt(2., 5.), 0.)
+	// t.Fatalf("no")
 }
 
 // ---------------------------------------------------------
@@ -543,6 +579,36 @@ func TestXAtY(t *testing.T) {
 }
 
 // ---------------------------------------------------------
+// BENCHMARKS
+
+func BenchmarkDistPointToSegment(b *testing.B) {
+	seg := Seg(10., 10., 100., 110.)
+	pt := Pt(20., 50.)
+
+	for n := 0; n < b.N; n++ {
+		DistPointToSegment(seg, pt)
+	}
+}
+
+func BenchmarkDistSquared(b *testing.B) {
+	seg := Seg(10., 10., 100., 110.)
+	pt := Pt(20., 50.)
+
+	for n := 0; n < b.N; n++ {
+		DistSquared(seg, pt)
+	}
+}
+
+func BenchmarkOrient(b *testing.B) {
+	seg := Seg(10., 10., 100., 110.)
+	pt := Pt(20., 50.)
+
+	for n := 0; n < b.N; n++ {
+		Orient(seg.A, seg.B, pt)
+	}
+}
+
+// ---------------------------------------------------------
 // CONSTRUCTION
 
 // Create a new line out on the supplied pixel components.
@@ -640,6 +706,7 @@ func pointsEqual(a, b PtF) bool {
 func points3dEqual(a, b Pt3dF) bool {
 	return FloatsEqual(a.X, b.X) && FloatsEqual(a.Y, b.Y) && FloatsEqual(a.Z, b.Z)
 }
+
 func pointSlicesEqual(a, b []PtF) bool {
 	if len(a) != len(b) {
 		return false

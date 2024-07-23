@@ -39,18 +39,6 @@ func Centroid[T Number](pts []Point[T]) Point[T] {
 	return Point[T]{X: T(x), Y: T(y)}
 }
 
-// Orientation checks the orientation of three points
-func Orientation[T Number](p0, p1, p2 Point[T]) int {
-	val := (p1.Y-p0.Y)*(p2.X-p1.X) - (p1.X-p0.X)*(p2.Y-p1.Y)
-	if val == 0 {
-		return 0 // collinear
-	} else if val > 0 {
-		return 1 // clockwise
-	} else {
-		return -1 // counter-clockwise
-	}
-}
-
 // IndexToXY converts a flat index into an array into
 // an XY position.
 func IndexToXY[T constraints.Integer](width, height, index T) (Point[T], error) {
@@ -93,12 +81,13 @@ func FloatsEqualTol(a, b, tolerance float64) bool {
 	return diff < tolerance
 }
 
-func cross[T Number](a, b Point[T]) T {
-	return a.X*b.Y - a.Y*b.X
-}
-
-func orient[T Number](a, b, c Point[T]) T {
-	return cross(b.Sub(a), c.Sub(a))
+// Orient answers whether C is left / clockwise to direct
+// segment AB. Response:
+// 0: C is collinear
+// < 0: C is left / clockwise
+// > 0: C is right / counterclockwise
+func Orient[T Number](a, b, c Point[T]) T {
+	return b.Sub(a).Cross(c.Sub(a))
 }
 
 // Ratio answers a 0-1 value based on a's
