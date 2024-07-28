@@ -10,6 +10,8 @@ import (
 	"github.com/hackborn/onefunc/math/rasterizing/xiaolinwu"
 )
 
+// go test -bench=.
+
 // ---------------------------------------------------------
 // TEST-LINE-I
 func TestLineI(t *testing.T) {
@@ -21,14 +23,14 @@ func TestLineI(t *testing.T) {
 
 func _testFactoryLineI(t *testing.T, facName string, facFunc newRasterizerFunc) {
 	table := []struct {
-		seg  geo.SegmentI
+		seg  geo.SegI
 		want LineOut
 	}{
-		{segi(0, 0, 2, 2), newLineOut(0, 0, 1, 1, 2, 2)},
-		{segi(0, 2, 2, 0), newLineOut(0, 2, 1, 1, 2, 0)},
-		{segi(0, 0, 2, 0), newLineOut(0, 0, 1, 0, 2, 0)},
-		{segi(0, 0, -2, 0), newLineOut(0, 0, -1, 0, -2, 0)},
-		{segi(0, 0, -2, -2), newLineOut(0, 0, -1, -1, -2, -2)},
+		{geo.Seg(0, 0, 2, 2), newLineOut(0, 0, 1, 1, 2, 2)},
+		{geo.Seg(0, 2, 2, 0), newLineOut(0, 2, 1, 1, 2, 0)},
+		{geo.Seg(0, 0, 2, 0), newLineOut(0, 0, 1, 0, 2, 0)},
+		{geo.Seg(0, 0, -2, 0), newLineOut(0, 0, -1, 0, -2, 0)},
+		{geo.Seg(0, 0, -2, -2), newLineOut(0, 0, -1, -1, -2, -2)},
 	}
 	for i, v := range table {
 		ras := facFunc()
@@ -66,18 +68,19 @@ func BenchmarkXiaolinwuLong(b *testing.B) {
 	runLongLine(b, r, fn)
 }
 
+//go:noinline
 func runShortLine(b *testing.B, r rasterizing.Rasterizer, fn rasterizing.PixelFunc) {
-	seg := geo.SegmentF64{A: geo.PointF64{X: 0.0, Y: 0.0},
-		B: geo.PointF64{X: 20.0, Y: 10.0}}
+	seg := geo.Seg(0.0, 0.0, 20.0, 10.0)
 	runLine(b, seg, r, fn)
 }
 
+//go:noinline
 func runLongLine(b *testing.B, r rasterizing.Rasterizer, fn rasterizing.PixelFunc) {
-	seg := geo.SegmentF64{A: geo.PointF64{X: 0.0, Y: 0.0},
-		B: geo.PointF64{X: 200.0, Y: 100.0}}
+	seg := geo.Seg(0.0, 0.0, 200.0, 100.0)
 	runLine(b, seg, r, fn)
 }
 
+//go:noinline
 func runLine(b *testing.B, shape any, r rasterizing.Rasterizer, fn rasterizing.PixelFunc) {
 	for n := 0; n < b.N; n++ {
 		r.Rasterize(shape, fn)
@@ -91,6 +94,7 @@ func BenchmarkXiaolinwuShort2(b *testing.B) {
 	runShortLine2(b, r, fn)
 }
 
+//go:noinline
 func BenchmarkXiaolinwuLong2(b *testing.B) {
 	r := xiaolinwu.NewRasterizer2()
 	fn := func([]rasterizing.Pixel) {
@@ -98,18 +102,19 @@ func BenchmarkXiaolinwuLong2(b *testing.B) {
 	runLongLine2(b, r, fn)
 }
 
+//go:noinline
 func runShortLine2(b *testing.B, r rasterizing.Rasterizer2, fn rasterizing.PixelsFunc) {
-	seg := geo.SegmentF64{A: geo.PointF64{X: 0.0, Y: 0.0},
-		B: geo.PointF64{X: 20.0, Y: 10.0}}
+	seg := geo.Seg(0.0, 0.0, 20.0, 10.0)
 	runLine2(b, seg, r, fn)
 }
 
+//go:noinline
 func runLongLine2(b *testing.B, r rasterizing.Rasterizer2, fn rasterizing.PixelsFunc) {
-	seg := geo.SegmentF64{A: geo.PointF64{X: 0.0, Y: 0.0},
-		B: geo.PointF64{X: 200.0, Y: 100.0}}
+	seg := geo.Seg(0.0, 0.0, 200.0, 100.0)
 	runLine2(b, seg, r, fn)
 }
 
+//go:noinline
 func runLine2(b *testing.B, shape any, r rasterizing.Rasterizer2, fn rasterizing.PixelsFunc) {
 	for n := 0; n < b.N; n++ {
 		r.Rasterize2(shape, fn)
@@ -123,15 +128,6 @@ type newRasterizerFunc func() rasterizing.Rasterizer
 
 // ---------------------------------------------------------
 // SUPPORT
-
-// pti is a convenience for creating a geo.PointI
-func pti(x, y int) geo.PointI {
-	return geo.PointI{X: x, Y: y}
-}
-
-func segi(x1, y1, x2, y2 int) geo.SegmentI {
-	return geo.SegmentI{A: pti(x1, y1), B: pti(x2, y2)}
-}
 
 // Create a new line out on the supplied pixel components.
 // Components must always be two ints (the x and y) optionally
