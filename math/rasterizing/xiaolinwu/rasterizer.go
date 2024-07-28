@@ -15,7 +15,7 @@ func NewRasterizer() rasterizing.Rasterizer {
 // and having clients iterate on a block instead of
 // processing each pixel. Performance advantage is negligible.
 func NewRasterizer2() rasterizing.Rasterizer2 {
-	buffer := make([]rasterizing.Pixel, 0, 8)
+	buffer := make([]rasterizing.Pixel, 0, 256)
 	return &rasterizer{buffer: buffer}
 }
 

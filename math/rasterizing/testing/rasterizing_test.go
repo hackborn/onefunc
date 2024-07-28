@@ -56,69 +56,90 @@ func rasterizerFactories() map[string]newRasterizerFunc {
 
 func BenchmarkXiaolinwuShort(b *testing.B) {
 	r := xiaolinwu.NewRasterizer()
-	fn := func(args rasterizing.Pixel) {
-	}
-	runShortLine(b, r, fn)
+	runShortLine(b, r)
 }
 
 func BenchmarkXiaolinwuLong(b *testing.B) {
 	r := xiaolinwu.NewRasterizer()
-	fn := func(args rasterizing.Pixel) {
-	}
-	runLongLine(b, r, fn)
+	runLongLine(b, r)
+}
+
+func BenchmarkXiaolinwuVeryLong(b *testing.B) {
+	r := xiaolinwu.NewRasterizer()
+	runVeryLongLine(b, r)
 }
 
 //go:noinline
-func runShortLine(b *testing.B, r rasterizing.Rasterizer, fn rasterizing.PixelFunc) {
+func runShortLine(b *testing.B, r rasterizing.Rasterizer) {
 	seg := geo.Seg(0.0, 0.0, 20.0, 10.0)
-	runLine(b, seg, r, fn)
+	runLine(b, seg, r)
 }
 
 //go:noinline
-func runLongLine(b *testing.B, r rasterizing.Rasterizer, fn rasterizing.PixelFunc) {
+func runLongLine(b *testing.B, r rasterizing.Rasterizer) {
 	seg := geo.Seg(0.0, 0.0, 200.0, 100.0)
-	runLine(b, seg, r, fn)
+	runLine(b, seg, r)
 }
 
 //go:noinline
-func runLine(b *testing.B, shape any, r rasterizing.Rasterizer, fn rasterizing.PixelFunc) {
+func runVeryLongLine(b *testing.B, r rasterizing.Rasterizer) {
+	seg := geo.Seg(0.0, 0.0, 800.0, 100.0)
+	runLine(b, seg, r)
+}
+
+//go:noinline
+func runLine(b *testing.B, shape any, r rasterizing.Rasterizer) {
 	for n := 0; n < b.N; n++ {
-		r.Rasterize(shape, fn)
+		r.Rasterize(shape, rasterizePixel)
 	}
 }
 
 func BenchmarkXiaolinwuShort2(b *testing.B) {
 	r := xiaolinwu.NewRasterizer2()
-	fn := func([]rasterizing.Pixel) {
-	}
-	runShortLine2(b, r, fn)
+	runShortLine2(b, r)
 }
 
-//go:noinline
 func BenchmarkXiaolinwuLong2(b *testing.B) {
 	r := xiaolinwu.NewRasterizer2()
-	fn := func([]rasterizing.Pixel) {
-	}
-	runLongLine2(b, r, fn)
+	runLongLine2(b, r)
+}
+
+func BenchmarkXiaolinwuVeryLong2(b *testing.B) {
+	r := xiaolinwu.NewRasterizer2()
+	runVeryLongLine2(b, r)
 }
 
 //go:noinline
-func runShortLine2(b *testing.B, r rasterizing.Rasterizer2, fn rasterizing.PixelsFunc) {
+func runShortLine2(b *testing.B, r rasterizing.Rasterizer2) {
 	seg := geo.Seg(0.0, 0.0, 20.0, 10.0)
-	runLine2(b, seg, r, fn)
+	runLine2(b, seg, r)
 }
 
 //go:noinline
-func runLongLine2(b *testing.B, r rasterizing.Rasterizer2, fn rasterizing.PixelsFunc) {
+func runLongLine2(b *testing.B, r rasterizing.Rasterizer2) {
 	seg := geo.Seg(0.0, 0.0, 200.0, 100.0)
-	runLine2(b, seg, r, fn)
+	runLine2(b, seg, r)
 }
 
 //go:noinline
-func runLine2(b *testing.B, shape any, r rasterizing.Rasterizer2, fn rasterizing.PixelsFunc) {
+func runVeryLongLine2(b *testing.B, r rasterizing.Rasterizer2) {
+	seg := geo.Seg(0.0, 0.0, 800.0, 100.0)
+	runLine2(b, seg, r)
+}
+
+//go:noinline
+func runLine2(b *testing.B, shape any, r rasterizing.Rasterizer2) {
 	for n := 0; n < b.N; n++ {
-		r.Rasterize2(shape, fn)
+		r.Rasterize2(shape, rasterizePixels)
 	}
+}
+
+//go:noinline
+func rasterizePixel(rasterizing.Pixel) {
+}
+
+//go:noinline
+func rasterizePixels([]rasterizing.Pixel) {
 }
 
 // ---------------------------------------------------------
