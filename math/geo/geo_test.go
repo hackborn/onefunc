@@ -79,14 +79,14 @@ func TestDistPointToSegment(t *testing.T) {
 }
 
 // ---------------------------------------------------------
-// TEST-ORIENTATION
-func TestOrientation(t *testing.T) {
+// TEST-ORIENT
+func TestOrient(t *testing.T) {
 	f := func(seg SegF, pt PtF, want float64) {
 		t.Helper()
 
 		have := Orient(seg.A, seg.B, pt)
 		if !FloatsEqualTol(have, want, 0.00001) {
-			t.Fatalf("TestOrientation has %.6f but wants %.6f", have, want)
+			t.Fatalf("Has %.6f but wants %.6f", have, want)
 		}
 	}
 	f(Seg(5., 5., 10., 5.), Pt(2., 0.), -25.)
@@ -508,6 +508,26 @@ func TestTrianglePlaneIntersection(t *testing.T) {
 			t.Fatalf("TestTrianglePlaneIntersection %v has %v but expected %v", i, have, v.want)
 		}
 	}
+}
+
+// ---------------------------------------------------------
+// TEST-RADIAL-DIST
+func TestRadialDist(t *testing.T) {
+	f := func(a, b float64, want float64, wantOrientation Orientation) {
+		t.Helper()
+
+		have, haveOrientation := RadialDist(a, b)
+		if haveOrientation != wantOrientation {
+			t.Fatalf("Has orientation %v but wants %v", haveOrientation, wantOrientation)
+		} else if !FloatsEqualTol(have, want, 0.00001) {
+			t.Fatalf("Has %.6f but wants %.6f", have, want)
+		}
+	}
+	f(.5, .5, 0., Collinear)
+	f(.3, .4, .1, CounterClockwise)
+	f(.4, .3, .1, Clockwise)
+	f(.1, .9, .2, Clockwise)
+	f(.9, .1, .2, CounterClockwise)
 }
 
 var zeroPlane = Tri3dFlat(10., 0., 0., 10., 10., 0., 0., 10., 0.)

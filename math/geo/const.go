@@ -22,6 +22,14 @@ const (
 	Vertical
 )
 
+type Orientation uint8
+
+const (
+	Collinear Orientation = iota
+	Clockwise
+	CounterClockwise
+)
+
 var (
 	HorizontalSlope = Slope{Angle: Horizontal, M: 0.}
 	VerticalSlope   = Slope{Angle: Vertical, M: math.MaxFloat64}

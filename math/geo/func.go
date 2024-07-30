@@ -23,6 +23,29 @@ func RadiansToDegrees(radians float64) float64 {
 	return radians * (180.0 / math.Pi)
 }
 
+// RadialDist answers the distance between two unit values,
+// accounting for wrapping.
+// Examples:
+// a=.1, b=.9, distance is .2, i.e. it wraps around 1.
+func RadialDist(a, b float64) (float64, Orientation) {
+	if a == b {
+		return 0., Collinear
+	}
+	a1 := a - b
+	a2 := b - a
+	if a1 < 0. {
+		a1 = 1. + a1
+	}
+	if a2 < 0. {
+		a2 = 1. + a2
+	}
+	if a1 < a2 {
+		return a1, Clockwise
+	} else {
+		return a2, CounterClockwise
+	}
+}
+
 func Sqr[T Number](x T) T {
 	return x * x
 }
