@@ -24,12 +24,13 @@ func RadiansToDegrees(radians float64) float64 {
 }
 
 // RadialDist answers the distance between two unit values,
-// accounting for wrapping.
+// accounting for wrapping. Andswer 0 - 1, with 1 being
+// the two values are closest.
 // Examples:
 // a=.1, b=.9, distance is .2, i.e. it wraps around 1.
 func RadialDist(a, b float64) (float64, Orientation) {
 	if a == b {
-		return 0., Collinear
+		return 1., Collinear
 	}
 	a1 := a - b
 	a2 := b - a
@@ -39,10 +40,11 @@ func RadialDist(a, b float64) (float64, Orientation) {
 	if a2 < 0. {
 		a2 = 1. + a2
 	}
+	// This results in a range of 0. - .5, so scale up
 	if a1 < a2 {
-		return a1, Clockwise
+		return 1. - (a1 * 2.), Clockwise
 	} else {
-		return a2, CounterClockwise
+		return 1. - (a2 * 2.), CounterClockwise
 	}
 }
 

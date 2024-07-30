@@ -523,11 +523,12 @@ func TestRadialDist(t *testing.T) {
 			t.Fatalf("Has %.6f but wants %.6f", have, want)
 		}
 	}
-	f(.5, .5, 0., Collinear)
-	f(.3, .4, .1, CounterClockwise)
-	f(.4, .3, .1, Clockwise)
-	f(.1, .9, .2, Clockwise)
-	f(.9, .1, .2, CounterClockwise)
+	f(.5, .5, 1., Collinear)
+	f(.3, .4, .8, CounterClockwise)
+	f(.3, .5, .6, CounterClockwise)
+	f(.4, .3, .8, Clockwise)
+	f(.1, .9, .6, Clockwise)
+	f(.9, .1, .6, CounterClockwise)
 }
 
 var zeroPlane = Tri3dFlat(10., 0., 0., 10., 10., 0., 0., 10., 0.)
