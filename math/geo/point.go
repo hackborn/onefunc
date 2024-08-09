@@ -9,6 +9,15 @@ func Pt[T Number](x, y T) Point[T] {
 	return Point[T]{X: x, Y: y}
 }
 
+// Pts creates a slice of Points from x y values.
+func Pts[T Number](xys ...T) []Point[T] {
+	pts := make([]Point[T], 0, len(xys)/2)
+	for i := 1; i < len(xys); i += 2 {
+		pts = append(pts, Point[T]{X: xys[i-1], Y: xys[i]})
+	}
+	return pts
+}
+
 type Point[T Number] struct {
 	X T
 	Y T
@@ -58,15 +67,8 @@ func (a Point[T]) Normalize() Point[T] {
 		Y: T(float64(a.Y) / mag)}
 }
 
-// TODO: I think above is more correct. My understanding now is the
-// normal would be each component divided by the magnitude.
-// This function isn't in use so I will replace and see what that looks like.
-func (a Point[T]) _Normalize2() Point[T] {
-	if a.X == 0 && a.Y == 0 {
-		return a
-	}
-	max := Max(a.X, a.Y)
-	return Point[T]{X: a.X / max, Y: a.Y / max}
+func (a Point[T]) Dot(b Point[T]) float64 {
+	return float64(a.X*b.X + a.Y*b.Y)
 }
 
 func (a Point[T]) Magnitude() float64 {
@@ -195,6 +197,19 @@ func (p Point[T]) ToIndex(xy Point[T]) T {
 
 func ConvertPoint[A Number, B Number](a Point[A]) Point[B] {
 	return Point[B]{X: B(a.X), Y: B(a.Y)}
+}
+
+func PtBounds[T Number](pts []Point[T]) Rectangle[T] {
+	r := Rectangle[T]{L: 0, T: 0, R: 0, B: 0}
+	for i, pt := range pts {
+		if i == 0 {
+			r.L, r.T, r.R, r.B = pt.X, pt.Y, pt.X, pt.Y
+		} else {
+			r.L, r.T = min(r.L, pt.X), min(r.T, pt.Y)
+			r.R, r.B = max(r.R, pt.X), max(r.B, pt.Y)
+		}
+	}
+	return r
 }
 
 type PtF = Point[float64]

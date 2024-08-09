@@ -1,5 +1,9 @@
 package geo
 
+import (
+	"fmt"
+)
+
 func Rect[T Number](left, top, right, bottom T) Rectangle[T] {
 	return Rectangle[T]{L: left, T: top, R: right, B: bottom}
 }
@@ -50,6 +54,10 @@ func (r1 Rectangle[T]) Union(r2 Rectangle[T]) Rectangle[T] {
 	r1.R = max(r1.R, r2.R)
 	r1.B = max(r1.B, r2.B)
 	return r1
+}
+
+func (r Rectangle[T]) String() string {
+	return fmt.Sprintf("l=%v t=%v r=%v b=%v", r.L, r.T, r.R, r.B)
 }
 
 // Expand adds the value to all edges.

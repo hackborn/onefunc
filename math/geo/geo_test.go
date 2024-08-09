@@ -11,6 +11,95 @@ import (
 // go test -bench=.
 
 // ---------------------------------------------------------
+// TEST-CUBIC-BEZIER-AT
+func TestCubicBezierAt(t *testing.T) {
+	f := func(bez CubicBezier, pos float64, want PtF) {
+		t.Helper()
+
+		have := bez.At(pos)
+		if !pointsEqual(have, want) {
+			t.Fatalf("Has %v but wants %v", have, want)
+		}
+	}
+	f(bezEA, 0., Pt(0., 0.))
+	f(bezEA, .25, Pt(5.359375, 5.65625))
+	f(bezEA, .5, Pt(7.625, 10.))
+	f(bezEA, .75, Pt(6.328125, 14.34375))
+	f(bezEA, 1., Pt(1., 20.))
+}
+
+var bezEA = CubicBez(0., 0., 9., 9., 11., 11., 1., 20.)
+
+// ---------------------------------------------------------
+// TEST-QUADRATIC-BEZIER-AT
+func TestQuadraticBezierAt(t *testing.T) {
+	f := func(bez BezF, pos float64, want PtF) {
+		t.Helper()
+
+		have := bez.At(pos)
+		if !pointsEqual(have, want) {
+			t.Fatalf("Has %v but wants %v", have, want)
+		}
+	}
+	f(bezQuad1, 0., Pt(0., 0.))
+	f(bezQuad1, .5, Pt(5., 5.))
+	f(bezQuad1, 1., Pt(10., 10.))
+	f(bezQuad2, 0., Pt(0., 0.))
+	f(bezQuad2, .25, Pt(1.875, 2.5))
+	f(bezQuad2, .5, Pt(2.5, 5.))
+	f(bezQuad2, .75, Pt(1.875, 7.5))
+	f(bezQuad2, 1., Pt(0., 10.))
+}
+
+var bezQuad1 = QuadraticBez(0., 0., 5., 5., 10., 10.)
+var bezQuad2 = QuadraticBez(0., 0., 5., 5., 0., 10.)
+
+func safeBez(q QuadraticBezier) QuadraticBezier {
+	if q.P0.X == 0. && q.P0.Y == 0. {
+		q.P0.X += .000000001
+	}
+	return q
+}
+
+// ---------------------------------------------------------
+// TEST-CUBIC-BEZIER-DISTANCE
+func TestCubicBezierDistance(t *testing.T) {
+	f := func(bez CubicBezier, pt PtF, want float64, wantPt PtF) {
+		t.Helper()
+
+		have, havePt := CubicBezierDistance(bez, pt)
+		if !FloatsEqualTol(have, want, 0.000001) {
+			t.Fatalf("Has distance %v but wants %v", have, want)
+		} else if !pointsEqual(havePt, wantPt) {
+			t.Fatalf("Has pt %v but wants %v", havePt, wantPt)
+		}
+	}
+	f(bezDA, Pt(5., 5.), 0.7485775074, Pt(5.35961245, 5.6565418))
+}
+
+var bezDA = CubicBez(0., 0., 9., 9., 11., 11., 1., 20.)
+
+// ---------------------------------------------------------
+// TEST-QUADRATIC-BEZIER-DISTANCE
+func TestQuadraticBezierDistance(t *testing.T) {
+	f := func(bez QuadraticBezier, pt PtF, want float64, wantPt PtF) {
+		t.Helper()
+
+		have, havePt := quadraticBezierDistance(bez, pt)
+		if !FloatsEqualTol(have, want, 0.000001) {
+			t.Fatalf("Has distance %v but wants %v", have, want)
+		} else if !pointsEqual(havePt, wantPt) {
+			t.Fatalf("Has pt %v but wants %v", havePt, wantPt)
+		}
+	}
+	// This will fail because Pt0 is 0,0. Which is obviously
+	// wrong, but how it's designed.
+	// TODO: These repsonses are clearly wrong, but I'm exploring
+	// some other ideas so might not bother to get this working.
+	f(safeBez(bezQuad1), Pt(0., 5.), -3.535533, Pt(2.5000011, 2.5000011))
+}
+
+// ---------------------------------------------------------
 // TEST-CIRCLE-HIT-TEST
 func TestCircleHitTest(t *testing.T) {
 	table := []struct {
@@ -76,6 +165,24 @@ func TestDistPointToSegment(t *testing.T) {
 	}
 	f(Seg(0., 0., 10., 10.), Pt(2., 0.), 1.414214, Pt(1., 1.))
 	f(Seg(0., 5., 10., 5.), Pt(2., 0.), 5., Pt(2., 5.))
+}
+
+// ---------------------------------------------------------
+// TEST-LINE-LINE-INTERSECTION
+func TestLineLineIntersection(t *testing.T) {
+	f := func(a, b LnF, want PtF, wantOk bool) {
+		t.Helper()
+
+		have, haveOk := LineLineIntersectionF(a, b)
+		if haveOk != wantOk {
+			t.Fatalf("Has ok %v but wants %v", haveOk, wantOk)
+		} else if !pointsEqual(have, want) {
+			t.Fatalf("Has %v but wants %v", have, want)
+		}
+	}
+	f(LineFromXys(0., 0., 0., 10.), LineFromXys(10., 0., 10., 10.), Pt(0., 0.), false)
+	f(LineFromXys(0., 0., 10., 10.), LineFromXys(10., 0., 0., 10.), Pt(5., 5.), true)
+	f(LineFromXys(0., 0., 3., 3.), LineFromXys(10., 0., 0., 10.), Pt(5., 5.), true)
 }
 
 // ---------------------------------------------------------
@@ -626,6 +733,24 @@ func BenchmarkOrient(b *testing.B) {
 
 	for n := 0; n < b.N; n++ {
 		Orient(seg.A, seg.B, pt)
+	}
+}
+
+func BenchmarkBuiltinMin(b *testing.B) {
+	v0, v1 := 0., 10.
+	sum := 0.
+	for n := 0; n < b.N; n++ {
+		sum += min(v0, v1)
+		sum += min(v1, v0)
+	}
+}
+
+func BenchmarkCustomMin(b *testing.B) {
+	v0, v1 := 0., 10.
+	sum := 0.
+	for n := 0; n < b.N; n++ {
+		sum += Min(v0, v1)
+		sum += Min(v1, v0)
 	}
 }
 

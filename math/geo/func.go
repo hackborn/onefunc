@@ -126,7 +126,8 @@ func Ratio(a, b float64) float64 {
 }
 
 // Surely these are SOMEWHERE?
-
+// TODO: Yes, builtin min() and max(), and they are highly
+// optimized, perform the same as this. So remove these.
 func Min[T Number](a, b T) T {
 	if a <= b {
 		return a

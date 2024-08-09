@@ -85,6 +85,13 @@ func (a Point3d[T]) Normalize() Point3d[T] {
 //	return Point3d[T]{X: T(x), Y: T(y), Z: T(z)}
 //}
 
+func (a Point3d[T]) CLampFast(rng Range[T]) Point3d[T] {
+	return Point3d[T]{X: rng.ClampFast(a.X),
+		Y: rng.ClampFast(a.Y),
+		Z: rng.ClampFast(a.Z),
+	}
+}
+
 func Pt3dNearZero(v Pt3dF, tolerance float64) bool {
 	return math.Abs(v.X) <= tolerance && math.Abs(v.Y) <= tolerance && math.Abs(v.Z) <= tolerance
 }

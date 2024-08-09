@@ -19,7 +19,13 @@ func (p Range[T]) Contains(value T) bool {
 }
 
 // Clip returns the value clipped to my range.
+// TODO: Clamp() seems more common so switch to that.
 func (p Range[T]) Clip(value T) T {
+	return p.Clamp(value)
+}
+
+// Clamp returns the value clipped to my range.
+func (p Range[T]) Clamp(value T) T {
 	min, max := p.Min, p.Max
 	if p.Max < p.Min {
 		min, max = p.Max, p.Min
@@ -32,6 +38,23 @@ func (p Range[T]) Clip(value T) T {
 	} else {
 		return value
 	}
+}
+
+// ClampFast returns the value clipped to my range.
+// It assumes Min is less than Max.
+func (r Range[T]) ClampFast(value T) T {
+	if value <= r.Min {
+		return r.Min
+	} else if value >= r.Max {
+		return r.Max
+	} else {
+		return value
+	}
+}
+
+// Clip returns the value clipped to my range.
+func (p Range[T]) Midpoint() T {
+	return T((p.Min / 2) + (p.Max / 2))
 }
 
 // Overlaps returns true if the ranges overlap.
@@ -100,3 +123,5 @@ type RngI = Range[int]
 type RngF32 = Range[float32]
 type RngF64 = Range[float64]
 type RngI64 = Range[int64]
+
+var RngFUnit = RngF{Min: 0., Max: 1.}
