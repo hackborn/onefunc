@@ -348,18 +348,21 @@ func TestPointNormalize(t *testing.T) {
 // ---------------------------------------------------------
 // TEST-POINT-ROTATE
 func TestPointRotate(t *testing.T) {
-	f := func(pt PtF, angleInRads float64, want PtF) {
+	f := func(cen, pt PtF, angleInRads float64, want PtF) {
 		t.Helper()
 
-		cen := Pt(0., 0.)
 		have := pt.Rotate(cen, angleInRads)
 		if !pointsEqual(want, have) {
 			t.Fatalf("TestPointRotate wants %v has %v", want, have)
 		}
 	}
-	f(Pt(10., 0.), DegreesToRadians(45), Pt(7.07106781, 7.07106781))
-	f(Pt(10., 0.), DegreesToRadians(90), Pt(0., 10.))
-	f(Pt(10., 0.), DegreesToRadians(180), Pt(-10., 0.))
+	f(Pt(0., 0.), Pt(10., 0.), DegreesToRadians(45), Pt(7.07106781, 7.07106781))
+	f(Pt(0., 0.), Pt(10., 0.), DegreesToRadians(90), Pt(0., 10.))
+	f(Pt(0., 0.), Pt(10., 0.), DegreesToRadians(180), Pt(-10., 0.))
+
+	// Real world
+	//	f(Pt(10., 0.), DegreesToRadians(180), Pt(-10., 0.))
+	//seg {{35 25} {15 15}} pt {21.58359213500126 18.29179606750063} rotated {21.58359213500126 18.29179606750063}
 }
 
 // ---------------------------------------------------------

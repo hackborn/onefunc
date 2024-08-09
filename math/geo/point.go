@@ -99,6 +99,9 @@ func (a Point[T]) Inside(r Rectangle[T]) bool {
 
 // Rotate the point. Rotation will be:
 // In Quandrant 4 this rotates CW for positive angles and CCW for negative.
+// TODO: API might be confusing, after not using it I've started thinking
+// of the a point as the center and the point being passed in as the point to
+// rotate. so might switch those.
 func (a Point[T]) Rotate(origin Point[T], angleInRads float64) Point[T] {
 	// from https://stackoverflow.com/questions/2259476/rotating-a-point-about-another-point-2d
 

@@ -38,6 +38,11 @@ func (r Rectangle[T]) Area() T {
 	return (rb.X - lt.X) * (rb.Y - lt.Y)
 }
 
+func (r1 Rectangle[T]) Contains(r2 Rectangle[T]) bool {
+	return r2.L >= r1.L && r2.T >= r1.T &&
+		r2.R <= r1.R && r2.B <= r1.B
+}
+
 func (r1 Rectangle[T]) Overlaps(r2 Rectangle[T]) bool {
 	if r1.R < r2.L || r2.R < r1.L {
 		return false

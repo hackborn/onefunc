@@ -37,6 +37,17 @@ func (b *QuadraticBezier) At(t float64) PtF {
 	return PtF{X: x, Y: y}
 }
 
+// PointBounds is the bounding box for my control points. It does
+// not include any point that lies outside the controls.
+func (b *QuadraticBezier) PointBounds() RectF {
+	r := RectF{}
+	r.L, r.R = min(b.P0.X, b.P1.X), max(b.P0.X, b.P1.X)
+	r.L, r.R = min(r.L, b.P2.X), max(r.R, b.P2.X)
+	r.T, r.B = min(b.P0.Y, b.P1.Y), max(b.P0.Y, b.P1.Y)
+	r.T, r.B = min(r.T, b.P2.Y), max(r.B, b.P2.Y)
+	return r
+}
+
 // ---------------------------------------------------------
 // CUBIC BEZIER
 
