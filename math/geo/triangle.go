@@ -61,19 +61,10 @@ normal = calculate_triangle_normal(triangle)
 print("Triangle normal:", normal)
 */
 
-/*
-	func (t Triangle3d[T]) Normal() Point3d[T] {
-		U, V := t.B.Sub(t.A), t.C.Sub(t.A)
-		x := (U.Y * V.Z) - (U.Z * V.Y)
-		y := (U.Z * V.X) - (U.X * V.Z)
-		z := (U.X * V.Y) - (U.Y * V.X)
-		return Point3d[T]{X: x, Y: y, Z: z}
-	}
-*/
-func (t Triangle3d[T]) Normal() Point3d[T] {
+// https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
+func (t Triangle3d[T]) SurfaceNormal() Point3d[T] {
 	U, V := t.B.Sub(t.A), t.C.Sub(t.A)
 	return U.Cross(V)
-	// return U.Cross(V).Normalize()
 }
 
 /*
@@ -95,7 +86,7 @@ func TriangleIntersectionPlaneZ(tri Tri3dF, planeZ float64) (Pt3dF, bool) {
 */
 
 func TrianglePlaneIntersection(tri Tri3dF, triPt Pt3dF, planeTri Tri3dF, planePt Pt3dF) (Pt3dF, bool) {
-	tri_normal, plane_normal := tri.Normal().Normalize(), planeTri.Normal()
+	tri_normal, plane_normal := tri.SurfaceNormal().Normalize(), planeTri.SurfaceNormal()
 	lineA, lineB := tri.A, tri.A.Add(tri_normal)
 	return LinePlaneIntersection(lineA, lineB, plane_normal, planePt)
 }
@@ -155,7 +146,7 @@ public static XYZ LinePlaneIntersection(
 //   R ray_point - ray_direction * dot(ray_point - plane_point, plane_normal) / dot(ray_direction, plane_normal)
 
 func TrianglePlaneIntersection2(tri Tri3dF, triPt Pt3dF, planeTri Tri3dF, planePt Pt3dF) (Pt3dF, bool) {
-	tri_normal, plane_normal := tri.Normal(), planeTri.Normal()
+	tri_normal, plane_normal := tri.SurfaceNormal(), planeTri.SurfaceNormal()
 
 	tri_normal = tri_normal.Normalize()
 	plane_normal = plane_normal.Normalize()
@@ -175,7 +166,7 @@ func TrianglePlaneIntersection5(tri Tri3dF, triPt Pt3dF, planeTri Tri3dF, planeP
 	//func TrianglePlaneIntersection(tri Tri3dF, triPt Pt3dF, plane_normal, planePt Pt3dF) (Pt3dF, bool) {
 	//	def project_ray_to_plane(triangle, point_on_triangle, plane_normal, plane_point):
 
-	tri_normal, plane_normal := tri.Normal(), planeTri.Normal()
+	tri_normal, plane_normal := tri.SurfaceNormal(), planeTri.SurfaceNormal()
 	//	tri_normal := tri.Normal()
 	// Check if triPt is coplanar with the triangle
 	//	if tri_normal.DotProduct(triPt.Sub(tri.A)) == 0. {
