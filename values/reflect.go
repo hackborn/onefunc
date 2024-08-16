@@ -68,3 +68,19 @@ func valueToBool(src reflect.Value) (bool, error) {
 	}
 	return false, fmt.Errorf("unsupported bool conversion on type %T", src.Interface())
 }
+
+func setField(dst reflect.Value, srcType reflect.Type, srcValue reflect.Value, i int) error {
+	srcValueField := srcValue.Field(i)
+	if !srcValueField.CanInterface() {
+		return nil
+	}
+	typeField := srcType.Field(i)
+	dstValueField := dst.FieldByName(typeField.Name)
+	if !dstValueField.IsValid() || !dstValueField.CanInterface() {
+		return nil
+	}
+	if srcValueField.Kind() == dstValueField.Kind() {
+		dstValueField.Set(srcValueField)
+	}
+	return nil
+}

@@ -13,6 +13,27 @@ import (
 )
 
 // ---------------------------------------------------------
+// TEST-COPY
+func TestCopy(t *testing.T) {
+	f := func(dst, src any, wantErr error, want []string) {
+		t.Helper()
+
+		haveErr := Copy(dst, src)
+		if err := jacl.RunErr(haveErr, wantErr); err != nil {
+			t.Fatalf("Has err %v but wants %v", haveErr, wantErr)
+		} else if err := jacl.Run(dst, want...); err != nil {
+			dat, _ := json.Marshal(dst)
+			t.Fatalf("Wants %v but has %v", want, string(dat))
+		}
+	}
+	f(&Data1{}, Data1{A: "a"}, nil, []string{"A=a"})
+	f(&Data2{}, Data1{A: "a"}, nil, []string{"A=a"})
+	f(&Data1{}, Data2{A: "a", B: 10}, nil, []string{"A=a"})
+	//
+	// panic("n")
+}
+
+// ---------------------------------------------------------
 // TEST-GET
 func TestGet(t *testing.T) {
 	table := []struct {
