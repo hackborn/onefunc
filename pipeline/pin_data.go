@@ -28,7 +28,14 @@ type StructField struct {
 	// The name of the field in the original source.
 	Name string
 	// The Go type of the field (string, float64, etc.)
-	Type string
+	// The Type will be unknown for complicated types (maps, etc.).
+	// In that case, you can use the RawType.
+	// And yes, this is a bad design. It is a result of pushing
+	// unhandled cases into this node instead of letting clients
+	// decide for themselves. Future clients should just use RawType
+	// and expect that at some point RawType will be renamed to Type.
+	Type    string
+	RawType string
 	// Tag data for the field.
 	Tag string
 }

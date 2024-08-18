@@ -4,6 +4,7 @@ import (
 	astpkg "go/ast"
 	parserpkg "go/parser"
 	tokenpkg "go/token"
+	typespkg "go/types"
 	"strings"
 
 	"github.com/hackborn/onefunc/pipeline"
@@ -77,14 +78,22 @@ func newStructData(spec *astpkg.TypeSpec, structType *astpkg.StructType, tagFilt
 		//		fmt.Printf("FIELD names %T %v\n", field.Names, field.Names)
 		//		fmt.Printf("FIELD type %T %v\n", field.Type, field.Type)
 		typeName := pipeline.UnknownType
+		rawType := ""
 		switch t := field.Type.(type) {
 		case *astpkg.Ident:
 			typeName = t.Name
+		case *astpkg.ArrayType:
+			rawType = "[]" + typespkg.ExprString(t.Elt)
+		case *astpkg.MapType:
+			rawType = "map[" + typespkg.ExprString(t.Key) + "]" + typespkg.ExprString(t.Value)
 		}
-
+		if rawType == "" {
+			rawType = typeName
+		}
 		sf := pipeline.StructField{Name: field.Names[0].Name,
-			Type: typeName,
-			Tag:  getTag(field, tagFilter),
+			Type:    typeName,
+			RawType: rawType,
+			Tag:     getTag(field, tagFilter),
 		}
 
 		if astpkg.IsExported(sf.Name) {

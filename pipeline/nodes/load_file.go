@@ -107,7 +107,7 @@ func (n *LoadFileNode) getMatches(glob, sep string, fn loadGetMatches) ([]string
 // loadGetMatches gets matches for a glob.
 type loadGetMatches func(glob string) ([]string, error)
 
-// loadReaedFile reads a filename. It is done this way
+// loadReadFile reads a filename. It is done this way
 // so I can wrap os.ReadFile instead of using os.DirFS,
 // which does not handle relative paths.
 type loadReadFile func(path string) ([]byte, error)
