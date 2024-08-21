@@ -84,6 +84,14 @@ func setValue(src, dst reflect.Value, assign SetFunc, flags uint8) error {
 		dst.Set(reflect.ValueOf(int32(src.Int())))
 	case reflect.Int64:
 		dst.Set(reflect.ValueOf(src.Int()))
+	case reflect.Uint64:
+		if src.CanUint() {
+			dst.Set(reflect.ValueOf(src.Uint()))
+		} else if src.CanInt() {
+			dst.Set(reflect.ValueOf(uint64(src.Int())))
+		} else {
+			return fmt.Errorf("field mismatch, have %v want %v", src.Kind(), dst.Kind())
+		}
 	case reflect.String:
 		if src.Kind() != reflect.String {
 			return fmt.Errorf("field mismatch, have %v want %v", src.Kind(), dst.Kind())

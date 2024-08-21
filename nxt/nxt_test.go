@@ -6,6 +6,19 @@ import (
 )
 
 // ---------------------------------------------------------
+// TEST-CHAIN-2
+func TestChain2(t *testing.T) {
+	f := func(nhfn ...NewHandler2Func) {
+		t.Helper()
+
+		c2a := Chain2Args{}
+		Chain2(c2a, nhfn...)
+	}
+	f(newTextFunc("hi"), addTextFunc("", "!"))
+	panic("no")
+}
+
+// ---------------------------------------------------------
 // TEST-CHAIN
 func _TestChain(t *testing.T) {
 	table := []struct {
