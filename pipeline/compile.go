@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/hackborn/onefunc/values"
+	"github.com/hackborn/onefunc/reflect"
 )
 
 // Compile converts an expression into a Pipeline.
@@ -31,8 +31,8 @@ func Compile(expr string) (*Pipeline, error) {
 		pipeline.nodes = append(pipeline.nodes, rn)
 		// apply fixed vars
 		if len(nn.vars) > 0 {
-			req := values.SetRequestFrom(nn.vars)
-			err = values.Set(req, rn.node)
+			req := reflect.SetRequestFrom(nn.vars)
+			err = reflect.Set(req, rn.node)
 			if err != nil {
 				return nil, err
 			}

@@ -49,6 +49,18 @@ type Pin[T any] struct {
 // nodes which are then performed in the context of a runner. Adding
 // something similar would be through the handling args, but it couldn't
 // be multi-stage, where you have a Start() and a Run().
+// * Automatic init vars. Since the pipeline system has a concrete
+// node struct, it has a place the framework can initialize fields.
+// Doing it here requires the factory/per-thread data be fleshed out
+// and echoed back to the running node.
+// * Lifecycle. Along with no waiting, there is no init/start/flush stage,
+// and again, I'm not sure there can be, it's just a different method
+// of pipeline processing. In a unification of pipeline and the handler
+// method, the pipeline HAS TO wait on each node until all pins have
+// had a chance to run, and the handler method CAN'T wait, instead just
+// running things through as soon as possible. Best I can think of
+// offhand is this is a per-node configuration, with some external
+// object that gets introduced to manage it.
 
 // NewHandlerFunc returns a Handler function
 type NewHandler2Func func(args NewHandler2Args) ([]any, *NewHandler2Output)
@@ -76,8 +88,16 @@ type Handler2Args struct {
 	runnerId int64
 }
 
-func Chain2(args Chain2Args, newHandlers ...NewHandler2Func) Pipeline {
-	p := newPipeline()
+// Graph stores instantiated handler nodes.
+type Graph struct {
+}
+
+// Context is a running context, with unique data.
+type Context struct {
+}
+
+func Chain2(args Chain2Args, newHandlers ...NewHandler2Func) Graph {
+	g := Graph{}
 	//	wd := &_wrapperData{}
 	nhargs := NewHandler2Args{Settings: args.Settings}
 	//	nhargs.Next = NullHandler()
@@ -111,7 +131,7 @@ func Chain2(args Chain2Args, newHandlers ...NewHandler2Func) Pipeline {
 		}
 	}
 	//	p.heads = append(p.heads, nhargs.Next)
-	return p
+	return g
 }
 
 type Chain2Args struct {
