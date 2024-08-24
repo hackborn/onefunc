@@ -115,29 +115,48 @@ func (r *runner) isIdentRune(ch rune, i int) bool {
 
 func (r *runner) handleCompare(tok rune, t string) error {
 	switch tok {
-	/*
-		case scanner.Float:
-			tt.tt = floatToken
-		case scanner.Int:
-			tt.tt = intToken
-	*/
+	//		case scanner.Float:
+	//			tt.tt = floatToken
+	case scanner.Int:
+		t = strings.Trim(t, `"`)
+		return r.handleAnyCompare(t)
 	case scanner.String:
 		t = strings.Trim(t, `"`)
-		return r.handleStringCompare(t)
+		return r.handleAnyCompare(t)
 	case scanner.Ident:
-		return r.handleStringCompare(t)
+		return r.handleAnyCompare(t)
 	default:
-		return r.handleStringCompare(t)
+		return r.handleAnyCompare(t)
 	}
 }
 
-func (r *runner) handleStringCompare(s string) error {
-	cmp, ok := r.target.(string)
-	if !ok {
+func (r *runner) handleAnyCompare(s string) error {
+	switch cmp := r.target.(type) {
+	case bool:
+		s = strings.ToLower(s)
+		if cmp == true && (s == "t" || s == "true") {
+			return nil
+		} else if cmp == false && (s == "f" || s == "false") {
+			return nil
+		} else {
+			return fmt.Errorf("Have value \"%v\" but want \"%v\"", cmp, s)
+		}
+	case int, uint, int8, uint8, int16, uint16, int32, uint32, int64, uint64:
+		// There's got to be a clean way to do a direct conversion but I haven't found it.
+		a, erra := strconv.ParseInt(fmt.Sprintf("%v", cmp), 10, 64)
+		b, errb := strconv.ParseInt(s, 10, 64)
+		if erra != nil || errb != nil {
+			return fmt.Errorf("Can't compare int %v to %v (%v %v)", r.target, s, erra, errb)
+		}
+		if a != b {
+			return fmt.Errorf("Have int %v but want %v", cmp, s)
+		}
+	case string:
+		if cmp != r.opts.processValue(s) {
+			return fmt.Errorf("Have value \"%v\" but want \"%v\"", cmp, s)
+		}
+	default:
 		return fmt.Errorf("Can't compare %v with %v", r.target, s)
-	}
-	if cmp != r.opts.processValue(s) {
-		return fmt.Errorf("Have value \"%v\" but want \"%v\"", cmp, s)
 	}
 	return nil
 }

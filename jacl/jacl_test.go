@@ -8,30 +8,27 @@ import (
 // ---------------------------------------------------------
 // TEST-RUN
 func TestRun(t *testing.T) {
-	table := []struct {
-		dst     any
-		exprs   []string
-		wantErr error
-	}{
-		{Field{Name: "a"}, []string{`Name=a`}, nil},
-		{[]Field{{Name: "a"}}, []string{`0/Name=a`}, nil},
-		{Field{}, []string{`{type}="Field"`}, nil},
-		{&Field{}, []string{`{type}="*Field"`}, nil},
-		{map1, []string{`a/Name=blip`}, nil},
-		{map2, []string{`a/b/Name=dash`}, nil},
-		{map2, []string{`a/""/Name=found`}, nil},
-		// Errors
-		{[]Field{{Name: "a"}}, []string{`1/Name=a`}, fmt.Errorf("out of range")},
-	}
-	for i, v := range table {
-		haveErr := Run(v.dst, v.exprs...)
+	f := func(dst any, wantErr error, want ...string) {
+		t.Helper()
 
-		if v.wantErr == nil && haveErr != nil {
-			t.Fatalf("TestRun %v expected no error but has %v", i, haveErr)
-		} else if v.wantErr != nil && haveErr == nil {
-			t.Fatalf("TestRun %v has no error but expected %v", i, v.wantErr)
+		haveErr := Run(dst, want...)
+		if wantErr == nil && haveErr != nil {
+			t.Fatalf("TestRun expected no error but has %v", haveErr)
+		} else if wantErr != nil && haveErr == nil {
+			t.Fatalf("TestRun has no error but expected %v", wantErr)
 		}
 	}
+	f(Field{Name: "a"}, nil, `Name=a`)
+	f([]Field{{Name: "a"}}, nil, `0/Name=a`)
+	f(Field{}, nil, `{type}="Field"`)
+	f(&Field{}, nil, `{type}="*Field"`)
+	f(map1, nil, `a/Name=blip`)
+	f(map1, nil, `b/Name=bop`, `b/IV=10`)
+	f(map1, nil, `ct/Name=":)"`, `ct/BV=true`)
+	f(map2, nil, `a/b/Name=dash`)
+	f(map2, nil, `a/""/Name=found`)
+	// Errors
+	f([]Field{{Name: "a"}}, fmt.Errorf("out of range"), `1/Name=a`)
 }
 
 // ---------------------------------------------------------
@@ -72,17 +69,21 @@ type Field struct {
 	Name string
 	IV   int
 	SV   string
+	BV   bool
 }
 
 var (
 	map1 = map[string]Field{
-		"a": Field{Name: "blip", SV: "bloop"},
+		"a":  {Name: "blip", SV: "bloop"},
+		"b":  {Name: "bop", IV: 10},
+		"ct": {Name: ":)", BV: true},
+		"cf": {Name: ":(", BV: false},
 	}
 
 	map2 = map[string]map[string]Field{
-		"a": map[string]Field{
-			"":  Field{Name: "found"},
-			"b": Field{Name: "dash"},
+		"a": {
+			"":  {Name: "found"},
+			"b": {Name: "dash"},
 		},
 	}
 )
