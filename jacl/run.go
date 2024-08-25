@@ -156,7 +156,13 @@ func (r *runner) handleAnyCompare(s string) error {
 			return fmt.Errorf("Have value \"%v\" but want \"%v\"", cmp, s)
 		}
 	default:
-		return fmt.Errorf("Can't compare %v with %v", r.target, s)
+		// Not sure if this is the best way to handle this, but for unknown types
+		// convert them to string and compare. It's the only way I can think of
+		// to handle custom types like bitmasks.
+		if fmt.Sprintf("%v", cmp) != s {
+			return fmt.Errorf("Have value \"%v\" but want \"%v\"", cmp, s)
+		}
+		//		return fmt.Errorf("Can't compare %v with %v", r.target, s)
 	}
 	return nil
 }
