@@ -3,6 +3,8 @@ package reflect
 import (
 	"fmt"
 	"reflect"
+
+	"golang.org/x/exp/constraints"
 )
 
 // Set sets the value of each field to the supplied value.
@@ -58,9 +60,7 @@ func setValue(src, dst reflect.Value, assign SetFunc, flags uint8) error {
 		if kindIsFloat(src.Kind()) {
 			dst.Set(reflect.ValueOf(float32(src.Float())))
 		} else if flags&FuzzyFloats != 0 {
-			if kindIsInt(src.Kind()) {
-				dst.Set(reflect.ValueOf(float32(src.Int())))
-			}
+			return setNumberValue[float32](src, dst)
 		} else {
 			return fmt.Errorf("can't assign %v to %v", src.Kind(), dst.Kind())
 		}
@@ -68,30 +68,20 @@ func setValue(src, dst reflect.Value, assign SetFunc, flags uint8) error {
 		if kindIsFloat(src.Kind()) {
 			dst.Set(reflect.ValueOf(src.Float()))
 		} else if flags&FuzzyFloats != 0 {
-			if kindIsInt(src.Kind()) {
-				dst.Set(reflect.ValueOf(float64(src.Int())))
-			}
+			return setNumberValue[float64](src, dst)
 		} else {
 			return fmt.Errorf("can't assign %v to %v", src.Kind(), dst.Kind())
 		}
 	case reflect.Int:
-		if kindIsInt(src.Kind()) {
-			dst.Set(reflect.ValueOf(int(src.Int())))
-		}
+		return setNumberValue[int](src, dst)
 	case reflect.Int8:
-		dst.Set(reflect.ValueOf(int8(src.Int())))
+		return setNumberValue[int8](src, dst)
 	case reflect.Int32:
-		dst.Set(reflect.ValueOf(int32(src.Int())))
+		return setNumberValue[int32](src, dst)
 	case reflect.Int64:
-		dst.Set(reflect.ValueOf(src.Int()))
+		return setNumberValue[int64](src, dst)
 	case reflect.Uint64:
-		if src.CanUint() {
-			dst.Set(reflect.ValueOf(src.Uint()))
-		} else if src.CanInt() {
-			dst.Set(reflect.ValueOf(uint64(src.Int())))
-		} else {
-			return fmt.Errorf("field mismatch, have %v want %v", src.Kind(), dst.Kind())
-		}
+		return setNumberValue[uint64](src, dst)
 	case reflect.String:
 		if src.Kind() != reflect.String {
 			return fmt.Errorf("field mismatch, have %v want %v", src.Kind(), dst.Kind())
@@ -99,6 +89,19 @@ func setValue(src, dst reflect.Value, assign SetFunc, flags uint8) error {
 		dst.Set(reflect.ValueOf(src.String()))
 	default:
 		return fmt.Errorf("unsupported field type %v", dst.Kind())
+	}
+	return nil
+}
+
+func setNumberValue[T constraints.Integer | constraints.Float](src, dst reflect.Value) error {
+	if src.CanUint() {
+		dst.Set(reflect.ValueOf(T(src.Uint())))
+	} else if src.CanInt() {
+		dst.Set(reflect.ValueOf(T(src.Int())))
+	} else if src.CanFloat() {
+		dst.Set(reflect.ValueOf(T(src.Float())))
+	} else {
+		return fmt.Errorf("field mismatch, have %v want %v", src.Kind(), dst.Kind())
 	}
 	return nil
 }

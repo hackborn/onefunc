@@ -22,6 +22,15 @@ import (
 // Example term:
 // "0/Name=Ireland"
 // where the target is a slice of structs that have a Name field.
+//
+// Builtin keywords are supported for specific comparisons:
+// "{type}" will compare against the type, i.e.
+//
+//	"{type}=Event" will be true if the type is named Event.
+//
+// "{count}" will compare against the length of slices and maps, i.e.
+//
+//	"{count}=2" will be true if the value is a slice with length of 2.
 func Run(target any, terms ...string) error {
 	return RunOpts(Opts{}, target, terms...)
 }
@@ -84,7 +93,7 @@ func (r *runner) runTerm(term string) error {
 		}
 
 		text := scan.TokenText()
-		// If there are any tokens passed the comparison, error
+		// If there are any tokens past the comparison, error
 		if stage == finishedCompare {
 			return fmt.Errorf("expr \"%v\" contains tokens past the comparison (%v)", term, text)
 		}
@@ -217,6 +226,8 @@ func (r *runner) handlePathString(s string) error {
 	if s == keywordType {
 		r.target = getTypeName(r.target)
 		return nil
+	} else if s == keywordCount {
+		return r.handlePathCount()
 	}
 
 	targetValue := reflect.ValueOf(r.target)
@@ -256,6 +267,17 @@ func (r *runner) handlePathStringOnMap(fieldName string) error {
 	return nil
 }
 
+func (r *runner) handlePathCount() error {
+	v := reflect.ValueOf(r.target)
+	switch v.Kind() {
+	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice, reflect.String:
+		r.target = v.Len()
+		return nil
+	default:
+		return fmt.Errorf("%v on invalid type %T", keywordCount, r.target)
+	}
+}
+
 // ---------------------------------------------------------
 // SUPPORT
 
@@ -282,5 +304,6 @@ const (
 )
 
 const (
-	keywordType = `{type}`
+	keywordType  = `{type}`
+	keywordCount = `{count}`
 )
