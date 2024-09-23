@@ -87,6 +87,19 @@ func setValue(src, dst reflect.Value, assign SetFunc, flags uint8) error {
 			return fmt.Errorf("field mismatch, have %v want %v", src.Kind(), dst.Kind())
 		}
 		dst.Set(reflect.ValueOf(src.String()))
+		/*
+			case reflect.Slice:
+			if src.Kind() != reflect.Slice {
+				return fmt.Errorf("attempting to set %v on %v", src.Kind(), dst.Kind())
+			}
+			fmt.Println("set??")
+			dst.Grow(src.Len())
+			dst.SetLen(src.Len())
+			reflect.Copy(dst, src)
+			//		for i := 0; i < src.Len(); i++ {
+			//			dst.
+			//		}
+		*/
 	default:
 		return fmt.Errorf("unsupported field type %v", dst.Kind())
 	}

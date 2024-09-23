@@ -95,17 +95,6 @@ func XYToIndexFast[T constraints.Integer](x, y, width T) T {
 	return (y * width) + x
 }
 
-func FloatsEqual(a, b float64) bool {
-	const eps = 0.000000000000001
-	diff := math.Abs(a - b)
-	return diff < eps
-}
-
-func FloatsEqualTol(a, b, tolerance float64) bool {
-	diff := math.Abs(a - b)
-	return diff < tolerance
-}
-
 // Orient answers whether C is left / clockwise to direct
 // segment AB. Response:
 // 0: C is collinear
