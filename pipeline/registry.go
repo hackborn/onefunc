@@ -3,9 +3,8 @@ package pipeline
 import (
 	"fmt"
 	"strings"
-	"sync"
 
-	"github.com/hackborn/onefunc/lock"
+	"github.com/hackborn/onefunc/sync"
 )
 
 type NewNodeFunc func() Node
@@ -35,7 +34,7 @@ type registry struct {
 }
 
 func (r *registry) register(name string, f factory) error {
-	lock.Locker(&r.lock).Unlock()
+	sync.Lock(&r.lock).Unlock()
 	if _, ok := r.factories[name]; ok {
 		return fmt.Errorf("Node \"%v\" already registered", name)
 	}
@@ -52,7 +51,7 @@ func (r *registry) new(name string) (Node, error) {
 }
 
 func (r *registry) get(name string) (factory, bool) {
-	lock.Locker(&r.lock).Unlock()
+	sync.Lock(&r.lock).Unlock()
 	f, ok := r.factories[name]
 	return f, ok
 }

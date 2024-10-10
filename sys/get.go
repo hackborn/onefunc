@@ -9,7 +9,7 @@ func Get(keys ...string) (Info, error) {
 }
 
 type Info struct {
-	// Path to application data folder.
+	// Path to application data folder. Uses filepath separator.
 	AppDataPath string
 
 	// The system-reported platform DPI. Note that this might

@@ -1,9 +1,7 @@
 package nxt
 
 import (
-	"sync"
-
-	"github.com/hackborn/onefunc/lock"
+	"github.com/hackborn/onefunc/sync"
 )
 
 func wrapperFunc(f Factory, wd *_wrapperData, next Handler) Handler {
@@ -27,13 +25,13 @@ type _wrapperData struct {
 }
 
 func (d *_wrapperData) Get(id any) (any, bool) {
-	defer lock.Locker(d.locker).Unlock()
+	defer sync.Lock(d.locker).Unlock()
 	ans, ok := d.data[id]
 	return ans, ok
 }
 
 func (d *_wrapperData) Set(id any, data any) {
-	defer lock.Locker(d.locker).Unlock()
+	defer sync.Lock(d.locker).Unlock()
 	d.data[id] = data
 }
 

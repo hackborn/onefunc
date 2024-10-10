@@ -52,7 +52,7 @@ func (r Range[T]) ClampFast(value T) T {
 	}
 }
 
-// Clip returns the value clipped to my range.
+// Midpoint returns the center of the range.
 func (p Range[T]) Midpoint() T {
 	return T((p.Min / 2) + (p.Max / 2))
 }

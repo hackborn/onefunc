@@ -1,4 +1,4 @@
-package lock
+package sync
 
 import (
 	"sync"
@@ -41,16 +41,16 @@ func Write(rw *sync.RWMutex) WriteAuto {
 	return WriteAuto{rw}
 }
 
-// struct LockerAuto manages an automatic Locker lock.
-type LockerAuto struct {
+// AutoLock manages an automatic Locker lock.
+type AutoLock struct {
 	m sync.Locker
 }
 
-func (l LockerAuto) Unlock() {
+func (l AutoLock) Unlock() {
 	l.m.Unlock()
 }
 
-func Locker(m sync.Locker) LockerAuto {
+func Lock(m sync.Locker) AutoLock {
 	m.Lock()
-	return LockerAuto{m}
+	return AutoLock{m}
 }

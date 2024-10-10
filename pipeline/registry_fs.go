@@ -3,9 +3,8 @@ package pipeline
 import (
 	"fmt"
 	"io/fs"
-	"sync"
 
-	"github.com/hackborn/onefunc/lock"
+	"github.com/hackborn/onefunc/sync"
 )
 
 // RegisterFs adds a named file system to the registry.
@@ -31,7 +30,7 @@ func newRegistryFs() *registryFs {
 }
 
 func (r *registryFs) Register(name string, fsys fs.FS) error {
-	defer lock.Locker(&r.lock).Unlock()
+	defer sync.Lock(&r.lock).Unlock()
 	if _, ok := r.systems[name]; ok {
 		return fmt.Errorf(`FS "` + name + `" already registered`)
 	}
@@ -40,7 +39,7 @@ func (r *registryFs) Register(name string, fsys fs.FS) error {
 }
 
 func (r *registryFs) Find(name string) (fs.FS, bool) {
-	defer lock.Locker(&r.lock).Unlock()
+	defer sync.Lock(&r.lock).Unlock()
 	if f, ok := r.systems[name]; ok {
 		return f, ok
 	}

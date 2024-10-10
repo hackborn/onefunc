@@ -7,10 +7,9 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"sync"
 
 	oferrors "github.com/hackborn/onefunc/errors"
-	"github.com/hackborn/onefunc/lock"
+	"github.com/hackborn/onefunc/sync"
 )
 
 type tree = map[string]any
@@ -65,7 +64,7 @@ func (s Settings) MustString(path, fallback string) string {
 // If path points to a string slice, it's returned,
 // otherwise the current keys are returned.
 func (s Settings) Strings(path string) []string {
-	defer lock.Read(s.rw).Unlock()
+	defer sync.Read(s.rw).Unlock()
 	p := strings.Split(path, pathSeparator)
 	p = slices.DeleteFunc(p, func(n string) bool {
 		return len(n) < 1
@@ -174,7 +173,7 @@ func (s Settings) flatBoolList(p string) (bool, bool) {
 // walking down the path. The path can have components
 // separated with "/".
 func (s Settings) Subset(path string) Settings {
-	defer lock.Read(s.rw).Unlock()
+	defer sync.Read(s.rw).Unlock()
 	return s.lockedSubset(path)
 }
 
@@ -246,7 +245,7 @@ func (s Settings) SetValue(key string, value interface{}) error {
 		value = make(map[string]any)
 	}
 
-	defer lock.Write(s.rw).Unlock()
+	defer sync.Write(s.rw).Unlock()
 	s.t[key] = value
 	s.t[changedKey] = true
 	return nil
@@ -273,7 +272,7 @@ func (s Settings) WalkKeys(fn WalkKeysFunc) error {
 }
 
 func (s Settings) asJson() ([]byte, error) {
-	defer lock.Read(s.rw).Unlock()
+	defer sync.Read(s.rw).Unlock()
 	s.lockedRemotePrivateKeys()
 	b, err := json.Marshal(s.t)
 	return b, err
@@ -296,7 +295,7 @@ func (s Settings) Print() {
 type getFlatTypeFunc[T any] func(s Settings, path string) (T, bool)
 
 func getType[T any](s Settings, path string, getFn getFlatTypeFunc[T]) (T, bool) {
-	defer lock.Read(s.rw).Unlock()
+	defer sync.Read(s.rw).Unlock()
 	p := strings.Split(path, pathSeparator)
 	switch len(p) {
 	case 0:

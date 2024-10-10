@@ -1,11 +1,10 @@
 package msg
 
 import (
-	"sync"
 	"sync/atomic"
 
-	"github.com/hackborn/onefunc/lock"
 	ofstrings "github.com/hackborn/onefunc/strings"
+	"github.com/hackborn/onefunc/sync"
 )
 
 func NewRouter() *Router {
@@ -51,7 +50,7 @@ func (r *Router) sub(pattern string, value any) Subscription {
 		r.added.Add(1)
 		sub = subs.add(value)
 	}
-	defer lock.Write(&r.mut).Unlock()
+	defer sync.Write(&r.mut).Unlock()
 	r.r.Edit(pattern, fn)
 	return sub
 }
@@ -60,7 +59,7 @@ func (r *Router) unsub(pattern string, id int64) {
 	fn := func(n int64, subs *routerSubscriptions) {
 		subs.remove(id)
 	}
-	defer lock.Write(&r.mut).Unlock()
+	defer sync.Write(&r.mut).Unlock()
 	if len(r.r.patterns) < 1 {
 		return
 	}
@@ -80,7 +79,7 @@ func (r *Router) visitRetained(pattern string, fn retainedVisitFunc) {
 }
 
 func (r *Router) readVisit(topic string, fn visitFunc[routerSubscriptions]) {
-	defer lock.Read(&r.mut).Unlock()
+	defer sync.Read(&r.mut).Unlock()
 	r.r.Visit(topic, fn)
 }
 
