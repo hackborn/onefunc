@@ -1,8 +1,11 @@
 package io
 
 import (
+	"cmp"
+	"encoding/json"
 	"fmt"
 	"io/fs"
+	"os"
 )
 
 // ReadString returns the first matching file as a string.
@@ -14,7 +17,7 @@ func ReadString(fsys fs.FS, globPattern string) (string, error) {
 	return string(d), nil
 }
 
-// ReadString returns the contents of the first matching file.
+// Read returns the byte of the first matching file.
 func Read(fsys fs.FS, globPattern string) ([]byte, error) {
 	matches, err := fs.Glob(fsys, globPattern)
 	if err != nil {
@@ -28,4 +31,12 @@ func Read(fsys fs.FS, globPattern string) ([]byte, error) {
 		return dat, nil
 	}
 	return nil, fmt.Errorf("No match for \"%v\"", globPattern)
+}
+
+// ReadJson reads the file and unmarshals to the type as JSON
+func ReadJson[T any](path string) (T, error) {
+	var t T
+	dat, err := os.ReadFile(path)
+	err = cmp.Or(err, json.Unmarshal(dat, &t))
+	return t, err
 }
