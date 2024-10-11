@@ -40,3 +40,12 @@ func ReadJson[T any](path string) (T, error) {
 	err = cmp.Or(err, json.Unmarshal(dat, &t))
 	return t, err
 }
+
+// WriteJson writes the any to the file as JSON.
+func WriteJson(path string, v any) error {
+	dat, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, dat, 0666)
+}
