@@ -1,6 +1,7 @@
 package cfg
 
 import (
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -122,5 +123,33 @@ func WithKeys(src Settings, keys []string) Option {
 			}
 		}
 		b.AddSettings(s)
+	}
+}
+
+// WithMap adds all keys in the supplied map.
+// Note this is only a shallow copy of the top layer,
+// anything below that is the original reference.
+func WithMap(m map[string]any) Option {
+	return func(b Builder, eb oferrors.Block) {
+		s := b.NewSettings()
+		for k, v := range m {
+			s[k] = v
+		}
+		b.AddSettings(s)
+	}
+}
+
+// WithSettings acts as a deep copy on src.
+func WithSettings(src Settings) Option {
+	return func(b Builder, eb oferrors.Block) {
+		t := b.NewSettings()
+		dat, err := src.asJson()
+		err = cmp.Or(err, json.Unmarshal(dat, t))
+		if err != nil {
+			eb.AddError(err)
+		} else {
+			removePrivateKeys(t)
+			b.AddSettings(t)
+		}
 	}
 }

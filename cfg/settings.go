@@ -46,6 +46,10 @@ func SaveSettings(path string, s Settings) error {
 	return err
 }
 
+func WriteJson(s Settings) ([]byte, error) {
+	return s.asJson()
+}
+
 // String answers the string value at the given path.
 func (s Settings) String(path string) (string, bool) {
 	return getType(s, path, leafString)
@@ -273,15 +277,19 @@ func (s Settings) WalkKeys(fn WalkKeysFunc) error {
 
 func (s Settings) asJson() ([]byte, error) {
 	defer sync.Read(s.rw).Unlock()
-	s.lockedRemotePrivateKeys()
+	s.lockedRemovePrivateKeys()
 	b, err := json.Marshal(s.t)
 	return b, err
 }
 
-func (s Settings) lockedRemotePrivateKeys() {
-	for k, _ := range s.t {
+func (s Settings) lockedRemovePrivateKeys() {
+	removePrivateKeys(s.t)
+}
+
+func removePrivateKeys(t map[string]any) {
+	for k, _ := range t {
 		if strings.HasPrefix(k, privateKeyPrefix) {
-			delete(s.t, k)
+			delete(t, k)
 		}
 	}
 }
