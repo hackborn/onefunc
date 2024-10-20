@@ -78,6 +78,21 @@ func (r1 Rectangle[T]) Add(l, t, r, b T) Rectangle[T] {
 	}
 }
 
+// MergePoint will expand the bounds to include the point.
+func (r1 Rectangle[T]) MergePoint(x, y T) Rectangle[T] {
+	if x < r1.L {
+		r1.L = x
+	} else if x > r1.R {
+		r1.R = x
+	}
+	if y < r1.T {
+		r1.T = y
+	} else if y > r1.B {
+		r1.B = y
+	}
+	return r1
+}
+
 func ConvertRect[A Number, B Number](a Rectangle[A]) Rectangle[B] {
 	return Rectangle[B]{L: B(a.L),
 		T: B(a.T),

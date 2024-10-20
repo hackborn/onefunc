@@ -2,6 +2,7 @@ package cfg
 
 import (
 	"embed"
+	"fmt"
 	"os"
 	"reflect"
 	"sort"
@@ -179,6 +180,23 @@ func TestStrings(t *testing.T) {
 			t.Fatalf("TestStrings %v has \"%v\" but wants \"%v\"", i, have, v.want)
 		}
 	}
+}
+
+// ---------------------------------------------------------
+// TEST-HEX-TO-UINT8
+func TestHexToUint8(t *testing.T) {
+	f := func(s string, idx int, fallback uint8, want uint8) {
+		t.Helper()
+
+		fmt.Println("TEST")
+		have := hexToUint8(s, idx, fallback)
+		if want != have {
+			t.Fatalf("TestHexToUint8 wants %v but has %v", want, have)
+		}
+	}
+	f("s", 0, 10, 10)
+	f("FF", 0, 10, 255)
+	f("ff", 0, 10, 255)
 }
 
 // ---------------------------------------------------------
