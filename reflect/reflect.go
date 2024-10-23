@@ -6,6 +6,18 @@ import (
 	"strings"
 )
 
+func GetFloat64(a any) (float64, error) {
+	v := reflect.ValueOf(a)
+	if v.CanFloat() {
+		return v.Float(), nil
+	} else if v.CanInt() {
+		return float64(v.Int()), nil
+	} else if v.CanUint() {
+		return float64(v.Uint()), nil
+	}
+	return 0., fmt.Errorf("Value can not be translated to a float")
+}
+
 func getReflectFieldValue(fieldName string, structValue reflect.Value) (reflect.Value, error) {
 	field := structValue.FieldByName(fieldName)
 	if !field.IsValid() {

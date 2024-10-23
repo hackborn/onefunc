@@ -4,6 +4,10 @@ import (
 	"image/color"
 	"strconv"
 	"strings"
+
+	"github.com/hackborn/onefunc/math/geo"
+	"github.com/hackborn/onefunc/reflect"
+	"github.com/hackborn/onefunc/sync"
 )
 
 // A series of additional translations, separated from the main
@@ -33,6 +37,45 @@ func (s Settings) NRGBA(path string) (color.NRGBA, bool) {
 		}, true
 	}
 	return color.NRGBA{}, false
+}
+
+// MustRectF returns a rect. The path must point to the
+// parent of keys that can be "l", "t", "r", "b", or some
+// combination (i.e. "lr").
+func (s Settings) MustRectF(path string, r geo.RectF) geo.RectF {
+	if v, ok := s.RectF(path); ok {
+		return v
+	}
+	return r
+}
+
+// MustRectF returns a rect. The path must point to the
+// parent of keys that can be "l", "t", "r", "b", or some
+// combination (i.e. "lr").
+func (s Settings) RectF(path string) (geo.RectF, bool) {
+	r := geo.RectF{}
+	defer sync.Read(s.rw).Unlock()
+	sub := s.lockedSubset(path)
+	if len(sub.t) < 1 {
+		return r, false
+	}
+	for k, _v := range sub.t {
+		if v, err := reflect.GetFloat64(_v); err == nil {
+			for _, rune := range strings.ToLower(k) {
+				switch rune {
+				case 'l':
+					r.L = v
+				case 't':
+					r.T = v
+				case 'r':
+					r.R = v
+				case 'b':
+					r.B = v
+				}
+			}
+		}
+	}
+	return r, true
 }
 
 func hexToUint8(s string, idx int, fallback uint8) uint8 {

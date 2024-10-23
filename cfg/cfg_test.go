@@ -2,13 +2,13 @@ package cfg
 
 import (
 	"embed"
-	"fmt"
 	"os"
 	"reflect"
 	"sort"
 	"testing"
 
 	"github.com/hackborn/onefunc/jacl"
+	"github.com/hackborn/onefunc/math/geo"
 )
 
 func TestMain(m *testing.M) {
@@ -85,6 +85,28 @@ func TestInt64(t *testing.T) {
 			t.Fatalf("TestInt64 %v has \"%v\" but wants \"%v\"", i, have, v.want)
 		}
 	}
+}
+
+// ---------------------------------------------------------
+// TEST-RECT
+func TestRect(t *testing.T) {
+	f := func(opts []Option, path string, want geo.RectI) {
+		t.Helper()
+
+		s, haveErr := NewSettings(opts...)
+		havef, ok := s.RectF(path)
+		have := geo.ConvertRect[float64, int](havef)
+		if haveErr != nil {
+			t.Fatalf("TestRect has err %v", haveErr)
+		} else if !ok {
+			t.Fatalf("TestRect has !ok for some reason")
+		} else if !geo.RectsEqual(have, want) {
+			t.Fatalf("TestRect wants %v but has %v", want, have)
+		}
+	}
+
+	optC := []Option{WithFS(dataFs, "testdata/c.json")}
+	f(optC, "rect1", geo.Rect(4, 8, 4, 12))
 }
 
 // ---------------------------------------------------------
@@ -188,7 +210,6 @@ func TestHexToUint8(t *testing.T) {
 	f := func(s string, idx int, fallback uint8, want uint8) {
 		t.Helper()
 
-		fmt.Println("TEST")
 		have := hexToUint8(s, idx, fallback)
 		if want != have {
 			t.Fatalf("TestHexToUint8 wants %v but has %v", want, have)

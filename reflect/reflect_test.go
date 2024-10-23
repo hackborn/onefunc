@@ -10,6 +10,7 @@ import (
 
 	oferrors "github.com/hackborn/onefunc/errors"
 	"github.com/hackborn/onefunc/jacl"
+	"github.com/hackborn/onefunc/math/geo"
 )
 
 // ---------------------------------------------------------
@@ -58,6 +59,30 @@ func TestGet(t *testing.T) {
 			t.Fatalf("TestGet %v has \"%v\" but wanted \"%v\"", i, have, v.want)
 		}
 	}
+}
+
+// ---------------------------------------------------------
+// TEST-GET-FLOAT-64
+func TestGetFloat64(t *testing.T) {
+	f := func(src any, wantErr error, want float64) {
+		t.Helper()
+
+		have, haveErr := GetFloat64(src)
+		if err := jacl.RunErr(haveErr, wantErr); err != nil {
+			t.Fatalf("Has err %v but wants %v", haveErr, wantErr)
+		} else if geo.FloatsEqualTol(have, want, 0.0001) == false {
+			t.Fatalf("Wants %v but has %v", want, have)
+		}
+	}
+	f(10, nil, 10.)
+	f(int(10), nil, 10.)
+	f(int8(10), nil, 10.)
+	f(int64(10), nil, 10.)
+	f(uint8(10), nil, 10.)
+	f(uint64(10), nil, 10.)
+	f(10., nil, 10.)
+	f(float32(10), nil, 10.)
+	f(float64(10), nil, 10.)
 }
 
 // ---------------------------------------------------------
