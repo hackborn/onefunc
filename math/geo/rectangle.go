@@ -43,6 +43,12 @@ func (r1 Rectangle[T]) Contains(r2 Rectangle[T]) bool {
 		r2.R <= r1.R && r2.B <= r1.B
 }
 
+// ContainsPoint returns true if the point is inside the
+// half-closed rectangle.
+func (r Rectangle[T]) ContainsPoint(pt Point[T]) bool {
+	return pt.X >= r.L && pt.X < r.R && pt.Y >= r.T && pt.Y < r.B
+}
+
 func (r1 Rectangle[T]) Overlaps(r2 Rectangle[T]) bool {
 	if r1.R < r2.L || r2.R < r1.L {
 		return false
