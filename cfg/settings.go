@@ -233,10 +233,13 @@ func (s Settings) Length(path string) int {
 	return 0
 }
 
+// Disabled. I think it makes more sense to make Settings
+// immutable, and redesign cases where I was editing them.
+/*
 // SetValue sets the given key to the given value.
 // `value` can be nil, and an empty map will be created.
 // Currently the key can not contain a path element; if you
-// want to se a path, find the subset first.
+// want to set a path, find the subset first.
 func (s Settings) SetValue(key string, value interface{}) error {
 	if s.rw == nil || s.t == nil {
 		return fmt.Errorf("invalid state")
@@ -259,7 +262,7 @@ func (s Settings) IsChanged() bool {
 	v, _ := s.Bool(changedKey)
 	return v
 }
-
+*/
 // WalkKeys iterates the keys.
 // You can get the same info from calling Strings(), which
 // is easier to use but less efficient. Not sure that I'll
