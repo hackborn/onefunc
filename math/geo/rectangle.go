@@ -12,6 +12,14 @@ type Rectangle[T Number] struct {
 	L, T, R, B T
 }
 
+func (r Rectangle[T]) Width() T {
+	return r.R - r.L
+}
+
+func (r Rectangle[T]) Height() T {
+	return r.B - r.T
+}
+
 func (r Rectangle[T]) LT() Point[T] {
 	return Pt(r.L, r.T)
 }
