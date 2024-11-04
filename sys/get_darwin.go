@@ -1,4 +1,4 @@
-//go:build darwin
+//go:build darwin && !ios
 
 package sys
 
@@ -55,10 +55,18 @@ func get(keys ...string) (Info, error) {
 	errs := []error{}
 	for _, key := range keys {
 		switch key {
-		case AppDataPath:
-			path, err := appDataPathFn()
+		case AppPath:
+			paths, err := appDataPathFn()
 			errs = append(errs, err)
-			info.AppDataPath = path
+			info.AppPath = paths.AppPath
+		case AppDocumentsPath:
+			paths, err := appDataPathFn()
+			errs = append(errs, err)
+			info.AppDocumentsPath = paths.AppDocumentsPath
+		case AppCachePath:
+			paths, err := appDataPathFn()
+			errs = append(errs, err)
+			info.AppCachePath = paths.AppCachePath
 		case Dpi:
 			size := C.getScreenDpi()
 			if size.width == 0 || size.height == 0 {
@@ -75,20 +83,39 @@ func get(keys ...string) (Info, error) {
 	return info, errors.Join(errs...)
 }
 
-func makeAppDataPath() (string, error) {
+func makeAppDataPath() (Info, error) {
+	info := Info{}
 	if appName == "" {
-		return "", fmt.Errorf("platform.Get: Missing app name, must first Set(SetAppName)")
+		return info, fmt.Errorf("platform.Get: Missing app name, must first Set(SetAppName)")
 	}
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return "", fmt.Errorf("platform.Get: %w", err)
+		return info, fmt.Errorf("platform.Get: %w", err)
 	}
-	path := filepath.Join(homeDir, "Library", "Application Support", appName)
-	err = os.Mkdir(path, 0750)
+
+	// -- APP PATH
+	appPath := filepath.Join(homeDir, "Library", "Application Support", appName)
+	err = os.Mkdir(appPath, 0750)
 	if err != nil && !os.IsExist(err) {
-		return "", fmt.Errorf("platform.Get: %w", err)
+		return info, fmt.Errorf("platform.Get: %w", err)
 	}
-	return path, nil
+	info.AppPath = appPath
+
+	// -- APP DOCUMENTS PATH
+	// TODO: This is compatibility with how I currently have it, but pretty sure
+	// this is not where macOS should be storing documents.
+	info.AppDocumentsPath = appPath
+
+	// -- APP CACHE PATH
+	// TODO: This is just made-up, clients might want it somewhere else.
+	appCachePath := filepath.Join(homeDir, "Library", "Application Support", appName, "cache")
+	err = os.Mkdir(appCachePath, 0750)
+	if err != nil && !os.IsExist(err) {
+		return info, fmt.Errorf("platform.Get: %w", err)
+	}
+	info.AppCachePath = appCachePath
+
+	return info, nil
 }
 
 var appDataPathFn = sync.OnceValues(makeAppDataPath)
