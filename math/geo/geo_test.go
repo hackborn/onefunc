@@ -305,6 +305,22 @@ func TestRatio(t *testing.T) {
 }
 
 // ---------------------------------------------------------
+// TEST-RECT-CLIP
+func TestRectClip(t *testing.T) {
+	f := func(r1, r2 RectI, want RectI) {
+		t.Helper()
+
+		have := r1.Clip(r2)
+		if have != want {
+			t.Fatalf("Has %v but wants %v", have, want)
+		}
+	}
+	f(Rect(0, 0, 10, 10), Rect(0, 0, 10, 10), Rect(0, 0, 10, 10))
+	f(Rect(0, 0, 10, 10), Rect(5, 5, 20, 20), Rect(5, 5, 10, 10))
+	f(Rect(0, 0, 10, 10), Rect(20, 20, 30, 30), Rect(20, 20, 10, 10))
+}
+
+// ---------------------------------------------------------
 // TEST-NORMALIZE
 func TestNormalize(t *testing.T) {
 	table := []struct {

@@ -12,6 +12,10 @@ type Rectangle[T Number] struct {
 	L, T, R, B T
 }
 
+func (r Rectangle[T]) IsZero() bool {
+	return r.L == 0 && r.T == 0 && r.R == 0 && r.B == 0
+}
+
 func (r Rectangle[T]) Width() T {
 	return r.R - r.L
 }
@@ -76,6 +80,15 @@ func (r1 Rectangle[T]) Union(r2 Rectangle[T]) Rectangle[T] {
 	r1.T = min(r1.T, r2.T)
 	r1.R = max(r1.R, r2.R)
 	r1.B = max(r1.B, r2.B)
+	return r1
+}
+
+// Clip returns r1 clipped by r2.
+func (r1 Rectangle[T]) Clip(r2 Rectangle[T]) Rectangle[T] {
+	r1.L = max(r1.L, r2.L)
+	r1.T = max(r1.T, r2.T)
+	r1.R = min(r1.R, r2.R)
+	r1.B = min(r1.B, r2.B)
 	return r1
 }
 
