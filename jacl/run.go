@@ -67,9 +67,12 @@ type runner struct {
 	first  errors.FirstBlock
 	opts   Opts
 	target any
+	// currentTerm is only stored for error reporting.
+	currentTerm string
 }
 
 func (r *runner) runTerm(term string) error {
+	r.currentTerm = term
 	var scan scanner.Scanner
 	scan.Init(strings.NewReader(term))
 	scan.Whitespace = 0
@@ -148,7 +151,7 @@ func (r *runner) handleAnyCompare(s string) error {
 		} else if cmp == false && (s == "f" || s == "false") {
 			return nil
 		} else {
-			return fmt.Errorf("Have value \"%v\" but want \"%v\"", cmp, s)
+			return fmt.Errorf("Term \"%v\" has value \"%v\" but wants \"%v\"", r.currentTerm, cmp, s)
 		}
 	case int, uint, int8, uint8, int16, uint16, int32, uint32, int64, uint64:
 		// There's got to be a clean way to do a direct conversion but I haven't found it.
@@ -162,14 +165,14 @@ func (r *runner) handleAnyCompare(s string) error {
 		}
 	case string:
 		if cmp != r.opts.processValue(s) {
-			return fmt.Errorf("Have value \"%v\" but want \"%v\"", cmp, s)
+			return fmt.Errorf("Term \"%v\" has value \"%v\" but wants \"%v\"", r.currentTerm, cmp, s)
 		}
 	default:
 		// Not sure if this is the best way to handle this, but for unknown types
 		// convert them to string and compare. It's the only way I can think of
 		// to handle custom types like bitmasks.
 		if fmt.Sprintf("%v", cmp) != s {
-			return fmt.Errorf("Have value \"%v\" but want \"%v\"", cmp, s)
+			return fmt.Errorf("Term \"%v\" has value \"%v\" but wants \"%v\"", r.currentTerm, cmp, s)
 		}
 		//		return fmt.Errorf("Can't compare %v with %v", r.target, s)
 	}

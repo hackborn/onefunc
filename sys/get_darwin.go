@@ -95,7 +95,7 @@ func makeAppDataPath() (Info, error) {
 
 	// -- APP PATH
 	appPath := filepath.Join(homeDir, "Library", "Application Support", appName)
-	err = os.Mkdir(appPath, 0750)
+	err = os.Mkdir(appPath, 0700)
 	if err != nil && !os.IsExist(err) {
 		return info, fmt.Errorf("platform.Get: %w", err)
 	}
@@ -109,7 +109,7 @@ func makeAppDataPath() (Info, error) {
 	// -- APP CACHE PATH
 	// TODO: This is just made-up, clients might want it somewhere else.
 	appCachePath := filepath.Join(homeDir, "Library", "Application Support", appName, "cache")
-	err = os.Mkdir(appCachePath, 0750)
+	err = os.Mkdir(appCachePath, 0700)
 	if err != nil && !os.IsExist(err) {
 		return info, fmt.Errorf("platform.Get: %w", err)
 	}

@@ -49,11 +49,3 @@ type Info struct {
 	// The current screen scaling. Will be 1 for no scale.
 	Scale float64
 }
-
-const (
-	AppPath          = "apppath"
-	AppDocumentsPath = "appdocpath"
-	AppCachePath     = "appcachepath"
-	Dpi              = "dpi"
-	Scale            = "scale"
-)
