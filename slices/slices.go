@@ -28,3 +28,19 @@ func SetLen[T any](s []T, area int) []T {
 		return s[:area]
 	}
 }
+
+// SetLenInit returns a slice with the given length,
+// reusing the supplied slice if it has enough capacity.
+// If the slice is reused then all values are initialized.
+func SetLenInit[T any](s []T, area int) []T {
+	if cap(s) < area {
+		return make([]T, area, area)
+	} else {
+		newS := s[:area]
+		for i := range area {
+			var t T
+			newS[i] = t
+		}
+		return newS
+	}
+}

@@ -21,6 +21,21 @@ func (c *FirstBlock) HasError() bool {
 	return c.Err != nil
 }
 
+// SliceBlock is a Block that stores the multiple errors.
+type SliceBlock struct {
+	Errs []error
+}
+
+func (c *SliceBlock) AddError(e error) {
+	if e != nil {
+		c.Errs = append(c.Errs, e)
+	}
+}
+
+func (c *SliceBlock) HasError() bool {
+	return len(c.Errs) > 0
+}
+
 // NullBlock is an empty Block that doesn't store errors.
 type NullBlock struct {
 }
