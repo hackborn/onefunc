@@ -144,7 +144,7 @@ func WithSettings(src Settings) Option {
 	return func(b Builder, eb oferrors.Block) {
 		t := b.NewSettings()
 		dat, err := src.asJson()
-		err = cmp.Or(err, json.Unmarshal(dat, t))
+		err = cmp.Or(err, json.Unmarshal(dat, &t))
 		if err != nil {
 			eb.AddError(err)
 		} else {

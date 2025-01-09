@@ -3,6 +3,7 @@ package cfg
 import (
 	"embed"
 	"os"
+	"path"
 	"reflect"
 	"sort"
 	"testing"
@@ -202,6 +203,36 @@ func TestStrings(t *testing.T) {
 			t.Fatalf("TestStrings %v has \"%v\" but wants \"%v\"", i, have, v.want)
 		}
 	}
+}
+
+// ---------------------------------------------------------
+// TEST-WITH-SETTINGS
+func TestWithSettings(t *testing.T) {
+	f := func(src, opt string, want string) {
+		t.Helper()
+
+		withOpt := []Option{WithFS(dataFs, path.Join("testdata", opt))}
+		optS, haveErr := NewSettings(withOpt...)
+		if haveErr != nil {
+			panic(haveErr)
+		}
+
+		opts := []Option{WithFS(dataFs, path.Join("testdata", src))}
+		opts = append(opts, WithSettings(optS))
+		s, haveErr := NewSettings(opts...)
+		s.Print()
+		if haveErr != nil {
+			panic(haveErr)
+		}
+
+		// TODO: Ahh, map compares. Need a good way of comparing
+		// the result.
+		//		if !reflect.DeepEqual(s, nil) {
+		//			t.Fatalf("TestWith has %v\nbut wants\n%v", s, nil)
+		//		}
+	}
+
+	f("a.json", "b.json", "c.json")
 }
 
 // ---------------------------------------------------------

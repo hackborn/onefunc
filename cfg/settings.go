@@ -105,7 +105,7 @@ func (s Settings) Strings(path string) []string {
 func (s Settings) treeKeys() []string {
 	if len(s.t) > 0 {
 		keys := make([]string, 0, len(s.t))
-		for k, _ := range s.t {
+		for k := range s.t {
 			keys = append(keys, k)
 		}
 		return keys
@@ -269,7 +269,7 @@ func (s Settings) IsChanged() bool {
 // ever need the difference in efficiency though, so this might
 // go away.
 func (s Settings) WalkKeys(fn WalkKeysFunc) error {
-	for k, _ := range s.t {
+	for k := range s.t {
 		err := fn(k)
 		if err != nil {
 			return err
@@ -290,7 +290,7 @@ func (s Settings) lockedRemovePrivateKeys() {
 }
 
 func removePrivateKeys(t map[string]any) {
-	for k, _ := range t {
+	for k := range t {
 		if strings.HasPrefix(k, privateKeyPrefix) {
 			delete(t, k)
 		}
