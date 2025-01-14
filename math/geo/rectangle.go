@@ -65,6 +65,14 @@ func (r Rectangle[T]) ContainsPoint(pt Point[T]) bool {
 	return pt.X >= r.L && pt.X < r.R && pt.Y >= r.T && pt.Y < r.B
 }
 
+// Inverted returns true if either the right is less than
+// the left or the bottom is less than the top. It can be
+// used as an "invalid" value in cases where a 0 rect is
+// insufficient.
+func (r Rectangle[T]) Inverted() bool {
+	return r.R < r.L || r.B < r.T
+}
+
 func (r1 Rectangle[T]) Overlaps(r2 Rectangle[T]) bool {
 	if r1.R < r2.L || r2.R < r1.L {
 		return false

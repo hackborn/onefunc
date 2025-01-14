@@ -25,3 +25,20 @@ func TestArrayFrom(t *testing.T) {
 		}
 	}
 }
+
+// ---------------------------------------------------------
+// TEST-POP
+func TestPop(t *testing.T) {
+	f := func(s []int, wantS []int, wantItem int) {
+		t.Helper()
+
+		haveS, haveItem := Pop(s)
+		if haveItem != wantItem {
+			t.Fatalf("TestPop has %v but wants %v", haveItem, wantItem)
+		} else if reflect.DeepEqual(haveS, wantS) == false {
+			t.Fatalf("TestPop has slice %v but wants %v", haveS, wantS)
+		}
+	}
+
+	f([]int{1, 2, 3}, []int{1, 2}, 3)
+}

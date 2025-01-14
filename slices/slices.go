@@ -19,6 +19,17 @@ func ArrayFrom[T any, U any](s []T, f func(T) U) []U {
 	return result
 }
 
+// Pop answers the last element of T, removing from the slice.
+func Pop[T any](s []T) ([]T, T) {
+	if len(s) < 1 {
+		var t T
+		return s, t
+	}
+	t := s[len(s)-1]
+	s = s[0 : len(s)-1]
+	return s, t
+}
+
 // SetLen returns a slice with the given length,
 // reusing the supplied slice if it has enough capacity.
 func SetLen[T any](s []T, area int) []T {
