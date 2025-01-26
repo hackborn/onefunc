@@ -140,16 +140,18 @@ func WithMap(m map[string]any) Option {
 }
 
 // WithSettings acts as a deep copy on src.
-func WithSettings(src Settings) Option {
+func WithSettings(srcs ...Settings) Option {
 	return func(b Builder, eb oferrors.Block) {
 		t := b.NewSettings()
-		dat, err := src.asJson()
-		err = cmp.Or(err, json.Unmarshal(dat, &t))
-		if err != nil {
-			eb.AddError(err)
-		} else {
-			removePrivateKeys(t)
-			b.AddSettings(t)
+		for _, src := range srcs {
+			dat, err := src.asJson()
+			err = cmp.Or(err, json.Unmarshal(dat, &t))
+			if err != nil {
+				eb.AddError(err)
+			} else {
+				removePrivateKeys(t)
+				b.AddSettings(t)
+			}
 		}
 	}
 }
