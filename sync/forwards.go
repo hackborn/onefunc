@@ -17,3 +17,7 @@ type Pool = sync.Pool
 type Once = sync.Once
 type RWMutex = sync.RWMutex
 type WaitGroup = sync.WaitGroup
+
+func NewCond(l Locker) *Cond {
+	return sync.NewCond(l)
+}

@@ -30,7 +30,9 @@ func NewSettings(opts ...Option) (Settings, error) {
 	eb := &oferrors.FirstBlock{}
 	builder := &_builder{t: s.t}
 	for _, opt := range opts {
-		opt(builder, eb)
+		if opt != nil {
+			opt(builder, eb)
+		}
 	}
 	return s, eb.Err
 }

@@ -7,11 +7,11 @@ import (
 // Scoped-lock style conveniences, for one line lock/auto-unlock.
 
 // sync.RWMutex examples:
-//		defer lock.Read(&rwmutex).Unlock()
-//		defer lock.Write(&rwmutex).Unlock()
+//		defer sync.Read(&rwmutex).Unlock()
+//		defer sync.Write(&rwmutex).Unlock()
 
 // sync.Locker examples (including Mutex):
-//		defer lock.Locker(locker).Unlock()
+//		defer sync.Lock(locker).Unlock()
 
 // struct ReadAuto manages an automatic RWMutex read lock.
 type ReadAuto struct {
