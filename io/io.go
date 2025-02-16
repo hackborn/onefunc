@@ -33,6 +33,14 @@ func Read(fsys fs.FS, globPattern string) ([]byte, error) {
 	return nil, fmt.Errorf("No match for \"%v\"", globPattern)
 }
 
+// ReadJsonFs reads the file and unmarshals to the type as JSON
+func ReadJsonFs[T any](fsys fs.FS, path string) (T, error) {
+	var t T
+	dat, err := fs.ReadFile(fsys, path)
+	err = cmp.Or(err, json.Unmarshal(dat, &t))
+	return t, err
+}
+
 // ReadJson reads the file and unmarshals to the type as JSON
 func ReadJson[T any](path string) (T, error) {
 	var t T

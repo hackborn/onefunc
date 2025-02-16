@@ -31,6 +31,31 @@ func TestCubicBezierAt(t *testing.T) {
 var bezEA = CubicBez(0., 0., 9., 9., 11., 11., 1., 20.)
 
 // ---------------------------------------------------------
+// TEST-NEAREST
+
+func doTestNearest[T Number](t *testing.T, base, a, b T, want int) {
+	t.Helper()
+
+	have := Nearest(base, a, b)
+	if have != want {
+		t.Fatalf("Has %v but wants %v", have, want)
+	}
+}
+
+func TestNearest(t *testing.T) {
+	doTestNearest(t, 10, 10, 10, 0)
+	doTestNearest(t, 10, 10, 9, 0)
+	doTestNearest(t, 10, 10, 11, 0)
+	doTestNearest(t, 10, 9, 10, 1)
+	doTestNearest(t, 10, 11, 10, 1)
+	doTestNearest(t, 0, -1, 2, 0)
+	doTestNearest(t, 0, 2, -1, 1)
+
+	doTestNearest(t, 10., 10., 10., 0)
+	doTestNearest(t, 10., 10.0001, 10., 1)
+}
+
+// ---------------------------------------------------------
 // TEST-QUADRATIC-BEZIER-AT
 func TestQuadraticBezierAt(t *testing.T) {
 	f := func(bez BezF, pos float64, want PtF) {
