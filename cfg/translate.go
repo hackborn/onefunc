@@ -78,6 +78,22 @@ func (s Settings) RectF(path string) (geo.RectF, bool) {
 	return r, true
 }
 
+// StringToNrgba converts a string to a color.
+// Current supported formats:
+// #FFFFFF
+// #FFFFFFFF
+func StringToNrgba(s string) (color.NRGBA, bool) {
+	if strings.HasPrefix(s, "#") {
+		s = s[1:]
+		return color.NRGBA{R: hexToUint8(s, 0, 0),
+			G: hexToUint8(s, 2, 0),
+			B: hexToUint8(s, 4, 0),
+			A: hexToUint8(s, 6, 255),
+		}, true
+	}
+	return color.NRGBA{}, false
+}
+
 func hexToUint8(s string, idx int, fallback uint8) uint8 {
 	if len(s) >= idx+2 {
 		if v, err := strconv.ParseInt(s[idx:idx+2], 16, 32); err == nil {

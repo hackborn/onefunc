@@ -55,3 +55,18 @@ func SetLenInit[T any](s []T, area int) []T {
 		return newS
 	}
 }
+
+// SetLenCopy returns a slice with the given length,
+// reusing the supplied slice if it has enough capacity.
+// If the slice is created then the original values are copied.
+func SetLenCopy[T any](s []T, area int) []T {
+	if cap(s) < area {
+		newS := make([]T, area, area)
+		for i := 0; i < min(len(s), area); i++ {
+			newS[i] = s[i]
+		}
+		return newS
+	} else {
+		return s[:area]
+	}
+}
