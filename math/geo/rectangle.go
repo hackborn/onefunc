@@ -2,6 +2,7 @@ package geo
 
 import (
 	"fmt"
+	"math"
 )
 
 func Rect[T Number](left, top, right, bottom T) Rectangle[T] {
@@ -38,6 +39,15 @@ func (r Rectangle[T]) Translate(pt Point[T]) Rectangle[T] {
 
 func (r Rectangle[T]) Size() Point[T] {
 	return Point[T]{X: r.R - r.L, Y: r.B - r.T}
+}
+
+// Rounded answers the rect with all values rounded to the nearest whole number.
+func (r Rectangle[T]) Rounded() Rectangle[T] {
+	r.L = T(math.Round(float64(r.L)))
+	r.T = T(math.Round(float64(r.T)))
+	r.R = T(math.Round(float64(r.R)))
+	r.B = T(math.Round(float64(r.B)))
+	return r
 }
 
 func (r Rectangle[T]) WithSize(pt Point[T]) Rectangle[T] {
