@@ -22,6 +22,8 @@ func GetString(key string) (string, error) {
 		return info.AppDocumentsPath, nil
 	case AppCachePath:
 		return info.AppCachePath, nil
+	case HardwareModel:
+		return info.HardwareModel, nil
 	default:
 		return "", fmt.Errorf("Unknown key: \"%v\"", key)
 	}
@@ -40,6 +42,9 @@ type Info struct {
 	// Path to application cache folder. Uses filepath separator.
 	// Hardcoded on some platforms, generated on others.
 	AppCachePath string
+
+	// HadrwareModel of this device.
+	HardwareModel string
 
 	// The system-reported platform DPI. Note that this might
 	// not be a final value: In some cases it might need to

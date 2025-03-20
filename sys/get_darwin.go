@@ -4,9 +4,14 @@ package sys
 
 /*
 #cgo CFLAGS: -x objective-c
-#cgo LDFLAGS: -framework Cocoa
+#cgo LDFLAGS: -framework Cocoa -framework Foundation
 
+#include <sys/types.h>
+#include <sys/sysctl.h>
+//#import <sys/utsname.h>
+#include <Foundation/NSString.h>
 #import <AppKit/NSScreen.h>
+
 
 NSScreen* getPrimaryScreen() {
 	// This is how some things do it, but as far as I know
@@ -36,6 +41,29 @@ CGFloat getScreenBackingScale() {
 	return scale;
 }
 
+void printInfo() {
+}
+
+// NSString* deviceName() {
+const char* deviceName() {
+//	printInfo();
+
+	size_t size;
+	sysctlbyname("hw.model", NULL, &size, NULL, 0);
+	char *model = malloc(size);
+	sysctlbyname("hw.model", model, &size, NULL, 0);
+	//NSLog(@"%s", model); // You would probably copy it to a NSString for later use
+	//free(model);
+	return model;
+
+//	struct utsname systemInfo;
+//    uname(&systemInfo);
+//    int NSUTF8StringEncoding = 4;
+//    NSString* str = [NSString stringWithCString:systemInfo.machine
+//        encoding:NSUTF8StringEncoding];
+//    return [str UTF8String];
+}
+
 // https://stackoverflow.com/questions/12589198/how-to-read-the-physical-screen-size-of-osx
 */
 import "C"
@@ -46,6 +74,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"unsafe"
 
 	"github.com/hackborn/onefunc/math/geo"
 )
@@ -73,6 +102,10 @@ func get(keys ...string) (Info, error) {
 				errs = append(errs, fmt.Errorf("platform.Get(Dpi): Invalid response"))
 			}
 			info.Dpi = geo.Pt(float64(size.width), float64(size.height))
+		case HardwareModel:
+			cString := C.deviceName()
+			defer C.free(unsafe.Pointer(cString))
+			info.HardwareModel = C.GoString(cString)
 		case Scale:
 			scale := float64(C.getScreenBackingScale())
 			info.Scale = scale
