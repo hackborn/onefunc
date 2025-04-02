@@ -149,7 +149,6 @@ func WithSettings(srcs ...Settings) Option {
 			if err != nil {
 				eb.AddError(err)
 			} else {
-				removePrivateKeys(t)
 				b.AddSettings(t)
 			}
 		}

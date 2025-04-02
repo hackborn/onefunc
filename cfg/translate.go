@@ -7,7 +7,6 @@ import (
 
 	"github.com/hackborn/onefunc/math/geo"
 	"github.com/hackborn/onefunc/reflect"
-	"github.com/hackborn/onefunc/sync"
 )
 
 // A series of additional translations, separated from the main
@@ -54,7 +53,6 @@ func (s Settings) MustRectF(path string, r geo.RectF) geo.RectF {
 // combination (i.e. "lr").
 func (s Settings) RectF(path string) (geo.RectF, bool) {
 	r := geo.RectF{}
-	defer sync.Read(s.rw).Unlock()
 	sub := s.lockedSubset(path)
 	if len(sub.t) < 1 {
 		return r, false

@@ -9,16 +9,16 @@ import (
 	"strings"
 
 	oferrors "github.com/hackborn/onefunc/errors"
-	"github.com/hackborn/onefunc/sync"
 )
 
 type tree = map[string]any
 
 // Settings stores a tree of settings values, accessed
 // via a path syntax ("path/to/value").
+// Settings are immutable. Modifications must be
+// made via creating a new Settings.
 type Settings struct {
-	rw *sync.RWMutex
-	t  tree
+	t tree
 	// sliceKey is a special case where we make a subset to a
 	// slice. For the client, the key that got us to the slice
 	// has disappeared, but we are a map and need a key, so it gets saved here.
@@ -26,7 +26,7 @@ type Settings struct {
 }
 
 func NewSettings(opts ...Option) (Settings, error) {
-	s := emptySettings(&sync.RWMutex{})
+	s := emptySettings()
 	eb := &oferrors.FirstBlock{}
 	builder := &_builder{t: s.t}
 	for _, opt := range opts {
@@ -70,7 +70,6 @@ func (s Settings) MustString(path, fallback string) string {
 // If path points to a string slice, it's returned,
 // otherwise the current keys are returned.
 func (s Settings) Strings(path string) []string {
-	defer sync.Read(s.rw).Unlock()
 	p := strings.Split(path, pathSeparator)
 	p = slices.DeleteFunc(p, func(n string) bool {
 		return len(n) < 1
@@ -179,7 +178,6 @@ func (s Settings) flatBoolList(p string) (bool, bool) {
 // walking down the path. The path can have components
 // separated with "/".
 func (s Settings) Subset(path string) Settings {
-	defer sync.Read(s.rw).Unlock()
 	return s.lockedSubset(path)
 }
 
@@ -189,7 +187,7 @@ func (s Settings) Subset(path string) Settings {
 func (s Settings) lockedSubset(path string) Settings {
 	p := strings.Split(path, "/")
 	if len(p) < 1 {
-		return emptySettings(s.rw)
+		return emptySettings()
 	}
 	t := s.t
 	for i, n := range p {
@@ -202,7 +200,7 @@ func (s Settings) lockedSubset(path string) Settings {
 				// result of the index is a map.
 				if index, ok4 := pathIndex(i+1, p); ok4 && index < len(st) {
 					if stm, ok5 := st[index].(map[string]any); ok5 {
-						return Settings{rw: s.rw, t: stm}
+						return Settings{t: stm}
 					}
 				}
 				// Slices are handled specially: The parent key
@@ -211,19 +209,19 @@ func (s Settings) lockedSubset(path string) Settings {
 				// annotated in "key" so subsequent callers know
 				// how to access the slice value.
 				insert := map[string]any{n: sub}
-				return Settings{rw: s.rw, t: insert, sliceKey: n}
+				return Settings{t: insert, sliceKey: n}
 			} else {
 				// It would be nice to handle this case: Essentially,
 				// a single value is being requested, with no children.
 				// Seems handy, but it breaks everything and doesn't
 				// make sense with the API.
-				return emptySettings(s.rw)
+				return emptySettings()
 			}
 		} else {
-			return emptySettings(s.rw)
+			return emptySettings()
 		}
 	}
-	return Settings{rw: s.rw, t: t}
+	return Settings{t: t}
 }
 
 // Length answers the length of the slice at path, or 0 if
@@ -235,36 +233,6 @@ func (s Settings) Length(path string) int {
 	return 0
 }
 
-// Disabled. I think it makes more sense to make Settings
-// immutable, and redesign cases where I was editing them.
-/*
-// SetValue sets the given key to the given value.
-// `value` can be nil, and an empty map will be created.
-// Currently the key can not contain a path element; if you
-// want to set a path, find the subset first.
-func (s Settings) SetValue(key string, value interface{}) error {
-	if s.rw == nil || s.t == nil {
-		return fmt.Errorf("invalid state")
-	}
-	if strings.Contains(key, pathSeparator) {
-		// If this become annoying I will build in finding the subset.
-		return fmt.Errorf(`key can not contain path character "` + pathSeparator + `"`)
-	}
-	if value == nil {
-		value = make(map[string]any)
-	}
-
-	defer sync.Write(s.rw).Unlock()
-	s.t[key] = value
-	s.t[changedKey] = true
-	return nil
-}
-
-func (s Settings) IsChanged() bool {
-	v, _ := s.Bool(changedKey)
-	return v
-}
-*/
 // WalkKeys iterates the keys.
 // You can get the same info from calling Strings(), which
 // is easier to use but less efficient. Not sure that I'll
@@ -281,22 +249,8 @@ func (s Settings) WalkKeys(fn WalkKeysFunc) error {
 }
 
 func (s Settings) asJson() ([]byte, error) {
-	defer sync.Read(s.rw).Unlock()
-	s.lockedRemovePrivateKeys()
 	b, err := json.Marshal(s.t)
 	return b, err
-}
-
-func (s Settings) lockedRemovePrivateKeys() {
-	removePrivateKeys(s.t)
-}
-
-func removePrivateKeys(t map[string]any) {
-	for k := range t {
-		if strings.HasPrefix(k, privateKeyPrefix) {
-			delete(t, k)
-		}
-	}
 }
 
 func (s Settings) Print() {
@@ -308,7 +262,6 @@ func (s Settings) Print() {
 type getFlatTypeFunc[T any] func(s Settings, path string) (T, bool)
 
 func getType[T any](s Settings, path string, getFn getFlatTypeFunc[T]) (T, bool) {
-	defer sync.Read(s.rw).Unlock()
 	p := strings.Split(path, pathSeparator)
 	switch len(p) {
 	case 0:
@@ -446,12 +399,10 @@ func pathIndex(index int, path []string) (int, bool) {
 
 type WalkKeysFunc func(key string) error
 
-func emptySettings(rw *sync.RWMutex) Settings {
-	return Settings{rw: rw, t: make(map[string]any)}
+func emptySettings() Settings {
+	return Settings{t: make(map[string]any)}
 }
 
 const (
-	pathSeparator    = `/`
-	privateKeyPrefix = `_$cfg_`
-	changedKey       = privateKeyPrefix + `changed`
+	pathSeparator = `/`
 )
