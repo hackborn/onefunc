@@ -48,6 +48,24 @@ func RadialDist(a, b float64) (float64, Orientation) {
 	}
 }
 
+func Clamp[T Number](n, low, high T) T {
+	if n <= low {
+		return low
+	} else if n >= high {
+		return high
+	}
+	return n
+}
+
+func Sign[T SignedNumber](n T) T {
+	if n > 0 {
+		return 1
+	} else if n < 0 {
+		return -1
+	}
+	return 0
+}
+
 func Sqr[T Number](x T) T {
 	return x * x
 }

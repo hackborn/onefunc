@@ -28,4 +28,23 @@ type Line[T Float] struct {
 	C T
 }
 
+// From gemini, check it out
+/*
+// NearestPointOnLine finds the nearest point on an infinite line to a given point.
+func NearestPointOnLine(p, a, b Point) Point {
+	ab := Point{X: b.X - a.X, Y: b.Y - a.Y}
+	ap := Point{X: p.X - a.X, Y: p.Y - a.Y}
+
+	dotProduct := ap.X*ab.X + ap.Y*ab.Y
+	abLengthSquared := ab.X*ab.X + ab.Y*ab.Y
+
+	if abLengthSquared == 0 {
+		return a
+	}
+
+	t := dotProduct / abLengthSquared
+	return Point{X: a.X + t*ab.X, Y: a.Y + t*ab.Y}
+}
+*/
+
 type LnF = Line[float64]

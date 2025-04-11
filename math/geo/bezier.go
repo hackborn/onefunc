@@ -37,6 +37,31 @@ func (b *QuadraticBezier) At(t float64) PtF {
 	return PtF{X: x, Y: y}
 }
 
+// Maybe slightly faster?
+func (q *QuadraticBezier) PointOnCurve(t float64) PtF {
+	omt := 1 - t
+	return PtF{
+		X: omt*omt*q.P0.X + 2*omt*t*q.P1.X + t*t*q.P2.X,
+		Y: omt*omt*q.P0.Y + 2*omt*t*q.P1.Y + t*t*q.P2.Y,
+	}
+}
+
+// FirstDerivative calculates the first derivative at t
+func (q QuadraticBezier) FirstDerivative(t float64) PtF {
+	return PtF{
+		X: 2*(1-t)*(q.P1.X-q.P0.X) + 2*t*(q.P2.X-q.P1.X),
+		Y: 2*(1-t)*(q.P1.Y-q.P0.Y) + 2*t*(q.P2.Y-q.P1.Y),
+	}
+}
+
+// SecondDerivative calculates the second derivative (constant for quadratic)
+func (q QuadraticBezier) SecondDerivative() PtF {
+	return PtF{
+		X: 2 * (q.P2.X - 2*q.P1.X + q.P0.X),
+		Y: 2 * (q.P2.Y - 2*q.P1.Y + q.P0.Y),
+	}
+}
+
 // PointBounds is the bounding box for my control points. It does
 // not include any point that lies outside the controls.
 func (b *QuadraticBezier) PointBounds() RectF {

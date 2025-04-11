@@ -139,6 +139,39 @@ func DistPointToSegment(seg SegF, p PtF) (float64, PtF) {
 	return math.Sqrt(d), newP
 }
 
+// This nearest point function comes from gemini, need
+// to compare it to what I have.
+/*
+func NearestPointOnLineSegment(p, a, b Point) Point {
+	// Vector from A to B
+	ab := Point{X: b.X - a.X, Y: b.Y - a.Y}
+	// Vector from A to P
+	ap := Point{X: p.X - a.X, Y: p.Y - a.Y}
+
+	// Project AP onto AB
+	dotProduct := ap.X*ab.X + ap.Y*ab.Y
+	abLengthSquared := ab.X*ab.X + ab.Y*ab.Y
+
+	if abLengthSquared == 0 {
+		// A and B are the same point
+		return a
+	}
+
+	t := dotProduct / abLengthSquared
+
+	if t < 0 {
+		// Nearest point is A
+		return a
+	} else if t > 1 {
+		// Nearest point is B
+		return b
+	} else {
+		// Nearest point is on the segment
+		return Point{X: a.X + t*ab.X, Y: a.Y + t*ab.Y}
+	}
+}
+*/
+
 // XAtY answers the X value for this segment at the given Y
 // value, or false if the line does not intersect y.
 func XAtY(s SegF, y float64) (float64, bool) {

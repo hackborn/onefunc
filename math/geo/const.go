@@ -14,6 +14,10 @@ type Number interface {
 	constraints.Integer | constraints.Float
 }
 
+type SignedNumber interface {
+	constraints.Signed | constraints.Float
+}
+
 type Angle uint8
 
 const (

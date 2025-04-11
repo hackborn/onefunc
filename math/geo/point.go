@@ -55,6 +55,14 @@ func (a Point[T]) Cross(b Point[T]) T {
 	return a.X*b.Y - a.Y*b.X
 }
 
+func (a Point[T]) AddValue(v T) Point[T] {
+	return Point[T]{X: a.X + v, Y: a.Y + v}
+}
+
+func (a Point[T]) SubValue(v T) Point[T] {
+	return Point[T]{X: a.X - v, Y: a.Y - v}
+}
+
 // Normalize normalizs the point to a unit.
 // Can be negative if they are generated from a negative point,
 // i.e. a negative direction vector.
@@ -71,6 +79,16 @@ func (a Point[T]) Dot(b Point[T]) float64 {
 	return float64(a.X*b.X + a.Y*b.Y)
 }
 
+// Length is the magnitude of the point.
+// I *think* this is just more standard
+// nomenclature than Magnitude.
+func (a Point[T]) Length() float64 {
+	x, y := float64(a.X), float64(a.Y)
+	return math.Sqrt(x*x + y*y)
+}
+
+// Magnitude is idental to Length, but I think
+// that's a more common term.
 func (a Point[T]) Magnitude() float64 {
 	x, y := float64(a.X), float64(a.Y)
 	return math.Sqrt(x*x + y*y)
