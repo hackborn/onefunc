@@ -36,6 +36,17 @@ type InterpolatorReader struct {
 	done    bool
 }
 
+// SetSource will also reset the state.
+func (r *InterpolatorReader) SetSource(src PointInterpolator) {
+	r.Source = src
+	r.Reset()
+}
+
+func (r *InterpolatorReader) Reset() {
+	r.current = 0
+	r.done = false
+}
+
 func (r *InterpolatorReader) NextPoint() (PtF, error) {
 	if r.done || r.Source == nil {
 		return PtF{}, io.EOF
