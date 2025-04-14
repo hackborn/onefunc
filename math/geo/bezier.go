@@ -1,5 +1,12 @@
 package geo
 
+import (
+	"io"
+)
+
+// ---------------------------------------------------------
+// CONSTRUCTION
+
 // Bez is shorthand for creating a quadratic bezier curve.
 func Bez(x0, y0, x1, y1, x2, y2 float64) QuadraticBezier {
 	return QuadraticBez(x0, y0, x1, y1, x2, y2)
@@ -23,6 +30,47 @@ func CubicBez(x0, y0, x1, y1, x2, y2, x3, y3 float64) CubicBezier {
 }
 
 // ---------------------------------------------------------
+// READERS
+
+type SliceReader struct {
+	Pts []PtF
+
+	current int
+}
+
+func (r *SliceReader) NextPoint() (PtF, error) {
+	if r.current >= len(r.Pts) {
+		return PtF{}, io.EOF
+	}
+	i := r.current
+	r.current++
+	return r.Pts[i], nil
+}
+
+// InterpolatorReader answers a reader on a quadratic bezier,
+// supplying all interpolated points from 0 - 1 based on step.
+type InterpolatorReader struct {
+	Source PointInterpolator
+	Step   float64
+
+	current float64
+	done    bool
+}
+
+func (r *InterpolatorReader) NextPoint() (PtF, error) {
+	if r.done || r.Source == nil {
+		return PtF{}, io.EOF
+	}
+	if r.current >= 1. {
+		r.current = 1.
+		r.done = true
+	}
+	pt := r.Source.PointAt(r.current)
+	r.current += r.Step
+	return pt, nil
+}
+
+// ---------------------------------------------------------
 // QUADRATIC BEZIER
 
 // QuadraticBezier represents a quadratic Bezier curve.
@@ -30,20 +78,25 @@ type QuadraticBezier struct {
 	P0, P1, P2 PtF
 }
 
-// At evaluates the Bezier curve at a given parameter t.
-func (b *QuadraticBezier) At(t float64) PtF {
-	x := (1-t)*(1-t)*b.P0.X + 2*(1-t)*t*b.P1.X + t*t*b.P2.X
-	y := (1-t)*(1-t)*b.P0.Y + 2*(1-t)*t*b.P1.Y + t*t*b.P2.Y
-	return PtF{X: x, Y: y}
-}
-
-// Maybe slightly faster?
-func (q *QuadraticBezier) PointOnCurve(t float64) PtF {
+// PointAt evaluates the Bezier curve at a given parameter t.
+// It satisfies the PointInterpolator interface.
+func (q *QuadraticBezier) PointAt(t float64) PtF {
 	omt := 1 - t
 	return PtF{
 		X: omt*omt*q.P0.X + 2*omt*t*q.P1.X + t*t*q.P2.X,
 		Y: omt*omt*q.P0.Y + 2*omt*t*q.P1.Y + t*t*q.P2.Y,
 	}
+}
+
+// At evaluates the Bezier curve at a given parameter t.
+// deprecated, move to PointAt
+func (q *QuadraticBezier) At(t float64) PtF {
+	return q.PointAt(t)
+}
+
+// deprecated, move to PointAt
+func (q *QuadraticBezier) PointOnCurve(t float64) PtF {
+	return q.PointAt(t)
 }
 
 // FirstDerivative calculates the first derivative at t

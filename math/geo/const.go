@@ -18,6 +18,14 @@ type SignedNumber interface {
 	constraints.Signed | constraints.Float
 }
 
+type PointInterpolator interface {
+	PointAt(float64) PtF
+}
+
+type PointReader interface {
+	NextPoint() (PtF, error)
+}
+
 type Angle uint8
 
 const (
