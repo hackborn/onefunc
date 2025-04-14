@@ -1,9 +1,5 @@
 package geo
 
-import (
-	"io"
-)
-
 // ---------------------------------------------------------
 // CONSTRUCTION
 
@@ -27,47 +23,6 @@ func CubicBez(x0, y0, x1, y1, x2, y2, x3, y3 float64) CubicBezier {
 		P2: Pt(x2, y2),
 		P3: Pt(x3, y3),
 	}
-}
-
-// ---------------------------------------------------------
-// READERS
-
-type SliceReader struct {
-	Pts []PtF
-
-	current int
-}
-
-func (r *SliceReader) NextPoint() (PtF, error) {
-	if r.current >= len(r.Pts) {
-		return PtF{}, io.EOF
-	}
-	i := r.current
-	r.current++
-	return r.Pts[i], nil
-}
-
-// InterpolatorReader answers a reader on a quadratic bezier,
-// supplying all interpolated points from 0 - 1 based on step.
-type InterpolatorReader struct {
-	Source PointInterpolator
-	Step   float64
-
-	current float64
-	done    bool
-}
-
-func (r *InterpolatorReader) NextPoint() (PtF, error) {
-	if r.done || r.Source == nil {
-		return PtF{}, io.EOF
-	}
-	if r.current >= 1. {
-		r.current = 1.
-		r.done = true
-	}
-	pt := r.Source.PointAt(r.current)
-	r.current += r.Step
-	return pt, nil
 }
 
 // ---------------------------------------------------------
