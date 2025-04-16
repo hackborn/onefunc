@@ -23,7 +23,15 @@ type PointInterpolator interface {
 }
 
 type PointReader interface {
-	NextPoint() (PtF, error)
+	ReadPoint() (PtF, error)
+}
+
+type PointInterpolator3d interface {
+	PointAt(float64) Pt3dF
+}
+
+type PointReader3d interface {
+	ReadPoint() (Pt3dF, error)
 }
 
 type Angle uint8

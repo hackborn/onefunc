@@ -38,3 +38,28 @@ func DistToPolyF(poly []PtF, pt PtF) (float64, PtF) {
 	}
 	return foundD, foundPt
 }
+
+/*
+// DistSquared answers the squared distance from the point to the segment,
+// as well as the point found on the segment.
+// From https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+func DistSquared(seg SegF, p PtF) (float64, PtF) {
+	l2 := seg.A.DistSquared(seg.B)
+	if l2 == 0 {
+		return p.DistSquared(seg.A), seg.A
+	}
+	t := ((p.X-seg.A.X)*(seg.B.X-seg.A.X) + (p.Y-seg.A.Y)*(seg.B.Y-seg.A.Y)) / l2
+	t = math.Max(0, math.Min(1, t))
+	newP := PtF{X: seg.A.X + t*(seg.B.X-seg.A.X),
+		Y: seg.A.Y + t*(seg.B.Y-seg.A.Y)}
+	return p.DistSquared(newP), newP
+}
+
+// DistPointToSegment answers the distance from the point to the segment,
+// as well as the point found on the segment.
+// From https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+func DistPointToSegment(seg SegF, p PtF) (float64, PtF) {
+	d, newP := DistSquared(seg, p)
+	return math.Sqrt(d), newP
+}
+*/

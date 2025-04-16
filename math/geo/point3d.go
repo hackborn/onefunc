@@ -13,6 +13,14 @@ type Point3d[T Number] struct {
 	Z T
 }
 
+func (a Point3d[T]) XY() Point[T] {
+	return Point[T]{X: a.X, Y: a.Y}
+}
+
+func (a Point3d[T]) Scale(t T) Point3d[T] {
+	return Point3d[T]{X: a.X * t, Y: a.Y * t, Z: a.Z * t}
+}
+
 func (a Point3d[T]) Add(b Point3d[T]) Point3d[T] {
 	return Point3d[T]{X: a.X + b.X, Y: a.Y + b.Y, Z: a.Z + b.Z}
 }
@@ -71,7 +79,7 @@ func (a Point3d[T]) Cross(b Point3d[T]) Point3d[T] {
 
 func (a Point3d[T]) Normalize() Point3d[T] {
 	mag := a.Magnitude()
-	if mag > 0 {
+	if mag > 1e-6 {
 		a.X /= T(mag)
 		a.Y /= T(mag)
 		a.Z /= T(mag)
