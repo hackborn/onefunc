@@ -1,5 +1,9 @@
 package geo
 
+import (
+	"math"
+)
+
 // Nearest answers which value is nearest to base.
 func Nearest[T Number](base, a, b T) int {
 	if a == base {
@@ -39,27 +43,23 @@ func DistToPolyF(poly []PtF, pt PtF) (float64, PtF) {
 	return foundD, foundPt
 }
 
-/*
-// DistSquared answers the squared distance from the point to the segment,
-// as well as the point found on the segment.
-// From https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
-func DistSquared(seg SegF, p PtF) (float64, PtF) {
-	l2 := seg.A.DistSquared(seg.B)
-	if l2 == 0 {
-		return p.DistSquared(seg.A), seg.A
-	}
-	t := ((p.X-seg.A.X)*(seg.B.X-seg.A.X) + (p.Y-seg.A.Y)*(seg.B.Y-seg.A.Y)) / l2
-	t = math.Max(0, math.Min(1, t))
-	newP := PtF{X: seg.A.X + t*(seg.B.X-seg.A.X),
-		Y: seg.A.Y + t*(seg.B.Y-seg.A.Y)}
-	return p.DistSquared(newP), newP
+func PointOnSegmentXY(seg Seg3dF, p PtF) (Pt3dF, float64) {
+	p2, d := PointOnSegmentSquaredXY(seg, p)
+	return p2, math.Sqrt(d)
 }
 
-// DistPointToSegment answers the distance from the point to the segment,
-// as well as the point found on the segment.
-// From https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
-func DistPointToSegment(seg SegF, p PtF) (float64, PtF) {
-	d, newP := DistSquared(seg, p)
-	return math.Sqrt(d), newP
+// PointOnSegmentSquaredXY finds the nearest point from p to seg,
+// but only considers the XY components, then interpolates the Z
+// from the segment endpoints.
+func PointOnSegmentSquaredXY(seg Seg3dF, p PtF) (Pt3dF, float64) {
+	sega, segb := seg.A.XY(), seg.B.XY()
+	d, _pb := DistSquared(SegF{A: sega, B: segb}, p)
+	z := seg.A.Z
+	if seg.A.Z != seg.B.Z {
+		// Unfortunately need to sqrt it to get the right value.
+		posa, posb := math.Sqrt(sega.DistSquared(_pb)), math.Sqrt(_pb.DistSquared(segb))
+		pos := posa / (posa + posb)
+		z = (seg.A.Z * (1. - pos)) + (seg.B.Z * pos)
+	}
+	return Pt3d(_pb.X, _pb.Y, z), d
 }
-*/

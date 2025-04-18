@@ -1,6 +1,8 @@
 package geo
 
-import "math"
+import (
+	"math"
+)
 
 // Pt3d is shorthand for creating a point3d from three values.
 func Pt3d[T Number](x, y, z T) Point3d[T] {
@@ -107,10 +109,3 @@ func Pt3dNearZero(v Pt3dF, tolerance float64) bool {
 func Float64NearZero(v float64, tolerance float64) bool {
 	return math.Abs(v) <= tolerance
 }
-
-type Pt3dF = Point3d[float64]
-type Pt3dI = Point3d[int]
-
-type Pt3dF32 = Point3d[float32]
-type Pt3dF64 = Point3d[float64]
-type Pt3dI64 = Point3d[int64]

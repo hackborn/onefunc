@@ -116,12 +116,3 @@ func (p Range[T]) MapNormal(normal float64) T {
 	//	}
 	return ans
 }
-
-type RngF = Range[float64]
-type RngI = Range[int]
-
-type RngF32 = Range[float32]
-type RngF64 = Range[float64]
-type RngI64 = Range[int64]
-
-var RngFUnit = RngF{Min: 0., Max: 1.}

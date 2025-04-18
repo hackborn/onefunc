@@ -265,5 +265,3 @@ else:
   print("No intersection found")
 
 */
-
-type Tri3dF = Triangle3d[float64]

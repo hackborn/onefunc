@@ -10,6 +10,3 @@ type Segment3d[T Number] struct {
 	A Point3d[T]
 	B Point3d[T]
 }
-
-type Seg3dF = Seg3dF64
-type Seg3dF64 = Segment3d[float64]

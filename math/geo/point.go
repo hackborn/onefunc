@@ -232,10 +232,3 @@ func PtBounds[T Number](pts []Point[T]) Rectangle[T] {
 	}
 	return r
 }
-
-type PtF = Point[float64]
-type PtI = Point[int]
-
-type PtF32 = Point[float32]
-type PtF64 = Point[float64]
-type PtI64 = Point[int64]

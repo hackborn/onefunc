@@ -200,10 +200,3 @@ func ConvertSegment[A Number, B Number](seg Segment[A]) Segment[B] {
 	b := ConvertPoint[A, B](seg.B)
 	return Segment[B]{A: a, B: b}
 }
-
-type SegF = Segment[float64]
-type SegI = Segment[int]
-
-type SegF32 = Segment[float32]
-type SegF64 = Segment[float64]
-type SegI64 = Segment[int64]

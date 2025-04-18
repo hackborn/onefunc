@@ -56,6 +56,22 @@ func TestNearest(t *testing.T) {
 }
 
 // ---------------------------------------------------------
+// TEST-POINT-ON-SEGMENT-XY
+func TestPointOnSegmentXY(t *testing.T) {
+	f := func(seg Seg3dF, p PtF, wantP Pt3dF) {
+		t.Helper()
+
+		haveP, _ := PointOnSegmentXY(seg, p)
+		if !points3dEqual(haveP, wantP) {
+			t.Fatalf("Has %v but wants %v", haveP, wantP)
+		}
+	}
+	f(Seg3d(0., 0., 0., 10., 0., 10.), Pt(5., 5.), Pt3d(5., 0., 5.))
+	f(Seg3d(0., 0., 0., 10., 0., 10.), Pt(1., 5.), Pt3d(1., 0., 1.))
+	f(Seg3d(10., 10, 0., 10., 10, 0.), Pt(1., 1.), Pt3d(10., 10., 0.))
+}
+
+// ---------------------------------------------------------
 // TEST-QUADRATIC-BEZIER-AT
 func TestQuadraticBezierAt(t *testing.T) {
 	f := func(bez BezF, pos float64, want PtF) {

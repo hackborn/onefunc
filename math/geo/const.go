@@ -54,3 +54,5 @@ var (
 	HorizontalSlope = Slope{Angle: Horizontal, M: 0.}
 	VerticalSlope   = Slope{Angle: Vertical, M: math.MaxFloat64}
 )
+
+var RngFUnit = RngF{Min: 0., Max: 1.}

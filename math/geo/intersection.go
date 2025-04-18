@@ -1,7 +1,6 @@
 package geo
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -389,13 +388,13 @@ func quadraticBezierDistance(bez QuadraticBezier, pos PtF) (float64, PtF) {
 	//    vec2 c = a * 2.0;
 	dx, dy := bez.P0.X-pos.X, bez.P0.Y-pos.Y
 	//   vec2 d = A - pos;
-	fmt.Println("a", ax, ay, "b", bx, by, "c", cx, cy, "d", dx, dy)
+	//	fmt.Println("a", ax, ay, "b", bx, by, "c", cx, cy, "d", dx, dy)
 
 	a, b := PtF{X: ax, Y: ay}, PtF{X: bx, Y: by}
 	d := PtF{X: dx, Y: dy}
 	// cubic to be solved (kx*=3 and ky*=3)
 	kk := 1. / b.Dot(b)
-	fmt.Println("b", b, "kk dot", b.Dot(b))
+	//	fmt.Println("b", b, "kk dot", b.Dot(b))
 	// float kk = 1.0/dot(b,b);
 	kx := kk * a.Dot(b)
 	// float kx = kk * dot(a,b);
@@ -403,7 +402,6 @@ func quadraticBezierDistance(bez QuadraticBezier, pos PtF) (float64, PtF) {
 	// float ky = kk * (2.0*dot(a,a)+dot(d,b))/3.0;
 	kz := kk * d.Dot(a)
 	//    float kz = kk * dot(d,a);
-	fmt.Println("kk", kk, "kx", kx, "ky", ky, "kz", kz)
 	res := 0.
 	// float res = 0.0;
 	sgn := 0.
