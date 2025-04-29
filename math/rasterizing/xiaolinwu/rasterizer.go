@@ -1,14 +1,19 @@
 package xiaolinwu
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/hackborn/onefunc/math/geo"
 	"github.com/hackborn/onefunc/math/rasterizing"
 )
 
-func NewRasterizer() rasterizing.Rasterizer {
-	return &rasterizer{}
+func NewRasterizer(opts ...Option) rasterizing.Rasterizer {
+	r := &rasterizer{}
+	for _, opt := range opts {
+		opt(r)
+	}
+	return r
 }
 
 // Experiment in optimizing by reusing a buffer
@@ -21,6 +26,7 @@ func NewRasterizer2() rasterizing.Rasterizer2 {
 
 type rasterizer struct {
 	buffer []rasterizing.Pixel
+	debug  bool
 }
 
 // Rasterize draws an antialiased line using Xiaolin Wu’s algorithm.
@@ -29,6 +35,9 @@ type rasterizer struct {
 func (r *rasterizer) Rasterize(shape any, fn rasterizing.PixelFunc) {
 	x0, y0, x1, y1, ok := r.getSegment(shape)
 	if !ok {
+		if r.debug {
+			fmt.Println("no segment")
+		}
 		return
 	}
 
@@ -66,6 +75,9 @@ func (r *rasterizer) Rasterize(shape any, fn rasterizing.PixelFunc) {
 
 	// main loop
 	if steep {
+		//		if r.debug {
+		//			fmt.Println("steep xpxl1", xpxl1, "xpxl2", xpxl2, "inc", inc)
+		//		}
 		for x := xpxl1; cmp(x, xpxl2); x += inc {
 			// pixel coverage is determined by fractional
 			// part of y co-ordinate
@@ -80,6 +92,9 @@ func (r *rasterizer) Rasterize(shape any, fn rasterizing.PixelFunc) {
 			intersectY += gradient
 		}
 	} else {
+		//		if r.debug {
+		//			fmt.Println("steep xpxl1", xpxl1, "xpxl2", xpxl2, "inc", inc)
+		//		}
 		for x := xpxl1; cmp(x, xpxl2); x += inc {
 			// pixel coverage is determined by fractional
 			// part of y co-ordinate

@@ -31,6 +31,33 @@ func TestCubicBezierAt(t *testing.T) {
 var bezEA = CubicBez(0., 0., 9., 9., 11., 11., 1., 20.)
 
 // ---------------------------------------------------------
+// TEST-POINT-ON-SEGMENT-SQUARED_XY-TestPointOnSegmentSquaredXYReal
+
+// Test with some real world data to track down issues.
+func TestPointOnSegmentSquaredXYReal(t *testing.T) {
+	f := func(seg Seg3dF, ptf PtF, wantDist float64) {
+		t.Helper()
+
+		havePt, haveDist := PointOnSegmentSquaredXY(seg, ptf)
+		//		fmt.Println("seg", seg, "pt", ptf, "havedist", haveDist, "havePt", havePt)
+		fmt.Println("dist", haveDist, "from pt", ptf, "havePt", havePt)
+	}
+	seg := Seg3d(318.429629629629, 193.000000000000, 0.041512345679, 319.000000000000, 193.020157068063, 0.041901178010)
+	f(seg, PtF{X: float64(308) + .5, Y: float64(311) + .5}, 0.)
+	f(seg, PtF{X: float64(309) + .5, Y: float64(311) + .5}, 0.)
+	f(seg, PtF{X: float64(310) + .5, Y: float64(311) + .5}, 0.)
+	t.Fatal("s")
+}
+
+/*
+(318, 193) line 1 seg (318.429629629629,193.000000000000,0.041512345679)-(319.000000000000,193.020157068063,0.041901178010)
+	dist (308, 311) 3903.9807727995376 pt {319 193.02015706806284 0.041901178010471225}
+	dist (309, 311) 3903.9807727995376 pt {319 193.02015706806284 0.041901178010471225}
+	dist (310, 311) 3903.9807727995376 pt {319 193.02015706806284 0.041901178010471225}
+	dist (311, 311) 3903.9807727995376 pt {319 193.02015706806284 0.041901178010471225}
+*/
+
+// ---------------------------------------------------------
 // TEST-NEAREST
 
 func doTestNearest[T Number](t *testing.T, base, a, b T, want int) {

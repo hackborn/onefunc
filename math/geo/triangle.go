@@ -62,6 +62,7 @@ print("Triangle normal:", normal)
 */
 
 // https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
+// You will generally want to normalize the returned vector.
 func (t Triangle3d[T]) SurfaceNormal() Point3d[T] {
 	U, V := t.B.Sub(t.A), t.C.Sub(t.A)
 	return U.Cross(V)

@@ -62,6 +62,22 @@ func (a Point3d[T]) Magnitude() float64 {
 //	return math.Sqrt(math.Pow(float64(a.X), 2) + math.Pow(float64(a.Y), 2) + math.Pow(float64(a.Z), 2))
 //}
 
+func (a Point3d[T]) Normalize() Point3d[T] {
+	mag := a.Magnitude()
+	if mag > 1e-6 {
+		a.X /= T(mag)
+		a.Y /= T(mag)
+		a.Z /= T(mag)
+	}
+	return a
+}
+
+//func (a Point3d[T]) Normalize() Point3d[T] {
+//	mag := a.Magnitude()
+//	x, y, z := float64(a.X)/mag, float64(a.Y)/mag, float64(a.Z)/mag
+//	return Point3d[T]{X: T(x), Y: T(y), Z: T(z)}
+//}
+
 func (a Point3d[T]) Dot(b Point3d[T]) T {
 	return a.X*b.X + a.Y*b.Y + a.Z*b.Z
 }
@@ -78,22 +94,6 @@ func (a Point3d[T]) Cross(b Point3d[T]) Point3d[T] {
 		Z: a.X*b.Y - a.Y*b.X,
 	}
 }
-
-func (a Point3d[T]) Normalize() Point3d[T] {
-	mag := a.Magnitude()
-	if mag > 1e-6 {
-		a.X /= T(mag)
-		a.Y /= T(mag)
-		a.Z /= T(mag)
-	}
-	return a
-}
-
-//func (a Point3d[T]) Normalize() Point3d[T] {
-//	mag := a.Magnitude()
-//	x, y, z := float64(a.X)/mag, float64(a.Y)/mag, float64(a.Z)/mag
-//	return Point3d[T]{X: T(x), Y: T(y), Z: T(z)}
-//}
 
 func (a Point3d[T]) CLampFast(rng Range[T]) Point3d[T] {
 	return Point3d[T]{X: rng.ClampFast(a.X),

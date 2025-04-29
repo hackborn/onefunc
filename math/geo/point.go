@@ -205,7 +205,11 @@ func (a Point[T]) projectAlgo3(m, dist float64) (Point[T], Point[T]) {
 
 // ProjectDegree takes a degree and distance and projects a new point.
 func (a Point[T]) ProjectDegree(deg, dist float64) Point[T] {
-	radians := DegreesToRadians(deg)
+	return a.ProjectRadians(DegreesToRadians(deg), dist)
+}
+
+// ProjectRadians takes a radian and distance and projects a new point.
+func (a Point[T]) ProjectRadians(radians, dist float64) Point[T] {
 	return Point[T]{X: a.X + T(dist*math.Cos(radians)),
 		Y: a.Y + T(dist*math.Sin(radians))}
 }
@@ -214,6 +218,10 @@ func (a Point[T]) ProjectDegree(deg, dist float64) Point[T] {
 // array as represented by this point.
 func (p Point[T]) ToIndex(xy Point[T]) T {
 	return (xy.Y * p.X) + xy.X
+}
+
+func (p Point[T]) To3d(z T) Point3d[T] {
+	return Point3d[T]{X: p.X, Y: p.Y, Z: z}
 }
 
 func ConvertPoint[A Number, B Number](a Point[A]) Point[B] {

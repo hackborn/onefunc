@@ -1,5 +1,7 @@
 package geo
 
+import "fmt"
+
 // ---------------------------------------------------------
 // CONSTRUCTION
 
@@ -79,6 +81,11 @@ func (b *QuadraticBezier) PointBounds() RectF {
 	r.T, r.B = min(b.P0.Y, b.P1.Y), max(b.P0.Y, b.P1.Y)
 	r.T, r.B = min(r.T, b.P2.Y), max(r.B, b.P2.Y)
 	return r
+}
+
+func (b QuadraticBezier) String() string {
+	return fmt.Sprintf("P0 (%.6f, %.6f), P1 (%.6f, %.6f), P2 (%.6f, %.6f)",
+		b.P0.X, b.P0.Y, b.P1.X, b.P1.Y, b.P2.X, b.P2.Y)
 }
 
 // ---------------------------------------------------------
