@@ -95,11 +95,38 @@ func (a Point3d[T]) Cross(b Point3d[T]) Point3d[T] {
 	}
 }
 
-func (a Point3d[T]) CLampFast(rng Range[T]) Point3d[T] {
+func (a Point3d[T]) ClampFast(rng Range[T]) Point3d[T] {
 	return Point3d[T]{X: rng.ClampFast(a.X),
 		Y: rng.ClampFast(a.Y),
 		Z: rng.ClampFast(a.Z),
 	}
+}
+
+// RotateX rotates a Vector3 around the X-axis by a given angle (in radians).
+func (v Point3d[T]) RotateX(angle float64) Point3d[T] {
+	sinTheta := T(math.Sin(angle))
+	cosTheta := T(math.Cos(angle))
+	newY := v.Y*cosTheta - v.Z*sinTheta
+	newZ := v.Y*sinTheta + v.Z*cosTheta
+	return Point3d[T]{X: v.X, Y: newY, Z: newZ}
+}
+
+// RotateY rotates a Vector3 around the Y-axis by a given angle (in radians).
+func (v Point3d[T]) RotateY(angle float64) Point3d[T] {
+	sinTheta := T(math.Sin(angle))
+	cosTheta := T(math.Cos(angle))
+	newX := v.X*cosTheta + v.Z*sinTheta
+	newZ := -v.X*sinTheta + v.Z*cosTheta
+	return Point3d[T]{X: newX, Y: v.Y, Z: newZ}
+}
+
+// RotateZ rotates a Vector3 around the Z-axis by a given angle (in radians).
+func (v Point3d[T]) RotateZ(angle float64) Point3d[T] {
+	sinTheta := T(math.Sin(angle))
+	cosTheta := T(math.Cos(angle))
+	newX := v.X*cosTheta - v.Y*sinTheta
+	newY := v.X*sinTheta + v.Y*cosTheta
+	return Point3d[T]{X: newX, Y: newY, Z: v.Z}
 }
 
 func Pt3dNearZero(v Pt3dF, tolerance float64) bool {

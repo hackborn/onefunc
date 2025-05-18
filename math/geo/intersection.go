@@ -446,7 +446,7 @@ func quadraticBezierDistance(bez QuadraticBezier, pos PtF) (float64, PtF) {
 		n := math.Sqrt(1.0 - m*m)
 
 		n *= math.Sqrt(3.0)
-		t := Pt3d((m+m)*z-kx, (-n-m)*z-kx, (n-m)*z-kx).CLampFast(RngFUnit)
+		t := Pt3d((m+m)*z-kx, (-n-m)*z-kx, (n-m)*z-kx).ClampFast(RngFUnit)
 		//        vec3  t = clamp( vec3(m+m,-n-m,n-m)*z-kx, 0.0, 1.0 );
 		qx := Pt(dx+(cx+bx*t.X)*t.X, dy+(cy+by*t.X)*t.X)
 		dx := qx.Dot(qx)
