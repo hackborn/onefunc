@@ -154,3 +154,14 @@ func WithSettings(srcs ...Settings) Option {
 		}
 	}
 }
+
+func WithString(s string) Option {
+	return func(b Builder, eb oferrors.Block) {
+		t := b.NewSettings()
+		if err := json.Unmarshal([]byte(s), &t); err != nil {
+			eb.AddError(err)
+		} else {
+			b.AddSettings(t)
+		}
+	}
+}
