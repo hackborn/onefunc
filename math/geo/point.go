@@ -63,6 +63,10 @@ func (a Point[T]) SubValue(v T) Point[T] {
 	return Point[T]{X: a.X - v, Y: a.Y - v}
 }
 
+func (a Point[T]) MulScalar(scalar T) Point[T] {
+	return Point[T]{X: a.X * scalar, Y: a.Y * scalar}
+}
+
 // Normalize normalizs the point to a unit.
 // Can be negative if they are generated from a negative point,
 // i.e. a negative direction vector.
@@ -113,6 +117,11 @@ func (a Point[T]) Degrees(b Point[T]) float64 {
 
 func (a Point[T]) Inside(r Rectangle[T]) bool {
 	return a.X >= r.L && a.Y >= r.T && a.X < r.R && a.Y < r.B
+}
+
+// Perpendicular returns a vector perpendicular to v (rotated 90 degrees clockwise).
+func (v Point[T]) Perpendicular() Point[T] {
+	return Point[T]{v.Y, -v.X} // Or {-v.Y, v.X} for counter-clockwise
 }
 
 // Rotate the point. Rotation will be:
