@@ -63,3 +63,39 @@ func PointOnSegmentSquaredXY(seg Seg3dF, p PtF) (Pt3dF, float64) {
 	}
 	return Pt3d(_pb.X, _pb.Y, z), d
 }
+
+// NearestPointOnSegment3 finds the nearest point on a line segment to a given point.
+func NearestPointOnSegment3(segment Seg3dF, p Pt3dF) Pt3dF {
+	// Vector representing the line segment (from P1 to P2)
+	segmentVec := vectorFrom(segment.A, segment.B)
+
+	// Squared length of the segment. If 0, segment is a single point.
+	l2 := segmentVec.LengthSq()
+	if l2 == 0.0 {
+		return segment.A // Segment is a point, so P1 is the nearest.
+	}
+
+	// Vector from P1 to the given point
+	p1ToP := vectorFrom(segment.A, p)
+
+	// Calculate the projection of p1ToP onto segmentVec.
+	// This gives us the 't' parameter along the infinite line.
+	t := p1ToP.DotProduct(segmentVec) / l2
+
+	// Clamp 't' to the [0, 1] range to ensure the point is on the segment.
+	// If t < 0, the closest point on the segment is P1.
+	// If t > 1, the closest point on the segment is P2.
+	// If 0 <= t <= 1, the closest point is on the segment between P1 and P2.
+	t = math.Max(0.0, math.Min(1.0, t))
+
+	// Calculate the nearest point on the segment using interpolation.
+	nearestPoint := segment.A.Add(segmentVec.MultScalar(t))
+
+	return nearestPoint
+}
+
+// VectorFrom creates a vector from point A to point B.
+// REPLACE WITH SUB
+func vectorFrom(a, b Pt3dF) Pt3dF {
+	return Pt3dF{b.X - a.X, b.Y - a.Y, b.Z - a.Z}
+}

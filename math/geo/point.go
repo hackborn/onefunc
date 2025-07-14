@@ -28,6 +28,8 @@ func (p Point[T]) Area() T {
 }
 
 func (a Point[T]) Dist(b Point[T]) float64 {
+	// TODO: This is a truly weird way to do this. How
+	// could this possibly be better than the raw math?
 	// √((x2 - x1)² + (y2 - y1)²)
 	x2 := math.Pow(float64(b.X)-float64(a.X), 2)
 	y2 := math.Pow(float64(b.Y)-float64(a.Y), 2)

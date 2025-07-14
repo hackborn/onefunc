@@ -31,22 +31,40 @@ func TestCubicBezierAt(t *testing.T) {
 var bezEA = CubicBez(0., 0., 9., 9., 11., 11., 1., 20.)
 
 // ---------------------------------------------------------
-// TEST-POINT-ON-SEGMENT-SQUARED_XY-TestPointOnSegmentSquaredXYReal
+// TEST-NEAREST-POINT-ON-SEGMENT-3
+
+func TestNearestPointOnSegment3(t *testing.T) {
+	f := func(seg Seg3dF, ptf Pt3dF, wantPt Pt3dF) {
+		t.Helper()
+
+		havePt := NearestPointOnSegment3(seg, ptf)
+		if !Pt3EquaTol(havePt, wantPt, .001) {
+			t.Fatalf("have %v but want %v", havePt, wantPt)
+		}
+	}
+	f(Seg3d(10., 10., 0., 20., 10., 0.), Pt3d(15., 5., 0.), Pt3d(15., 10., 0.))
+	f(Seg3d(10., 10., 1., 20., 10., 1.), Pt3d(15., 5., 0.), Pt3d(15., 10., 1.))
+	f(Seg3d(10., 10., 0., 20., 10., 1.), Pt3d(15., 5., 0.), Pt3d(14.9504, 10., 0.4950))
+}
+
+// ---------------------------------------------------------
+// TEST-POINT-ON-SEGMENT-SQUARED_XY
 
 // Test with some real world data to track down issues.
 func TestPointOnSegmentSquaredXYReal(t *testing.T) {
 	f := func(seg Seg3dF, ptf PtF, wantDist float64) {
 		t.Helper()
-
-		havePt, haveDist := PointOnSegmentSquaredXY(seg, ptf)
-		//		fmt.Println("seg", seg, "pt", ptf, "havedist", haveDist, "havePt", havePt)
-		fmt.Println("dist", haveDist, "from pt", ptf, "havePt", havePt)
+		/*
+			havePt, haveDist := PointOnSegmentSquaredXY(seg, ptf)
+			//		fmt.Println("seg", seg, "pt", ptf, "havedist", haveDist, "havePt", havePt)
+			fmt.Println("dist", haveDist, "from pt", ptf, "havePt", havePt)
+		*/
 	}
 	seg := Seg3d(318.429629629629, 193.000000000000, 0.041512345679, 319.000000000000, 193.020157068063, 0.041901178010)
 	f(seg, PtF{X: float64(308) + .5, Y: float64(311) + .5}, 0.)
 	f(seg, PtF{X: float64(309) + .5, Y: float64(311) + .5}, 0.)
 	f(seg, PtF{X: float64(310) + .5, Y: float64(311) + .5}, 0.)
-	t.Fatal("s")
+	// t.Fatal("s")
 }
 
 /*
