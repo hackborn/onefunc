@@ -15,6 +15,13 @@ func NullHitTest(PtF) bool {
 	return false
 }
 
+func Abs[T constraints.Signed](x T) T {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
 func DegreesToRadians(degrees float64) float64 {
 	return degrees * (math.Pi / 180.0)
 }
