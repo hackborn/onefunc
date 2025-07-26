@@ -48,7 +48,7 @@ func (r *InterpolatorReader) Reset() {
 }
 
 func (r *InterpolatorReader) ReadPoint() (PtF, error) {
-	if r.done || r.Source == nil {
+	if r.done || r.Source == nil || r.Step <= 0. {
 		return PtF{}, io.EOF
 	}
 	if r.current >= 1. {

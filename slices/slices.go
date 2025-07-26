@@ -34,7 +34,7 @@ func Pop[T any](s []T) ([]T, T) {
 // reusing the supplied slice if it has enough capacity.
 func SetLen[T any](s []T, area int) []T {
 	if cap(s) < area {
-		return make([]T, area, area)
+		return make([]T, area)
 	} else {
 		return s[:area]
 	}
@@ -45,7 +45,7 @@ func SetLen[T any](s []T, area int) []T {
 // If the slice is reused then all values are initialized.
 func SetLenInit[T any](s []T, area int) []T {
 	if cap(s) < area {
-		return make([]T, area, area)
+		return make([]T, area)
 	} else {
 		newS := s[:area]
 		for i := range area {
