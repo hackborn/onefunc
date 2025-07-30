@@ -16,6 +16,11 @@ type retained struct {
 }
 
 func (r *retained) Retain(topic string, value any) {
+	// This causes a panic, so I guess just don't do it.
+	// TODO: Should it log? Should it be considered illegal?
+	if value == nil {
+		return
+	}
 	last := last{}
 	last.value.Store(value)
 	r.all[topic] = last

@@ -15,70 +15,97 @@ import (
 
 // ---------------------------------------------------------
 // TEST-PUBLISH-INT
+
 func TestPublishInt(t *testing.T) {
-	table := []struct {
-		topic   string
-		message int
-		want    []any
-	}{
-		{"a", 1, []any{1}},
-	}
-	for i, v := range table {
+	f := func(topic string, message int, want []any) {
+		t.Helper()
+
 		r := NewRouter()
 		sub := &captureSubscription{}
-		Sub(r, v.topic, sub.receiveInt)
-		Pub(r, v.topic, v.message)
+		Sub(r, topic, sub.receiveInt)
+		Pub(r, topic, message)
 
-		if reflect.DeepEqual(v.want, sub.captured) != true {
-			t.Fatalf("TestPublishInt %v has \"%v\" but wants \"%v\"", i, sub.captured, v.want)
+		if reflect.DeepEqual(want, sub.captured) != true {
+			t.Fatalf("has \"%v\" but wants \"%v\"", sub.captured, want)
 		}
 	}
+	f("a", 1, []any{1})
 }
 
 // ---------------------------------------------------------
 // TEST-CHANNEL-INT
+
 func TestChannelInt(t *testing.T) {
-	table := []struct {
-		topic   string
-		message int
-		want    []any
-	}{
-		{"a", 1, []any{1}},
-	}
-	for i, v := range table {
+	f := func(topic string, message int, want []any) {
+		t.Helper()
+
 		sub := &captureSubscription{}
 		r := NewRouter()
-		Sub(r, v.topic, sub.receiveInt)
-		c := NewChannel[int](r, v.topic)
-		c.Pub(v.message)
+		Sub(r, topic, sub.receiveInt)
+		c := NewChannel[int](r, topic)
+		c.Pub(message)
 
-		if reflect.DeepEqual(v.want, sub.captured) != true {
-			t.Fatalf("TestChannelInt %v has \"%v\" but wants \"%v\"", i, sub.captured, v.want)
+		if reflect.DeepEqual(want, sub.captured) != true {
+			t.Fatalf("has \"%v\" but wants \"%v\"", sub.captured, want)
 		}
 	}
+	f("a", 1, []any{1})
+}
+
+// ---------------------------------------------------------
+// TEST-CHANNEL-INTERFACE
+
+func TestChannelInterface(t *testing.T) {
+	f := func(topic string, message Namer, want []Namer) {
+		t.Helper()
+
+		sub := &captureSubscription{}
+		r := NewRouter()
+		Sub(r, topic, sub.receiveNamer)
+		c := NewChannel[Namer](r, topic)
+		c.Pub(message)
+
+		if reflect.DeepEqual(want, sub.namerCaptured) != true {
+			t.Fatalf("has \"%v\" but wants \"%v\"", sub.namerCaptured, want)
+		}
+	}
+	// Used to cause crash.
+	f("a", nil, []Namer{nil})
+	// TODO: Need a different way to test for this to work
+	//	f("a", &_namer{n: "hi"}, []Namer{&_namer{n: "hi"}})
+}
+
+type Namer interface {
+	Name() string
+}
+
+type _namer struct {
+	n string
+}
+
+func (n *_namer) Name() string {
+	return n.n
 }
 
 // ---------------------------------------------------------
 // TEST-SEQUENCE
 func TestSequence(t *testing.T) {
-	table := []struct {
-		test string
-	}{
-		//		{"sequences_1.txt"},
-		{"sequences_2.txt"},
-	}
-	for i, v := range table {
-		tests := loadSeqTests(v.test)
+	f := func(test string) {
+		t.Helper()
+
+		tests := loadSeqTests(test)
 		for _, test := range tests {
 			state := newState()
 			for _, step := range test.Steps {
 				step.Step(state)
 			}
 			if reflect.DeepEqual(state.want, state.captured) != true {
-				t.Fatalf("TestSequence %v test %v has \"%v\" but wants \"%v\"", i, state.name, state.captured, state.want)
+				t.Fatalf("test %v has \"%v\" but wants \"%v\"", state.name, state.captured, state.want)
 			}
 		}
 	}
+	f("sequences_1.txt")
+	f("sequences_2.txt")
 }
 
 // ---------------------------------------------------------
@@ -370,11 +397,16 @@ func (b *seqTestBuilder) make() []seqTest {
 // HANDLERS
 
 type captureSubscription struct {
-	captured []any
+	captured      []any
+	namerCaptured []Namer
 }
 
 func (s *captureSubscription) receiveInt(topic string, value int) {
 	s.captured = append(s.captured, value)
+}
+
+func (s *captureSubscription) receiveNamer(topic string, value Namer) {
+	s.namerCaptured = append(s.namerCaptured, value)
 }
 
 // ---------------------------------------------------------
