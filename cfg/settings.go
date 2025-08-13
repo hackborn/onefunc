@@ -3,6 +3,7 @@ package cfg
 import (
 	"encoding/json"
 	"fmt"
+	"iter"
 	"os"
 	"slices"
 	"strconv"
@@ -233,19 +234,15 @@ func (s Settings) Length(path string) int {
 	return 0
 }
 
-// WalkKeys iterates the keys.
-// You can get the same info from calling Strings(), which
-// is easier to use but less efficient. Not sure that I'll
-// ever need the difference in efficiency though, so this might
-// go away.
-func (s Settings) WalkKeys(fn WalkKeysFunc) error {
-	for k := range s.t {
-		err := fn(k)
-		if err != nil {
-			return err
+// AllKeys iterates all keys at the top level.
+func (s Settings) AllKeys() iter.Seq[string] {
+	return func(yield func(string) bool) {
+		for k, _ := range s.t {
+			if !yield(k) {
+				return
+			}
 		}
 	}
-	return nil
 }
 
 func (s Settings) asJson() ([]byte, error) {
@@ -396,8 +393,6 @@ func pathIndex(index int, path []string) (int, bool) {
 	}
 	return 0, false
 }
-
-type WalkKeysFunc func(key string) error
 
 func NewEmptySettings() Settings {
 	return emptySettings()
