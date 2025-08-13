@@ -399,6 +399,10 @@ func pathIndex(index int, path []string) (int, bool) {
 
 type WalkKeysFunc func(key string) error
 
+func NewEmptySettings() Settings {
+	return emptySettings()
+}
+
 func emptySettings() Settings {
 	return Settings{t: make(map[string]any)}
 }
