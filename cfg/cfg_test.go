@@ -2,12 +2,14 @@ package cfg
 
 import (
 	"embed"
+	"fmt"
 	"os"
 	"path"
 	"reflect"
 	"sort"
 	"testing"
 
+	oferrors "github.com/hackborn/onefunc/errors"
 	"github.com/hackborn/onefunc/jacl"
 	"github.com/hackborn/onefunc/math/geo"
 )
@@ -16,6 +18,47 @@ func TestMain(m *testing.M) {
 	setupTests()
 	code := m.Run()
 	os.Exit(code)
+}
+
+// ---------------------------------------------------------
+// TEST-ADD
+
+// TestAdd tests adding to a Settings.
+func TestAdd(t *testing.T) {
+	f := func(src Settings, want Settings, items ...any) {
+		t.Helper()
+
+		for i := 1; i < len(items); i += 2 {
+			if key, ok := items[i-1].(string); ok && items[i] != nil {
+				var err error
+				src, err = Add(src, key, items[i])
+				oferrors.Panic(err)
+			}
+		}
+		haveStr, wantStr := fmt.Sprintf("%v", src.t), fmt.Sprintf("%v", want.t)
+		if haveStr != wantStr {
+			t.Fatalf("has\n\t%v\nbut wants\n\t%v", haveStr, wantStr)
+		}
+	}
+	f(addSettingsA, addSettingsB, "b", "isa")
+	f(addSettingsA, addSettingsC, "b", 10)
+}
+
+var addSettingsA = Settings{t: map[string]any{
+	"name": "a",
+},
+}
+
+var addSettingsB = Settings{t: map[string]any{
+	"name": "a",
+	"b":    "isa",
+},
+}
+
+var addSettingsC = Settings{t: map[string]any{
+	"name": "a",
+	"b":    10,
+},
 }
 
 // ---------------------------------------------------------
@@ -219,8 +262,7 @@ func TestWithSettings(t *testing.T) {
 
 		opts := []Option{WithFS(dataFs, path.Join("testdata", src))}
 		opts = append(opts, WithSettings(optS))
-		s, haveErr := NewSettings(opts...)
-		s.Print()
+		_, haveErr = NewSettings(opts...)
 		if haveErr != nil {
 			panic(haveErr)
 		}
