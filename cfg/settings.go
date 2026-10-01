@@ -115,6 +115,29 @@ func (s Settings) treeKeys() []string {
 	return nil
 }
 
+// ContainsString answers true if path resolves to a string slice
+// and the slice contains item.
+func (s Settings) ContainsString(path, item string) bool {
+	var cur any = s.t
+	for parent := range strings.SplitSeq(path, "/") {
+		if mc, ok := cur.(map[string]any); ok {
+			if v, ok := mc[parent]; ok {
+				cur = v
+				continue
+			}
+		}
+		return false
+	}
+	if fin, ok := cur.([]any); ok {
+		for _, _s := range fin {
+			if s, ok := _s.(string); ok && s == item {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // Bool answers the bool value at the given path. The value
 // must be a bool, a string (with value "true" or "t") or an
 // element of a slice (for example, if the Settings contains

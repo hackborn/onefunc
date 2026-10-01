@@ -98,6 +98,25 @@ func TestBool(t *testing.T) {
 }
 
 // ---------------------------------------------------------
+// TEST-CONTAINS-STRING
+
+// TestContainsString tests ContainsString.
+func TestContainsString(t *testing.T) {
+	f := func(name, path string, wantAll ...string) {
+		t.Helper()
+
+		s := mustLoad(name)
+		for _, want := range wantAll {
+			if !s.ContainsString(path, want) {
+				t.Fatalf("Item \"%v\" is missing", want)
+			}
+		}
+	}
+	f("c", "list", "a")
+	f("d", "this/is/real", "a")
+}
+
+// ---------------------------------------------------------
 // TEST-INT64
 func TestInt64(t *testing.T) {
 	optA := []Option{WithFS(dataFs, "testdata/a.json")}
@@ -300,6 +319,17 @@ func setupTests() {
 	os.Setenv("CFG_TESTDATA_A", "ant")
 	os.Setenv("CFG_TESTDATA_B", "bear")
 	os.Setenv("CFG_TESTDATA_C", "cat")
+}
+
+// ---------------------------------------------------------
+// IO
+
+func mustLoad(name string) Settings {
+	s, err := NewSettings(WithFS(dataFs, "testdata/"+name+".json"))
+	if err != nil {
+		panic(err)
+	}
+	return s
 }
 
 // ---------------------------------------------------------
