@@ -9,7 +9,7 @@ import (
 
 // Opener is called during the construction of
 // the services list.
-// Services an also implement io.Closer to close.
+// Services can also implement io.Closer to close.
 type Opener interface {
 	// Open the service, returning an error. Clients
 	// can return WaitingErr to indicate they are waiting

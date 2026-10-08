@@ -2,7 +2,6 @@ package background
 
 import (
 	"slices"
-	"sync/atomic"
 
 	"github.com/hackborn/onefunc/cfg"
 	"github.com/hackborn/onefunc/hub"
@@ -17,6 +16,8 @@ func newService(settings cfg.Settings) *service {
 		endUpdateFn:   defaultUpdateFunc,
 		runTaskFn:     defaultRunTaskFunc,
 	}
+	closer := NewChannelCloser[Task](c)
+	s.closers = append(s.closers, closer)
 	s.ls = &localService{s: s}
 	workers := 4
 	if settings.MustBool("debug/log", false) {
@@ -26,14 +27,15 @@ func newService(settings cfg.Settings) *service {
 		s.runTaskFn = timer.runLocal
 	}
 	for range workers {
-		s.wg.Add(1)
-		go s.loop()
+		s.wg.Go(func() {
+			s.loop(closer)
+		})
 	}
 	return s
 }
 
 type service struct {
-	closed       atomic.Bool
+	closers      []Closer
 	c            chan Task
 	wg           sync.WaitGroup
 	required     []*requiredTask
@@ -54,12 +56,21 @@ type service struct {
 // Closing shuts down before the official Close(), because
 // other services might rely on the background service.
 func (s *service) Closing(hub.Services) {
-	if s.closed.Load() == false {
-		s.cancelAll()
-		s.closed.Store(true)
-		close(s.c)
-		s.wg.Wait()
-		s.runRequired(s.required)
+	s.cancelAll()
+	for _, closer := range s.closers {
+		closer.Close()
+	}
+	s.wg.Wait()
+	s.runRequired(s.required)
+}
+
+func (s *service) Go(fn func(), c Closer) {
+	// TODO: This should only be available during the opening stage
+	// but I don't have a good mechanism for that right now, so I'll
+	// at least block it during the closing stage.
+	if s.c != nil && fn != nil && c != nil {
+		s.closers = append(s.closers, c)
+		s.wg.Go(fn)
 	}
 }
 
@@ -137,9 +148,7 @@ func (s *service) runRequired(tasks []*requiredTask) {
 	}
 }
 
-func (s *service) loop() {
-	defer s.wg.Done()
-
+func (s *service) loop(closer Closer) {
 	for {
 		task, more := <-s.c
 		if !more {
@@ -149,10 +158,8 @@ func (s *service) loop() {
 		task.Remote(args)
 		s.pushHandled(task)
 
-		// I think the s.c == nil check is sufficient but I'm not
-		// entirely positive about the safety, so I added the atomic.
-		if s.c == nil || s.closed.Load() == true {
-			break
+		if closer.IsClosed() {
+			return
 		}
 	}
 }
