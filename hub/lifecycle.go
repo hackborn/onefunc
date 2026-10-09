@@ -3,6 +3,7 @@ package hub
 import (
 	"cmp"
 	"fmt"
+	"iter"
 
 	"github.com/hackborn/onefunc/cfg"
 )
@@ -45,9 +46,9 @@ var WaitingErr = fmt.Errorf("Waiting")
 // open services. Repeatedly walk the list opening
 // whomever doesn't return an error. Stop when all
 // services are opened or we only get errors.
-func open(settings, globalSettings cfg.Settings, a *_services) (*_services, error) {
+func open(settings, globalSettings cfg.Settings, a, opening *_services) (*_services, error) {
 	b := newServices()
-
+	composite := &compositeService{a: b, b: opening}
 	var lastErr error
 	lastSize := len(a.all) + 1
 	for lastSize != len(a.all) {
@@ -57,7 +58,8 @@ func open(settings, globalSettings cfg.Settings, a *_services) (*_services, erro
 			if opener, ok := v.service.(Opener); ok {
 				args := OpenArgs{Settings: settings.Subset(k),
 					GlobalSettings: globalSettings,
-					Services:       b,
+					//					Services:       b,
+					Services: composite,
 				}
 				if err := opener.Open(args); err == nil {
 					a.moveTo(k, b)
@@ -69,6 +71,7 @@ func open(settings, globalSettings cfg.Settings, a *_services) (*_services, erro
 			}
 		}
 	}
+	opening.Close()
 	if len(a.all) > 0 {
 		// We failed to open everyone, which means the client
 		// will receive an empty services, so at least clean up.
@@ -77,4 +80,25 @@ func open(settings, globalSettings cfg.Settings, a *_services) (*_services, erro
 		return nil, cmp.Or(lastErr, fmt.Errorf("Can't open services"))
 	}
 	return b, nil
+}
+
+type compositeService struct {
+	a, b *_services
+}
+
+func (s *compositeService) All() iter.Seq2[string, any] {
+	fmt.Println("Unfinished: compositeService.All() only iterates a")
+	return s.a.All()
+}
+
+func (s *compositeService) Close() error {
+	err := s.a.Close()
+	return cmp.Or(err, s.b.Close())
+}
+
+func (s *compositeService) get(name string) (any, bool) {
+	if res, ok := s.a.get(name); ok {
+		return res, ok
+	}
+	return s.b.get(name)
 }

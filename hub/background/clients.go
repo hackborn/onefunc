@@ -2,6 +2,8 @@ package background
 
 import (
 	"sync/atomic"
+
+	"github.com/hackborn/onefunc/hub"
 )
 
 // This file provides a menchanism for clients to add their own
@@ -44,4 +46,18 @@ func (c *ChannelCloser[T]) IsClosed() bool {
 	// wait for the channel to drain before they know to
 	// return. They can if they want, but most won't.
 	return c.c == nil || c.closed.Load() == true
+}
+
+type openerService struct {
+	s *service
+}
+
+func (s *openerService) Closing(hub.Services) {
+	s.s = nil
+}
+
+func (s *openerService) Go(fn func(), closer Closer) {
+	if s.s != nil {
+		s.s.doGo(fn, closer)
+	}
 }

@@ -2,6 +2,7 @@ package hub
 
 import (
 	"fmt"
+	"sync/atomic"
 
 	"github.com/hackborn/onefunc/cfg"
 )
@@ -26,10 +27,9 @@ type BuildArgs struct {
 //	}
 func Build(args BuildArgs, settings cfg.Settings) (Services, error) {
 	waiting := newServices()
-	// Install system services
-	//	for k, s := range args.Services {
-	//		waiting.all[k] = serviceEntry{service: s}
-	//	}
+	opening := newServices()
+	onargs := OnNewServiceArgs{done: &atomic.Bool{},
+		openingServices: opening}
 
 	// Install configured services
 	for name := range settings.AllKeys() {
@@ -43,7 +43,13 @@ func Build(args BuildArgs, settings cfg.Settings) (Services, error) {
 		}
 		waiting.all[name] = serviceEntry{service: service,
 			depedencies: fac.Dependencies}
+		if fac.OnNewServiceFn != nil {
+			onargs.Name, onargs.Service = name, service
+			fac.OnNewServiceFn(onargs)
+
+		}
 	}
+	onargs.done.Store(true)
 
 	// Run steps
 	stepArgs := StepArgs{GlobalSettings: args.GlobalSettings,
@@ -56,7 +62,7 @@ func Build(args BuildArgs, settings cfg.Settings) (Services, error) {
 		}
 	}
 
-	return open(settings, args.GlobalSettings, waiting)
+	return open(settings, args.GlobalSettings, waiting, opening)
 }
 
 // ---------------------------------------------------------

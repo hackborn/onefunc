@@ -64,7 +64,7 @@ func (s *service) Closing(hub.Services) {
 	s.runRequired(s.required)
 }
 
-func (s *service) Go(fn func(), c Closer) {
+func (s *service) doGo(fn func(), c Closer) {
 	// TODO: This should only be available during the opening stage
 	// but I don't have a good mechanism for that right now, so I'll
 	// at least block it during the closing stage.

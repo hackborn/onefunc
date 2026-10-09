@@ -13,15 +13,20 @@ import (
 type Services interface {
 	All() iter.Seq2[string, any]
 	Close() error
+	// get answers the service at the name.
+	// This seals the interface, which is unnecessary, but
+	// there's also currently no reason for clients to
+	// implement it, so I do it to keep the namespace cleaner.
+	get(name string) (any, bool)
 }
 
 func Get[T any](_s Services, name string) (T, error) {
-	if s, ok := _s.(*_services); !ok {
+	if s, ok := _s.get(name); !ok {
 		var t T
-		return t, fmt.Errorf("Invalid services")
-	} else if service, ok := s.all[name].service.(T); !ok {
+		return t, fmt.Errorf("No service named %v", name)
+	} else if service, ok := s.(T); !ok {
 		var t T
-		return t, fmt.Errorf("No service named %v type %T", name, t)
+		return t, fmt.Errorf("Service named %v is not type %T", name, t)
 	} else {
 		return service, nil
 	}
@@ -51,6 +56,13 @@ func (s *_services) All() iter.Seq2[string, any] {
 			}
 		}
 	}
+}
+
+func (s *_services) get(name string) (any, bool) {
+	if e, ok := s.all[name]; ok {
+		return e.service, true
+	}
+	return nil, false
 }
 
 func (s *_services) Close() error {
@@ -93,6 +105,12 @@ func (a *_services) moveTo(key string, b *_services) {
 	if s, ok := a.all[key]; ok {
 		delete(a.all, key)
 		b.all[key] = s
+	}
+}
+
+func (a *_services) print() {
+	for k, s := range a.All() {
+		fmt.Printf("Service %s %T\n", k, s)
 	}
 }
 
