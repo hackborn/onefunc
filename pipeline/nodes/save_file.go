@@ -47,7 +47,7 @@ func (n *SaveFileNode) Run(state *pipeline.State, input pipeline.RunInput, outpu
 
 func (n *SaveFileNode) verify(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return fmt.Errorf("SaveFileNode: path \"" + path + "\"does not exist")
+		return fmt.Errorf("SaveFileNode: path \"%s\"does not exist", path)
 	}
 	return nil
 }

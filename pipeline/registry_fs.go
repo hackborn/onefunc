@@ -32,7 +32,7 @@ func newRegistryFs() *registryFs {
 func (r *registryFs) Register(name string, fsys fs.FS) error {
 	defer sync.Lock(&r.lock).Unlock()
 	if _, ok := r.systems[name]; ok {
-		return fmt.Errorf(`FS "` + name + `" already registered`)
+		return fmt.Errorf("FS \"%s\" already registered", name)
 	}
 	r.systems[name] = fsys
 	return nil
