@@ -1,6 +1,7 @@
 package cfg
 
 import (
+	"cmp"
 	"embed"
 	"fmt"
 	"os"
@@ -59,6 +60,95 @@ var addSettingsC = Settings{t: map[string]any{
 	"name": "a",
 	"b":    10,
 },
+}
+
+// ---------------------------------------------------------
+// TEST-SET
+
+// TestSet tests setting via the Set option.
+func TestSet(t *testing.T) {
+	f := func(want string, fns ...SetFunc) {
+		t.Helper()
+
+		opts := []Option{}
+		for _, fn := range fns {
+			opts = append(opts, Set(fn))
+		}
+		have, err := NewSettings(opts...)
+		oferrors.Panic(err)
+
+		haveStr, wantStr := fmt.Sprintf("%v", have.t), fmt.Sprintf("%v", mustLoad(want).t)
+		if haveStr != wantStr {
+			t.Fatalf("has\n\t%v\nbut wants\n\t%v", haveStr, wantStr)
+		}
+	}
+	f("set_a", setA)
+	f("set_a_b", setA, setB)
+}
+
+func setA(s Setter) error {
+	err := s.Set("a", 1)
+	err = cmp.Or(err, s.Set("b/c", 2))
+	err = cmp.Or(err, s.Set("d/e/f", 3))
+	return err
+}
+
+func setB(s Setter) error {
+	err := s.Set("name", "vail")
+	return err
+}
+
+// ---------------------------------------------------------
+// TEST-GET
+
+// TestGet tests getting via Get.
+func TestGet(t *testing.T) {
+	f := func(get getFunc, fns ...SetFunc) {
+		t.Helper()
+
+		opts := []Option{}
+		for _, fn := range fns {
+			opts = append(opts, Set(fn))
+		}
+		have, err := NewSettings(opts...)
+		oferrors.Panic(err)
+
+		if err := get(have); err != nil {
+			t.Fatalf("Get failed (%v) for settings %v", err, fmt.Sprintf("%v", have.t))
+		}
+	}
+	f(getA_1, setA)
+	f(getA_2, setA)
+	f(getB_1, setB)
+}
+
+type getFunc func(s Settings) error
+
+func getA_1(s Settings) error {
+	return getA_int("a", s)
+}
+
+func getA_2(s Settings) error {
+	return getA_int("d/e/f", s)
+}
+
+func getA_int(path string, s Settings) error {
+	if _, ok := s.Get[int](path); ok {
+		return nil
+	}
+
+	if v, ok := s.Get[any](path); ok {
+		return fmt.Errorf("Type for %v is %T", path, v)
+	} else {
+		return fmt.Errorf("Missing %v", path)
+	}
+}
+
+func getB_1(s Settings) error {
+	if _, ok := s.Get[string]("name"); !ok {
+		return fmt.Errorf("Missing name")
+	}
+	return nil
 }
 
 // ---------------------------------------------------------
@@ -326,9 +416,7 @@ func setupTests() {
 
 func mustLoad(name string) Settings {
 	s, err := NewSettings(WithFS(dataFs, "testdata/"+name+".json"))
-	if err != nil {
-		panic(err)
-	}
+	oferrors.Panic(err)
 	return s
 }
 

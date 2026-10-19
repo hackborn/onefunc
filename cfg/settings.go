@@ -53,6 +53,28 @@ func WriteJson(s Settings) ([]byte, error) {
 	return s.asJson()
 }
 
+// Get answers the typed value at the given path.
+func (s Settings) Get[T any](path string) (any, bool) {
+	if _v, ok := getType(s, path, leafAny); ok {
+		if v, ok := _v.(T); ok {
+			return v, true
+		}
+	}
+	var t T
+	return t, false
+}
+
+// MustGet answers the typed value at the given path.
+func (s Settings) MustGet[T any](path string) T {
+	if _v, ok := getType(s, path, leafAny); ok {
+		if v, ok := _v.(T); ok {
+			return v
+		}
+	}
+	var t T
+	return t
+}
+
 // String answers the string value at the given path.
 func (s Settings) String(path string) (string, bool) {
 	return getType(s, path, leafString)
@@ -293,6 +315,21 @@ func getType[T any](s Settings, path string, getFn getFlatTypeFunc[T]) (T, bool)
 		newPath := strings.Join(p[0:len(p)-1], pathSeparator)
 		return getFn(s.lockedSubset(newPath), p[len(p)-1])
 	}
+}
+
+// leafAnt takes a path with no seperator, i.e.
+// assumes it is an index in this map and not a subset,
+// and returns the value.
+func leafAny(s Settings, p string) (any, bool) {
+	// Lists are a special case
+	if s.sliceKey != "" {
+		// Anys don't have slice support
+		return nil, false
+	}
+	if v, ok := s.t[p]; ok {
+		return v, true
+	}
+	return nil, false
 }
 
 // leafBool takes a path with no seperator, i.e.

@@ -18,6 +18,20 @@ type Option func(Builder, oferrors.Block)
 
 type Process func(map[string]any) map[string]any
 
+type SetFunc func(Setter) error
+
+// Set converts a SetFunc into an Option, for
+// Settings construction.
+func Set(fn SetFunc) Option {
+	return func(b Builder, errs oferrors.Block) {
+		// b.Settings will never be nil, so don't check.
+		setter := Setter{all: b.Settings()}
+		if err := fn(setter); err != nil {
+			errs.AddError(err)
+		}
+	}
+}
+
 // WithFS loads all files that match the pattern
 // into the Settings. All matched files must be in JSON format.
 // See path.Match() for match rules.
