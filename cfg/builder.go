@@ -72,11 +72,18 @@ func (s Setter) Settings() Settings {
 func (s Setter) Set(path string, value any) error {
 	// The framework should guarantee this is never true.
 	addTo := s.all
+	// SplitSeq does not let us know when we're at the end.
+	lastPartI := 0
+	for range strings.SplitSeq(path, pathSeparator) {
+		lastPartI++
+	}
+	partI := 0
 	for part := range strings.SplitSeq(path, pathSeparator) {
 		if addTo == nil {
 			return fmt.Errorf("Setter.Set is missing settings")
 		}
-		if strings.HasSuffix(path, part) {
+		partI++
+		if partI == lastPartI {
 			addTo[part] = value
 		} else {
 			if v := addTo[part]; v == nil {

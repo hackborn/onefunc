@@ -98,6 +98,10 @@ func setB(s Setter) error {
 	return err
 }
 
+func setC(s Setter) error {
+	return s.Set("c/c", 1)
+}
+
 // ---------------------------------------------------------
 // TEST-GET
 
@@ -120,6 +124,8 @@ func TestGet(t *testing.T) {
 	f(getA_1, setA)
 	f(getA_2, setA)
 	f(getB_1, setB)
+	f(getC_1, setC)
+	f(getC_2, setC)
 }
 
 type getFunc func(s Settings) error
@@ -149,6 +155,20 @@ func getB_1(s Settings) error {
 		return fmt.Errorf("Missing name")
 	}
 	return nil
+}
+
+func getC_1(s Settings) error {
+	// Check that the iterating correctly idenfies the end.
+	if err := getA_int("c", s); err == nil {
+		return fmt.Errorf("Should not have found c")
+	} else {
+		return nil
+	}
+}
+
+func getC_2(s Settings) error {
+	// Check that the iterating correctly idenfies the end.
+	return getA_int("c/c", s)
 }
 
 // ---------------------------------------------------------
