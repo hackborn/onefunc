@@ -45,3 +45,11 @@ func MkExpandPath(path string) (string, error) {
 	parent := filepath.Dir(path)
 	return path, os.MkdirAll(parent, 0700)
 }
+
+func IsDirectory(path string) (bool, error) {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+	return fileInfo.IsDir(), nil
+}
