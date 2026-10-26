@@ -7,4 +7,4 @@ The initial idea was that every function would be isolated and self-contained ("
 
 The closest thing to a rule related to this project is: No dependencies. If a package needs a non-system dependency then it becomes a likely candidate to be spun off into a separate repo. _This_ repo should be an endpoint, not dragging in a huge amount of third-party code if you want to include it.
 
-But don't include it! It __is__ pretty hideous, after all. If, by chance, you have the misfortune to stumble across this project and find something useful, my suggestion would be to copy it or start your own similar repo.
+But don't include it! It __is__ pretty hideous, after all. If, by chance, you have the misfortune to stumble across this project and find something useful, my suggestion would be to copy it or start your own similar repo. I will break APIs in here if I decide it's worthwhile.

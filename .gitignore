@@ -21,8 +21,8 @@
 pipeline/*.prof
 pipeline/*.test
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# Test artifacts
+embr/testdata/draw_*
 
 # Go workspace file
 go.work

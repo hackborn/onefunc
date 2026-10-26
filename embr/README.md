@@ -1,0 +1,1 @@
+Simple image generation utility. Don't use it, I've written a million of these and they are all different. I'm sure it will change dramatically.
