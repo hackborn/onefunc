@@ -54,6 +54,23 @@ func TestDrawCircle2(t *testing.T) {
 	drawImage(t, "circle2", w, h, NewCircle(outside, inside))
 }
 
+func TestDrawCircleOutline1(t *testing.T) {
+	w, h := 100, 100
+	outside := color.NRGBA{R: 0, G: 255, B: 0, A: 0}
+	inside := color.NRGBA{R: 0, G: 0, B: 0, A: 255}
+	outline := color.NRGBA{R: 0, G: 255, B: 0, A: 255}
+	drawImage(t, "circleoutline1", w, h, NewCircle(outside, inside), NewCircleOutline(outline, 4))
+}
+
+func TestDrawCircleOutline2(t *testing.T) {
+	w, h := 100, 100
+	outside := color.NRGBA{R: 0, G: 0, B: 0, A: 255}
+	inside := color.NRGBA{R: 0, G: 0, B: 0, A: 255}
+	outline := color.NRGBA{R: 0, G: 255, B: 0, A: 255}
+	drawImage(t, "circleoutline2", w, h, NewCircle(outside, inside), NewCircleOutline(outline, 4))
+	t.FailNow()
+}
+
 // ---------------------------------------------------------
 // IO
 
