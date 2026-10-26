@@ -23,6 +23,7 @@ pipeline/*.test
 
 # Test artifacts
 embr/testdata/draw_*
+embr/emart/testdata/draw_*
 
 # Go workspace file
 go.work

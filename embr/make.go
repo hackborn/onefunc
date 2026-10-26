@@ -5,15 +5,15 @@ import (
 	"image/color"
 )
 
-type PixelArgs struct {
-	X, Y int
-}
-
-type PixelFunc func(PixelArgs) color.NRGBA
-
-func Make(width, height int, fn PixelFunc, args ...Arg) (*image.NRGBA, error) {
-	setup := Setup{Width: width, Height: height}
-	for _, a := range args {
+func Make(width, height int, layers ...Layer) (*image.NRGBA, error) {
+	setup := SetupArgs{Width: width, Height: height, ptr: &ptrSetupArgs{}}
+	for _, a := range layers {
+		if err := a.Setup(setup); err != nil {
+			return nil, err
+		}
+	}
+	steppers := setup.ptr.steppers
+	for _, a := range steppers {
 		a.Setup(setup)
 	}
 	bounds := image.Rect(0, 0, width, height)
@@ -21,18 +21,22 @@ func Make(width, height int, fn PixelFunc, args ...Arg) (*image.NRGBA, error) {
 	pa := PixelArgs{}
 	for pa.Y = range height {
 		for pa.X = range width {
-			step := Step{X: pa.X, Y: pa.Y}
-			for _, a := range args {
+			step := StepArgs{X: pa.X, Y: pa.Y}
+			for _, a := range steppers {
 				a.Step(step)
 			}
-			img.SetNRGBA(pa.X, pa.Y, fn(pa))
+			pa.Color = color.NRGBA{R: 0, G: 0, B: 0, A: 0}
+			for _, a := range layers {
+				pa.Color = a.Pixel(pa)
+			}
+			img.SetNRGBA(pa.X, pa.Y, pa.Color)
 		}
 	}
 	return img, nil
 }
 
-func MakeRGBA(width, height int, fn PixelFunc, args ...Arg) (*image.RGBA, error) {
-	if img, err := Make(width, height, fn, args...); err != nil {
+func MakeRGBA(width, height int, layers ...Layer) (*image.RGBA, error) {
+	if img, err := Make(width, height, layers...); err != nil {
 		return nil, err
 	} else {
 		return convertNRGBAToRGBA(img), nil
