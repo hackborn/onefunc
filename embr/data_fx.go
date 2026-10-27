@@ -4,18 +4,17 @@ import (
 	"github.com/hackborn/onefunc/math/geo"
 )
 
-// Stepper stores information about the image,
-// updated on each step.
-type Stepper interface {
-	// Setup sets any initial information about the image.
-	Setup(SetupArgs)
-
-	// Step is updated on each pixel. Note, this might
-	// go away -- you could just have functions that
-	// take the current PixelArgs and it'd be the same.
-	// The only value I'm seeing here is as a caching
-	// mechanism, and I don't know that you'd ever need that.
+// DataFx stores information that might be shared
+// across layers. It is run once per pixel.
+type DataFx interface {
+	// Setup sets any initial information about the data.
+	Setup(DataSetupArgs)
+	// Step is updated on each pixel.
 	Step(StepArgs)
+}
+
+type DataSetupArgs struct {
+	Width, Height int
 }
 
 type StepArgs struct {
@@ -41,7 +40,7 @@ type Distance struct {
 	w, h        int
 }
 
-func (a *Distance) Setup(setup SetupArgs) {
+func (a *Distance) Setup(setup DataSetupArgs) {
 	a.w, a.h = setup.Width, setup.Height
 	a.center = geo.PtF{X: (float64(a.w) / 2) - 0, Y: (float64(a.h) / 2) - 0}
 	maxX := geo.PtF{X: 0, Y: a.center.Y}.Dist(a.center)

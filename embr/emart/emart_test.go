@@ -32,7 +32,7 @@ func isGolden() bool {
 // TEST-DRAW
 
 // draw is just a place to draw some images.
-func drawImage(t *testing.T, name string, width, height int, layers ...embr.Layer) {
+func drawImage(t *testing.T, name string, width, height int, layers ...embr.LayerFx) {
 	t.Helper()
 	img, err := embr.Make(width, height, layers...)
 	oferrors.Panic(err)

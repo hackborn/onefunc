@@ -4,16 +4,17 @@ import (
 	"image/color"
 )
 
-// Layer is a single layer of color on the image.
-type Layer interface {
-	// Setup is used to install any Steppers used
+// LayerFx is a single layer of color on the image.
+// It is run once per pixel.
+type LayerFx interface {
+	// Setup is used to install any DataFx used
 	// by this layer.
-	Setup(SetupArgs) error
+	Setup(LayerSetupArgs) error
 	// Pixel provides a color for the given pixel.
 	Pixel(PixelArgs) color.NRGBA
 }
 
-type SetupArgs struct {
+type LayerSetupArgs struct {
 	Width, Height int
 	ptr           *ptrSetupArgs
 }
@@ -23,18 +24,18 @@ type PixelArgs struct {
 	Color color.NRGBA
 }
 
-// MustStep answers the step type if it's already in the
-// steppers list, otherwise adds it.
-func (a *SetupArgs) MustStep[T Stepper](ifMissing T) T {
+// MustData answers the DataFx type if it's already in the
+// list, otherwise adds ifMissing.
+func (a *LayerSetupArgs) MustData[T DataFx](ifMissing T) T {
 	if a.ptr == nil {
 		return ifMissing
 	}
-	for _, _s := range a.ptr.steppers {
+	for _, _s := range a.ptr.datafx {
 		if s, ok := _s.(T); ok {
 			return s
 		}
 	}
-	a.ptr.steppers = append(a.ptr.steppers, ifMissing)
+	a.ptr.datafx = append(a.ptr.datafx, ifMissing)
 	return ifMissing
 }
 
@@ -43,5 +44,5 @@ func (a *SetupArgs) MustStep[T Stepper](ifMissing T) T {
 // excessive, but I hate junking APIs with
 // things that look like they need nil checks.
 type ptrSetupArgs struct {
-	steppers []Stepper
+	datafx []DataFx
 }

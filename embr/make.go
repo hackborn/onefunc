@@ -5,16 +5,10 @@ import (
 	"image/color"
 )
 
-func Make(width, height int, layers ...Layer) (*image.NRGBA, error) {
-	setup := SetupArgs{Width: width, Height: height, ptr: &ptrSetupArgs{}}
-	for _, a := range layers {
-		if err := a.Setup(setup); err != nil {
-			return nil, err
-		}
-	}
-	steppers := setup.ptr.steppers
-	for _, a := range steppers {
-		a.Setup(setup)
+func Make(width, height int, layers ...LayerFx) (*image.NRGBA, error) {
+	datafx, err := setup(width, height, layers)
+	if err != nil {
+		return nil, err
 	}
 	bounds := image.Rect(0, 0, width, height)
 	img := image.NewNRGBA(bounds)
@@ -22,7 +16,7 @@ func Make(width, height int, layers ...Layer) (*image.NRGBA, error) {
 	for pa.Y = range height {
 		for pa.X = range width {
 			step := StepArgs{X: pa.X, Y: pa.Y}
-			for _, a := range steppers {
+			for _, a := range datafx {
 				a.Step(step)
 			}
 			pa.Color = color.NRGBA{R: 0, G: 0, B: 0, A: 0}
@@ -35,10 +29,25 @@ func Make(width, height int, layers ...Layer) (*image.NRGBA, error) {
 	return img, nil
 }
 
-func MakeRGBA(width, height int, layers ...Layer) (*image.RGBA, error) {
+func MakeRGBA(width, height int, layers ...LayerFx) (*image.RGBA, error) {
 	if img, err := Make(width, height, layers...); err != nil {
 		return nil, err
 	} else {
 		return convertNRGBAToRGBA(img), nil
 	}
+}
+
+func setup(width, height int, layers []LayerFx) ([]DataFx, error) {
+	setup := LayerSetupArgs{Width: width, Height: height, ptr: &ptrSetupArgs{}}
+	for _, a := range layers {
+		if err := a.Setup(setup); err != nil {
+			return nil, err
+		}
+	}
+	datafx := setup.ptr.datafx
+	dataSetup := DataSetupArgs{Width: setup.Width, Height: setup.Height}
+	for _, a := range datafx {
+		a.Setup(dataSetup)
+	}
+	return datafx, nil
 }

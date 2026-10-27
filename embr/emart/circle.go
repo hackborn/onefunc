@@ -28,8 +28,8 @@ type Circle struct {
 	distance *embr.Distance
 }
 
-func (c *Circle) Setup(args embr.SetupArgs) error {
-	c.distance = args.MustStep(&embr.Distance{})
+func (c *Circle) Setup(args embr.LayerSetupArgs) error {
+	c.distance = args.MustData(&embr.Distance{})
 	return nil
 }
 
@@ -53,8 +53,8 @@ type CircleOutline struct {
 	distance *embr.Distance
 }
 
-func (c *CircleOutline) Setup(args embr.SetupArgs) error {
-	c.distance = args.MustStep(&embr.Distance{})
+func (c *CircleOutline) Setup(args embr.LayerSetupArgs) error {
+	c.distance = args.MustData(&embr.Distance{})
 	return nil
 }
 

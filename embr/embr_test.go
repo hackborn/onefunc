@@ -31,7 +31,7 @@ func isGolden() bool {
 // TEST-DRAW
 
 // draw is just a place to draw some images.
-func drawImage(t *testing.T, name string, width, height int, layers ...Layer) {
+func drawImage(t *testing.T, name string, width, height int, layers ...LayerFx) {
 	t.Helper()
 	img, err := Make(width, height, layers...)
 	oferrors.Panic(err)
@@ -43,8 +43,8 @@ type circle struct {
 	distance *Distance
 }
 
-func (c *circle) Setup(args SetupArgs) error {
-	c.distance = args.MustStep(&Distance{})
+func (c *circle) Setup(args LayerSetupArgs) error {
+	c.distance = args.MustData(&Distance{})
 	return nil
 }
 

@@ -62,9 +62,6 @@ func (s *service) Closing(hub.Services) {
 }
 
 func (s *service) doGo(fn func(), c Closer) {
-	// TODO: This should only be available during the opening stage
-	// but I don't have a good mechanism for that right now, so I'll
-	// at least block it during the closing stage.
 	if s.c != nil && fn != nil && c != nil {
 		s.closers = append(s.closers, c)
 		s.wg.Go(fn)
