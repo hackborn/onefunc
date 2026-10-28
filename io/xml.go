@@ -12,6 +12,9 @@ func XmlAllTokens(rc io.ReadCloser) iter.Seq2[xml.Token, error] {
 		if rc == nil {
 			yield(nil, fmt.Errorf("Invalid input"))
 			return
+		} else if er, ok := rc.(error); ok {
+			yield(nil, er)
+			return
 		}
 		defer rc.Close()
 

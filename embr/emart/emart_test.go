@@ -68,7 +68,6 @@ func TestDrawCircleOutline2(t *testing.T) {
 	inside := color.NRGBA{R: 0, G: 0, B: 0, A: 255}
 	outline := color.NRGBA{R: 0, G: 255, B: 0, A: 255}
 	drawImage(t, "circleoutline2", w, h, NewCircle(outside, inside), NewCircleOutline(outline, 4))
-	t.FailNow()
 }
 
 // ---------------------------------------------------------

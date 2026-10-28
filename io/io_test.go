@@ -93,22 +93,25 @@ func TestExpandPath(t *testing.T) {
 // TEST-XML-ALL-TOKENS
 
 func TestXmlAllTokens(t *testing.T) {
-	f := func(filename string, cmp XmlComparison) {
+	f := func(filename string, cmp XmlComparison, wantErr error) {
 		t.Helper()
 
 		filename = filepath.Join("testdata", fmt.Sprintf("%s.xml", filename))
-		for tok, err := range XmlAllTokens(FileResource(filename)) {
-			if err != nil {
-				t.Fatalf("Unexpected error: %v", err)
+		for tok, haveErr := range XmlAllTokens(FileResource(filename)) {
+			if err := cmpErrors(haveErr, wantErr); err != nil {
+				if err != okErr {
+					t.Fatalf("%s", err)
+				}
 				return
 			}
-			if err = cmp.Token(tok); err != nil {
+			if err := cmp.Token(tok); err != nil {
 				t.Fatalf("%v", err)
 			}
 		}
 	}
 
-	f("a", chardatas("hi", "bye"))
+	f("a", chardatas("hi", "bye"), nil)
+	f("NOTAREALFILE", chardatas(""), fmt.Errorf("want err"))
 }
 
 // ---------------------------------------------------------
@@ -141,3 +144,17 @@ func (c *chardataList) Token(tok xml.Token) error {
 	}
 	return nil
 }
+
+func cmpErrors(have, want error) error {
+	if have == nil && want == nil {
+		return nil
+	} else if have != nil && want != nil {
+		return okErr
+	} else {
+		return fmt.Errorf("Have error %v but want %v", have, want)
+	}
+}
+
+// okErr what a funny name! Just used to indicate
+// I wanted an error, and I GOT an error.
+var okErr = fmt.Errorf("ok")

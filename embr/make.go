@@ -16,9 +16,7 @@ func Make(width, height int, layers ...LayerFx) (*image.NRGBA, error) {
 	for pa.Y = range height {
 		for pa.X = range width {
 			step := StepArgs{X: pa.X, Y: pa.Y}
-			for _, a := range datafx {
-				a.Step(step)
-			}
+			datafx.Step(step)
 			pa.Color = color.NRGBA{R: 0, G: 0, B: 0, A: 0}
 			for _, a := range layers {
 				pa.Color = a.Pixel(pa)
@@ -37,17 +35,15 @@ func MakeRGBA(width, height int, layers ...LayerFx) (*image.RGBA, error) {
 	}
 }
 
-func setup(width, height int, layers []LayerFx) ([]DataFx, error) {
+func setup(width, height int, layers []LayerFx) (DataFx, error) {
 	setup := LayerSetupArgs{Width: width, Height: height, ptr: &ptrSetupArgs{}}
 	for _, a := range layers {
 		if err := a.Setup(setup); err != nil {
 			return nil, err
 		}
 	}
-	datafx := setup.ptr.datafx
+	datafx := collapseDataFx(setup.ptr.datafx)
 	dataSetup := DataSetupArgs{Width: setup.Width, Height: setup.Height}
-	for _, a := range datafx {
-		a.Setup(dataSetup)
-	}
+	datafx.Setup(dataSetup)
 	return datafx, nil
 }
