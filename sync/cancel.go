@@ -18,3 +18,25 @@ func (c *Cancel) Cancel() {
 func (c *Cancel) IsCancelled() bool {
 	return c.b.Load() == true
 }
+
+type CancelChecker interface {
+	IsCancelled() bool
+}
+
+func ChainCancelChecker(a, b CancelChecker) CancelChecker {
+	return &checkerChain{a: a, b: b}
+}
+
+type checkerChain struct {
+	a, b CancelChecker
+}
+
+func (c *checkerChain) IsCancelled() bool {
+	if c.a != nil && c.a.IsCancelled() {
+		return true
+	}
+	if c.b != nil && c.b.IsCancelled() {
+		return true
+	}
+	return false
+}

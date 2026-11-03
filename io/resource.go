@@ -29,16 +29,20 @@ func FileResource(filename string) io.ReadCloser {
 	return file
 }
 
-func StringResource(s string) io.ReadCloser {
+func StringResource(s string) io.ReadSeekCloser {
 	return &stringRes{r: strings.NewReader(s)}
 }
 
 type stringRes struct {
-	r io.Reader
+	r io.ReadSeeker
 }
 
 func (r *stringRes) Read(p []byte) (n int, err error) {
 	return r.r.Read(p)
+}
+
+func (r *stringRes) Seek(offset int64, whence int) (int64, error) {
+	return r.r.Seek(offset, whence)
 }
 
 func (r *stringRes) Close() error {
