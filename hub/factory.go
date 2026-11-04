@@ -34,6 +34,11 @@ func RegisterFactory(name string, factory Factory) error {
 	return allFactories.register(name, factory)
 }
 
+func hasFactory(name string) bool {
+	_, ok := allFactories.all[name]
+	return ok
+}
+
 func getFactory(name string) (Factory, error) {
 	if f, ok := allFactories.all[name]; ok {
 		return f, nil

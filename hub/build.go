@@ -32,7 +32,15 @@ func Build(args BuildArgs, settings cfg.Settings) (Services, error) {
 		openingServices: opening}
 
 	// Install configured services
+	// Settings might be configured for services that are added in
+	// build steps, so check for missing services, and only error
+	// if they are still missing after the build steps.
+	missing := []string{}
 	for name := range settings.AllKeys() {
+		if !hasFactory(name) {
+			missing = append(missing, name)
+			continue
+		}
 		fac, err := getFactory(name)
 		if err != nil {
 			return nil, err
@@ -62,6 +70,12 @@ func Build(args BuildArgs, settings cfg.Settings) (Services, error) {
 		}
 	}
 
+	// Verify any missing have been added
+	for _, name := range missing {
+		if _, ok := waiting.get(name); !ok {
+			return nil, fmt.Errorf("No factory named %v", name)
+		}
+	}
 	return open(settings, args.GlobalSettings, waiting, opening)
 }
 
