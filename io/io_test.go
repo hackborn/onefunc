@@ -23,18 +23,7 @@ func TestAll(t *testing.T) {
 	f := func(path string, args ...any) {
 		t.Helper()
 
-		opts := []IterOption{}
-		wants := []string{}
-		for _, _arg := range args {
-			switch arg := _arg.(type) {
-			case IterOption:
-				opts = append(opts, arg)
-			case string:
-				wants = append(wants, arg)
-			default:
-				oferrors.Panic(fmt.Errorf("Unknown argument %T %v", _arg, _arg))
-			}
-		}
+		opts, wants := iterArgs(args...)
 
 		root := filepath.Join("testdata", path)
 		wantIndex := 0
@@ -60,6 +49,60 @@ func TestAll(t *testing.T) {
 	f("iter", "/b.txt", "/c.txt", "/dir", "/dir/a.txt")
 	f("iter", SkipDir("testdata/iter/dir"), "/b.txt", "/c.txt")
 	f("iter", skipFileNamed("testdata/iter/b.txt"), "/c.txt", "/dir", "/dir/a.txt")
+}
+
+// ---------------------------------------------------------
+// TEST-PULL-ALL
+
+// TestPullAll is identical to TestAll, just using the pull
+// iterator. There is one important distinction: It returns
+// the empty parent directory, so tests need to account for
+// that. This is because I am testing the underlying iteration
+// algorithm, unlike All(), which uses filepath.WalkDir().
+func TestPullAll(t *testing.T) {
+	f := func(path string, args ...any) {
+		t.Helper()
+
+		opts, wants := iterArgs(args...)
+
+		root := filepath.Join("testdata", path)
+		wantIndex := 0
+		all, err := PullAll(root, opts...)
+		oferrors.Panic(err)
+		for e, err := all.Pull(); !(e.Entry == nil && err == nil); e, err = all.Pull() {
+			oferrors.Panic(err)
+			p := strings.TrimPrefix(e.Path, root)
+			if wantIndex < len(wants) {
+				if wants[wantIndex] != p {
+					t.Fatalf("want \"%v\" at index %v but have \"%v\"", wants[wantIndex], wantIndex, p)
+				}
+				wantIndex++
+			}
+		}
+		if len(wants) > wantIndex {
+			t.Fatalf("want \"%v\" but nothing left", wants[wantIndex])
+		}
+	}
+
+	f("iter", "", "/b.txt", "/c.txt", "/dir", "/dir/a.txt")
+	f("iter", SkipDir("testdata/iter/dir"), "", "/b.txt", "/c.txt")
+	f("iter", skipFileNamed("testdata/iter/b.txt"), "", "/c.txt", "/dir", "/dir/a.txt")
+}
+
+func iterArgs(args ...any) ([]IterOption, []string) {
+	opts := []IterOption{}
+	wants := []string{}
+	for _, _arg := range args {
+		switch arg := _arg.(type) {
+		case IterOption:
+			opts = append(opts, arg)
+		case string:
+			wants = append(wants, arg)
+		default:
+			panic(fmt.Errorf("Unknown argument %T %v", _arg, _arg))
+		}
+	}
+	return opts, wants
 }
 
 func skipFileNamed(n string) IterOption {
