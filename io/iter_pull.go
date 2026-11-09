@@ -57,16 +57,28 @@ func (p *_puller) next() (IterEntry, bool, error) {
 		ie := IterEntry{Path: filepath.Join(pd.parent, entry.Name()),
 			Entry: entry}
 		// Run the options
+		skipHandling := false
 		if err := p.runOptions(ie); err != nil {
 			switch err {
 			case filepath.SkipAll:
 				// Cancel
 				p.steps = nil
 				return IterEntry{}, true, nil
-			case filepath.SkipDir, SkipFile:
+			case filepath.SkipDir:
 				// Advance
 				pd.pos++
 				return IterEntry{}, false, nil
+			case SkipFile:
+				// This is very counterintuitive, but All() handles
+				// SkipFile on directories by not passing on the directory
+				// to the client, but still diving into it.
+				if !ie.Entry.IsDir() {
+					// Advance
+					pd.pos++
+					return IterEntry{}, false, nil
+				} else {
+					skipHandling = true
+				}
 			default:
 				return IterEntry{}, true, err
 			}
@@ -81,7 +93,11 @@ func (p *_puller) next() (IterEntry, bool, error) {
 				step := &_pullStep{parent: ie.Path, entries: dirs}
 				p.steps = append(p.steps, step)
 				// With my children in place, let clients process me.
-				return ie, true, nil
+				if skipHandling {
+					return IterEntry{}, false, nil
+				} else {
+					return ie, true, nil
+				}
 			}
 		} else {
 			return ie, true, nil

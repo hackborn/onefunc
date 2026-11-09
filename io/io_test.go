@@ -47,6 +47,8 @@ func TestAll(t *testing.T) {
 	}
 
 	f("iter", "/b.txt", "/c.txt", "/dir", "/dir/a.txt")
+	f("iter", SkipDir("testdata/iter"))
+	f("iter", skipFileNamed("testdata/iter"), "/b.txt", "/c.txt", "/dir", "/dir/a.txt")
 	f("iter", SkipDir("testdata/iter/dir"), "/b.txt", "/c.txt")
 	f("iter", skipFileNamed("testdata/iter/b.txt"), "/c.txt", "/dir", "/dir/a.txt")
 }
@@ -55,38 +57,37 @@ func TestAll(t *testing.T) {
 // TEST-PULL-ALL
 
 // TestPullAll is identical to TestAll, just using the pull
-// iterator. There is one important distinction: It returns
-// the empty parent directory, so tests need to account for
-// that. This is because I am testing the underlying iteration
-// algorithm, unlike All(), which uses filepath.WalkDir().
+// iterator. It verifies the data against All().
 func TestPullAll(t *testing.T) {
 	f := func(path string, args ...any) {
 		t.Helper()
 
-		opts, wants := iterArgs(args...)
+		opts, _ := iterArgs(args...)
 
 		root := filepath.Join("testdata", path)
-		wantIndex := 0
 		all, err := PullAll(root, opts...)
 		oferrors.Panic(err)
-		for e, err := all.Pull(); !(e.Entry == nil && err == nil); e, err = all.Pull() {
+		for want, err := range All(root, opts...) {
 			oferrors.Panic(err)
-			p := strings.TrimPrefix(e.Path, root)
-			if wantIndex < len(wants) {
-				if wants[wantIndex] != p {
-					t.Fatalf("want \"%v\" at index %v but have \"%v\"", wants[wantIndex], wantIndex, p)
-				}
-				wantIndex++
+			have, err := all.Pull()
+			if err != nil {
+				t.Fatalf("want \"%v\" but have err %v", want.Path, err)
+			}
+			if have.Path != want.Path {
+				t.Fatalf("want \"%v\" but have \"%v\"", want.Path, have.Path)
 			}
 		}
-		if len(wants) > wantIndex {
-			t.Fatalf("want \"%v\" but nothing left", wants[wantIndex])
+		// Nothing dangling?
+		if have, _ := all.Pull(); have.Path != "" {
+			t.Fatalf("have \"%v\" but want is finished", have.Path)
 		}
 	}
 
-	f("iter", "", "/b.txt", "/c.txt", "/dir", "/dir/a.txt")
-	f("iter", SkipDir("testdata/iter/dir"), "", "/b.txt", "/c.txt")
-	f("iter", skipFileNamed("testdata/iter/b.txt"), "", "/c.txt", "/dir", "/dir/a.txt")
+	f("iter")
+	f("iter", SkipDir("testdata/iter"))
+	f("iter", skipFileNamed("testdata/iter"))
+	f("iter", SkipDir("testdata/iter/dir"))
+	f("iter", skipFileNamed("testdata/iter/b.txt"))
 }
 
 func iterArgs(args ...any) ([]IterOption, []string) {
