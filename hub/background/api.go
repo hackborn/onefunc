@@ -44,7 +44,7 @@ type Task interface {
 	Remote(RemoteArgs)
 
 	// Local is run on the main thread.
-	Local()
+	Local(LocalArgs)
 }
 
 type RemoteArgs struct {
@@ -53,6 +53,9 @@ type RemoteArgs struct {
 
 	// streamingFn handles sending tasks to the main thread.
 	streamingFn taskHandlerFunc
+
+	// data stores data supplied by clients. Access it by type with Get()
+	data []any
 }
 
 func (a RemoteArgs) IsCancelled() bool {
@@ -66,10 +69,74 @@ func (a RemoteArgs) IsCancelled() bool {
 // n number of times during remote execution.
 func (a RemoteArgs) Stream(t Task) {
 	if a.streamingFn != nil {
-		a.streamingFn(taskEntry{t: t, cancel: a.cancel})
+		a.streamingFn(RunningTask{task: t, cancel: a.cancel})
 	}
+}
+
+// Get answers the data type, or nil if none.
+func (a RemoteArgs) Get[T any]() *T {
+	for _, _d := range a.data {
+		if d, ok := _d.(*T); ok {
+			return d
+		}
+	}
+	return nil
+}
+
+type LocalArgs struct {
+	// data stores data supplied by clients. Access it by type with Get()
+	data []any
+}
+
+// Get answers the data type, or nil if none.
+func (a LocalArgs) Get[T any]() *T {
+	for _, _d := range a.data {
+		if d, ok := _d.(*T); ok {
+			return d
+		}
+	}
+	return nil
 }
 
 type TaskInfo struct {
 	Cancel *sync.Cancel
 }
+
+// RunningTask is used to hook into the new pluggable
+// run-local system.
+type RunningTask struct {
+	task   Task
+	cancel *sync.Cancel
+}
+
+func NewRunningTask(task Task, cancel *sync.Cancel) RunningTask {
+	return RunningTask{task: task, cancel: cancel}
+}
+
+// WithTask answers the myself with my task replaced, but my cancel intact.
+// This feels overengineered because I got backed into a corner where
+// some systems expect the original cancel struct and some transform it
+// into a cancelchecker, and I'm not sure how to reconcile.
+func (t RunningTask) WithTask(task Task) RunningTask {
+	return RunningTask{task: task, cancel: t.cancel}
+}
+
+func (t RunningTask) IsCancelled() bool {
+	if t.cancel != nil {
+		return t.cancel.IsCancelled()
+	}
+	return false
+}
+
+// ---------------------------------------------------------
+// FUNC
+
+// RunLocalFunc can be installed on the service to provide
+// a custom local handler. It runs in a worker thread.
+type RunLocalFunc func(Task, LocalArgs)
+
+// SendLocalFunc is used to expose the RunLocalFunc to clients.
+// By default it will send the task to the main thread to run,
+// but if a RunLocalFunc is installed it will use that in the
+// worker thread. This satisfies some UI lib requirements.
+type SendLocalFunc func(RunningTask)

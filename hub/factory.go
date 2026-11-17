@@ -60,23 +60,14 @@ type OnNewServiceArgs struct {
 	// done is marked true when the framework is finished.
 	// This is extra-protection against anyone capturing
 	// the args and trying to use them past build time.
-	done            *atomic.Bool
-	services        *_services
-	openingServices *_services
+	done     *atomic.Bool
+	services *_services
 }
 
-// SddService will set the service at name, replacing any existing.
-func (a OnNewServiceArgs) SddService(name string, service any) {
+// SetService will set the service at name, replacing any existing.
+func (a OnNewServiceArgs) SetService(name string, service any) {
 	if a.services != nil && a.done != nil && a.done.Load() == false {
 		a.services.all[name] = serviceEntry{service: service}
-	}
-}
-
-// SetOpeningService will set a new opening service. Opeming services
-// disappear after the Open stage.
-func (a OnNewServiceArgs) SetOpeningService(name string, service any) {
-	if a.openingServices != nil && a.done != nil && a.done.Load() == false {
-		a.openingServices.all[name] = serviceEntry{service: service}
 	}
 }
 

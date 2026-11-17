@@ -22,7 +22,7 @@ func (t *requiredTask) Remote(args RemoteArgs) {
 	t.remoteDone.Store(true)
 }
 
-func (t *requiredTask) Local() {
-	t.task.Local()
+func (t *requiredTask) Local(args LocalArgs) {
+	t.task.Local(args)
 	t.localDone.Store(true)
 }

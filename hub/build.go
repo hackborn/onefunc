@@ -15,6 +15,11 @@ type BuildArgs struct {
 	Steps []BuildStepFunc
 }
 
+func (a BuildArgs) AppendStep(stepFn BuildStepFunc) BuildArgs {
+	a.Steps = append(a.Steps, stepFn)
+	return a
+}
+
 // Build read the services config from the settings,
 // opens them and returns the services.
 //
@@ -27,9 +32,9 @@ type BuildArgs struct {
 //	}
 func Build(args BuildArgs, settings cfg.Settings) (Services, error) {
 	waiting := newServices()
-	opening := newServices()
 	onargs := OnNewServiceArgs{done: &atomic.Bool{},
-		openingServices: opening}
+		services: waiting,
+	}
 
 	// Install configured services
 	// Settings might be configured for services that are added in
@@ -59,24 +64,61 @@ func Build(args BuildArgs, settings cfg.Settings) (Services, error) {
 	}
 	onargs.done.Store(true)
 
-	// Run steps
+	// Run the steps
+	if err := runSteps(args, waiting); err != nil {
+		return nil, err
+	}
+
+	// Check for any missing
+	if err := verifyMissing(waiting, missing); err != nil {
+		return nil, err
+	}
+
+	// Open the services
+	ready, err := open(settings, args.GlobalSettings, waiting)
+	if err != nil {
+		return nil, err
+	}
+
+	// Remove the finishers
+	removeBuildFinishers(ready)
+	return ready, nil
+}
+
+func runSteps(args BuildArgs, s *_services) error {
 	stepArgs := StepArgs{GlobalSettings: args.GlobalSettings,
-		Services:  waiting,
-		_services: waiting,
+		Services:  s,
+		_services: s,
 	}
 	for _, fn := range args.Steps {
 		if err := fn(stepArgs); err != nil {
-			return nil, err
+			return err
 		}
 	}
+	return nil
+}
 
-	// Verify any missing have been added
+// verifyMissing returns an error if I don't have any items
+// in the missing.
+func verifyMissing(s *_services, missing []string) error {
 	for _, name := range missing {
-		if _, ok := waiting.get(name); !ok {
-			return nil, fmt.Errorf("No factory named %v", name)
+		if _, ok := s.get(name); !ok {
+			return fmt.Errorf("No service named %v", name)
 		}
 	}
-	return open(settings, args.GlobalSettings, waiting, opening)
+	return nil
+}
+
+// removeBuildFinishers removes all BuildFinisher services.
+func removeBuildFinishers(s *_services) {
+	fn := func(name string, service any) bool {
+		if f, ok := service.(BuildFinisher); ok {
+			f.BuildFinished()
+			return true
+		}
+		return false
+	}
+	s.deleteFunc(fn)
 }
 
 // ---------------------------------------------------------

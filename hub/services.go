@@ -65,6 +65,14 @@ func (s *_services) get(name string) (any, bool) {
 	return nil, false
 }
 
+func (s *_services) deleteFunc(fn func(name string, service any) bool) {
+	for k, v := range s.all {
+		if fn(k, v.service) {
+			delete(s.all, k)
+		}
+	}
+}
+
 func (s *_services) Close() error {
 	close := make([]closeEntry, 0, len(s.all))
 	for name, a := range s.all {

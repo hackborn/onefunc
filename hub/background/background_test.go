@@ -74,6 +74,7 @@ func TestRun(t *testing.T) {
 	// fail, but still makes sure things are working.
 	f(&cancelRunTask{}, startAndCancelTask)
 	f(&streamingRunTask{neededCount: 5}, nil)
+	f(&childTask{wantValue: 22}, runChannelTask)
 }
 
 // ---------------------------------------------------------
@@ -86,6 +87,13 @@ func startAndCancelTask(s *service, t Task) {
 	if tc, ok := t.(cancellableSetter); ok {
 		tc.setCancel(info.Cancel)
 	}
+}
+
+func runChannelTask(s *service, t Task) {
+	count := Count{value: 22}
+	args := AddChannelArgs{RemoteData: &count}
+	id := s.doAddChannel(args)
+	s.RunOn(t, id)
 }
 
 // ---------------------------------------------------------
@@ -112,7 +120,7 @@ func (t *basicRunTask) Remote(RemoteArgs) {
 	t.remoteCalled.Store(true)
 }
 
-func (t *basicRunTask) Local() {
+func (t *basicRunTask) Local(LocalArgs) {
 	t.localCalled.Store(true)
 }
 
@@ -137,7 +145,7 @@ func (t *cancelRunTask) Remote(RemoteArgs) {
 	}
 }
 
-func (t *cancelRunTask) Local() {
+func (t *cancelRunTask) Local(LocalArgs) {
 	if t.cancel != nil && !t.cancel.IsCancelled() {
 		t.localCalled.Store(true)
 	}
@@ -160,6 +168,27 @@ func (t *cancelRunTask) setCancel(cancel *sync.Cancel) {
 	t.cancel = cancel
 }
 
+type childTask struct {
+	wantValue   int
+	remoteValue int
+}
+
+func (t *childTask) Remote(args RemoteArgs) {
+	if count := args.Get[Count](); count != nil {
+		t.remoteValue = count.value
+	}
+}
+
+func (t *childTask) Local(LocalArgs) {
+}
+
+func (t *childTask) Error() error {
+	if t.wantValue != t.remoteValue {
+		return fmt.Errorf("Want %v but have %v", t.wantValue, t.remoteValue)
+	}
+	return nil
+}
+
 type streamingRunTask struct {
 	count, neededCount int
 }
@@ -170,7 +199,7 @@ func (t *streamingRunTask) Remote(args RemoteArgs) {
 	}
 }
 
-func (t *streamingRunTask) Local() {
+func (t *streamingRunTask) Local(LocalArgs) {
 }
 
 func (t *streamingRunTask) Error() error {
@@ -187,10 +216,17 @@ type streamingCounter struct {
 func (t *streamingCounter) Remote(args RemoteArgs) {
 }
 
-func (t *streamingCounter) Local() {
+func (t *streamingCounter) Local(LocalArgs) {
 	if t.t != nil {
 		t.t.count++
 	}
+}
+
+// ---------------------------------------------------------
+// TASK-ARGS
+
+type Count struct {
+	value int
 }
 
 // ---------------------------------------------------------

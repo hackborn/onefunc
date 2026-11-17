@@ -9,13 +9,12 @@ import (
 // FUNC
 
 type updateFunc func()
-type runTaskFunc func(Task)
 
 func defaultUpdateFunc() {
 }
 
-func defaultRunTaskFunc(t Task) {
-	t.Local()
+func defaultRunLocalFunc(t Task, args LocalArgs) {
+	t.Local(args)
 }
 
 // ---------------------------------------------------------
@@ -47,9 +46,9 @@ func (t *debugTimer) endUpdate() {
 	}
 }
 
-func (t *debugTimer) runLocal(task Task) {
+func (t *debugTimer) runLocal(task Task, args LocalArgs) {
 	prev := time.Now()
-	task.Local()
+	task.Local(args)
 	diff := time.Since(prev)
 	t.entries = append(t.entries, debugTimerEntry{task: task, dur: diff})
 }

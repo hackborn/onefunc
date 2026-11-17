@@ -9,6 +9,7 @@ import (
 const (
 	ServiceName = "background"
 	OpenerName  = "background#opener"
+	ConfigName  = "background#config"
 )
 
 func init() {
@@ -20,8 +21,8 @@ func init() {
 		// Add an opener service, so clients have access to a mechanism
 		// during the Open stage to add their own background threads.
 		if s, ok := args.Service.(*service); ok {
-			openerS := &openerService{s: s}
-			args.SetOpeningService(OpenerName, openerS)
+			args.SetService(OpenerName, &openerService{s: s})
+			args.SetService(ConfigName, &configService{s: s})
 		}
 	}
 	hub.RegisterFactory(ServiceName, fac)

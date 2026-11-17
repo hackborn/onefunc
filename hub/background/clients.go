@@ -1,9 +1,8 @@
 package background
 
 import (
+	"fmt"
 	"sync/atomic"
-
-	"github.com/hackborn/onefunc/hub"
 )
 
 // This file provides a menchanism for clients to add their own
@@ -14,10 +13,40 @@ import (
 // OpenerService is only available during Open(). It allows clients
 // to add managed background tasks.
 type OpenerService interface {
+	// AddChannel adds a new channel to the background service.
+	// Access it by calling RunOn with the returned ID.
+	// The remoteArg and localArg will be available in the
+	// remote and local args.
+	AddChannel(AddChannelArgs) int
+
 	// Go will run the func on the background thread. Closer
 	// will be closed when the service ends, and the func
 	// should check the closed state and return when closed.
+	// TODO: I think this can be deprecated, and just use AddChannel.
 	Go(func(), Closer)
+
+	// SendLocalFunc answers the function used to send the
+	// task to the local thread. Some apps might need to replace
+	// this with something appropriate to the UI system.
+	SendLocalFunc() SendLocalFunc
+}
+
+type AddChannelArgs struct {
+	// RemoteData will be available from RemoteArgs.Get.
+	RemoteData any
+	// LocalData will be available from LocalArgs.Get.
+	LocalData any
+	// Max will cause the worker threads to dynamically
+	// scale, from 0 to max.
+	// TODO: Unimplemented.
+	//Max int
+}
+
+// ConfigService is only available during the build stage. It lets
+// clients pass in data to the service.
+type ConfigService interface {
+	SetRunLocalFunc(RunLocalFunc)
+	SetLocalData(any)
 }
 
 type Closer interface {
@@ -52,12 +81,45 @@ type openerService struct {
 	s *service
 }
 
-func (s *openerService) Closing(hub.Services) {
-	s.s = nil
+func (s *openerService) AddChannel(args AddChannelArgs) int {
+	panicService(s.s, "opener")
+	return s.s.doAddChannel(args)
 }
 
 func (s *openerService) Go(fn func(), closer Closer) {
-	if s.s != nil {
-		s.s.doGo(fn, closer)
+	panicService(s.s, "opener")
+	s.s.doGo(fn, closer)
+}
+
+func (s *openerService) SendLocalFunc() SendLocalFunc {
+	panicService(s.s, "opener")
+	return s.s.doSendLocalFunc()
+}
+
+func (s *openerService) BuildFinished() {
+	s.s = nil
+}
+
+type configService struct {
+	s *service
+}
+
+func (s *configService) BuildFinished() {
+	s.s = nil
+}
+
+func (s *configService) SetRunLocalFunc(fn RunLocalFunc) {
+	panicService(s.s, "config")
+	s.s.runLocalFn = fn
+}
+
+func (s *configService) SetLocalData(d any) {
+	panicService(s.s, "config")
+	s.s.localArgs.data = append(s.s.localArgs.data, d)
+}
+
+func panicService(s *service, name string) {
+	if s == nil {
+		panic(fmt.Sprintf("background %s after the build has finished", name))
 	}
 }
