@@ -32,6 +32,33 @@ func Get[T any](_s Services, name string) (T, error) {
 	}
 }
 
+// GetUpdaters answers an updater composed of any services
+// that implement Update().
+func GetUpdaters(s Services) (Updater, bool) {
+	upd := []Updater{}
+	for _, it := range All[Updater](s) {
+		upd = append(upd, it)
+	}
+	switch len(upd) {
+	case 0:
+		return nil, false
+	case 1:
+		return upd[0], true
+	default:
+		return &compositeUpdater{upd: upd}, true
+	}
+}
+
+// MustGetUpdaters will answer a null update service
+// if there are no updaters.
+func MustGetUpdaters(s Services) Updater {
+	if upd, ok := GetUpdaters(s); ok {
+		return upd
+	} else {
+		return &emptyUpdater{}
+	}
+}
+
 func All[T any](all Services) iter.Seq2[string, T] {
 	return func(yield func(string, T) bool) {
 		for k, v := range all.All() {

@@ -85,3 +85,17 @@ func open(settings, globalSettings cfg.Settings, a *_services) (*_services, erro
 	}
 	return b, nil
 }
+
+type emptyUpdater struct{}
+
+func (*emptyUpdater) Update() {}
+
+type compositeUpdater struct {
+	upd []Updater
+}
+
+func (u *compositeUpdater) Update() {
+	for _, it := range u.upd {
+		it.Update()
+	}
+}
